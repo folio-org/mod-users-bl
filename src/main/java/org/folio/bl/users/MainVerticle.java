@@ -54,8 +54,17 @@ public class MainVerticle extends AbstractVerticle {
     
     dummyOkapiURL = System.getProperty("dummy.okapi.url", null);
     
-    router.get("/by-id/:id").handler(this::handleRetrieve);
-    router.get("/:username").handler(this::handleRetrieve);
+    router.get("/users-bl/by-id/:id").handler(this::handleRetrieve);
+    router.get("/users-bl/:username").handler(this::handleRetrieve);
+    
+    server.requestHandler(router::accept).listen(port, serverResult -> {
+      if(serverResult.failed()) {
+        future.fail(serverResult.cause());
+      } else {
+        future.complete();
+      }
+    });
+    logger.debug("users-bl module listening on port " + port);
   }
   
   private void handleRetrieve(RoutingContext context) {

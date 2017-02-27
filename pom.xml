@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.indexdata</groupId>
+    <groupId>org.folio</groupId>
     <artifactId>users_bl</artifactId>
     <name>users_bl</name>
     <version>0.0.1-SNAPSHOT</version>
@@ -20,11 +20,6 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web</artifactId>
-            <version>3.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-auth-jwt</artifactId>
             <version>3.2.1</version>
         </dependency>
          <!-- logging see http://www.slf4j.org/legacy.html -->
