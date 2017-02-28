@@ -19,6 +19,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.nio.file.attribute.UserPrincipalNotFoundException;
 import org.folio.bl.util.RecordNotFoundException;
 import org.folio.bl.util.ResultNotUniqueException;
+import java.lang.Integer;
 
 
 /**
@@ -104,7 +105,7 @@ public class MainVerticle extends AbstractVerticle {
           context.response()
                   .setStatusCode(500)
                   .end("An error has occurred, please contact your system administrator");
-          logger.debug("Error retrieving user record: " + userRecordResult.cause().getLocalizedMessage());
+          logger.error("Error retrieving user record: " + userRecordResult.cause().getLocalizedMessage());
         }
       } else {
         JsonObject masterResponseObject = new JsonObject();
@@ -114,6 +115,7 @@ public class MainVerticle extends AbstractVerticle {
         credentialsObjectFuture = Future.succeededFuture(new JsonObject()); //for testing
         permissionsObjectFuture = Future.succeededFuture(new JsonObject()); //for testing
         
+	logger.debug("Creating composite future");
         CompositeFuture compositeFuture = CompositeFuture.all(credentialsObjectFuture, permissionsObjectFuture);
         compositeFuture.setHandler(compositeResult -> {
           if(compositeResult.failed()) {
@@ -140,33 +142,44 @@ public class MainVerticle extends AbstractVerticle {
     Future<JsonObject> future = Future.future();
     HttpClient httpClient = vertx.createHttpClient();
     String queryString = "?query=" + field + "=" + value;
+    logger.debug("Requesting record from mod-users with query '" + queryString + "'");
     HttpClientRequest request = httpClient.getAbs(moduleURL + queryString);
     request.putHeader(OKAPI_TOKEN_HEADER, requestToken)
             .putHeader(OKAPI_TENANT_HEADER, tenant)
+            .putHeader("Accept", "application/json")
+            .putHeader("Content-Type", "application/json")
             .handler(queryResult -> {
               if(queryResult.statusCode() != 200) {
                 queryResult.bodyHandler(body -> {
                   future.fail("Got status code "+ queryResult.statusCode() + ": " + body.toString());
                 });
               } else {
+                logger.debug("Got status code " + queryResult.statusCode() + " - Calling bodyhandler to parse results");
                 queryResult.bodyHandler(body -> {
                   JsonObject result;
+                  logger.debug("Got body: " + body.toString());
                   try {
                     result = new JsonObject(body.toString());
                   } catch(Exception e) {
                     future.fail("Unable to parse body as JSON: " + e.getLocalizedMessage());
                     return;
                   }
-                  if(result.getInteger("totalRecords") < 1) {
+                  Integer totalRecords = result.getInteger("total_records");
+                  if(totalRecords == null || totalRecords < 1) {
                     future.fail(new RecordNotFoundException("No record found for query '" + queryString + "'"));
-                  } else if(result.getInteger("totalRecords") > 1) {
+                  } else if(totalRecords > 1) {
                     future.fail(new ResultNotUniqueException("'" + queryString + "' returns multiple results"));
                   } else {
                     JsonObject record = result.getJsonArray(resultKey).getJsonObject(0);
+                    logger.debug("Got record " + record.encode());
                     future.complete(record);
                   }
                 });
               }
+            })
+            .exceptionHandler(exception -> {
+              logger.debug("Something bad, wtf: " + exception.getLocalizedMessage());
+              future.fail(exception);
             })
             .end();
     return future;  
@@ -178,6 +191,8 @@ public class MainVerticle extends AbstractVerticle {
     HttpClientRequest request = httpClient.getAbs(moduleURL + "/" + key);
     request.putHeader(OKAPI_TOKEN_HEADER, requestToken)
             .putHeader(OKAPI_TENANT_HEADER, tenant)
+            .putHeader("Accept", "application/json")
+            .putHeader("Content-Type", "application/json")
             .handler(queryResult -> {
               if(queryResult.statusCode() != 200) {
                 if(queryResult.statusCode() == 404) {
