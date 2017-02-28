@@ -107,8 +107,8 @@ public class MainVerticle extends AbstractVerticle {
         Future<JsonObject> credentialsObjectFuture;
         Future<JsonObject> permissionsObjectFuture;
         
-        credentialsObjectFuture = Future.succeededFuture(new JsonObject()); //for testing
-        permissionsObjectFuture = Future.succeededFuture(new JsonObject()); //for testing
+        credentialsObjectFuture = this.getCredentialsRecord(username, tenant, okapiURL, token);
+        permissionsObjectFuture = this.getPermissionsRecord(username, tenant, okapiURL, token);
         
 	logger.debug("Creating composite future");
         CompositeFuture compositeFuture = CompositeFuture.all(credentialsObjectFuture, permissionsObjectFuture);
@@ -213,4 +213,37 @@ public class MainVerticle extends AbstractVerticle {
             .end();
     return future;
   }
+  
+  private Future<JsonObject> getPermissionsRecord(String username, String tenant, String okapiURL, String requestToken) {
+    Future<JsonObject> future = Future.future();
+    getRecordByKey(username, tenant, okapiURL + "/perms/users", requestToken).setHandler(getResponse -> {
+      if(getResponse.failed()) {
+        if(getResponse.cause() instanceof RecordNotFoundException) {
+          future.complete(null);
+        } else {
+          future.fail(getResponse.cause());
+        }
+      } else {
+        future.complete(getResponse.result());
+      }
+    });
+    return future;
+  }
+  
+    private Future<JsonObject> getCredentialsRecord(String username, String tenant, String okapiURL, String requestToken) {
+    Future<JsonObject> future = Future.future();
+    getRecordByKey(username, tenant, okapiURL + "/authn/credentials", requestToken).setHandler(getResponse -> {
+      if(getResponse.failed()) {
+        if(getResponse.cause() instanceof RecordNotFoundException) {
+          future.complete(null);
+        } else {
+          future.fail(getResponse.cause());
+        }
+      } else {
+        future.complete(getResponse.result());
+      }
+    });
+    return future;
+  }
+    
 }
