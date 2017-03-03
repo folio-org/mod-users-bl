@@ -1,5 +1,4 @@
 package org.folio.bl.users;
-
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -10,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.RoutingContext;
 import java.nio.file.attribute.UserPrincipalNotFoundException;
 import org.folio.bl.util.RecordNotFoundException;
@@ -24,7 +24,7 @@ import java.lang.Integer;
 
 
 public class MainVerticle extends AbstractVerticle {
-  
+   
   private static String OKAPI_URL_HEADER = "X-Okapi-URL";
   private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
@@ -52,7 +52,12 @@ public class MainVerticle extends AbstractVerticle {
     
     router.get("/users-bl/by-id/:id").handler(this::handleRetrieve);
     router.get("/users-bl/:username").handler(this::handleRetrieve);
-    
+    router.put().handler(BodyHandler.create());
+    router.put("/users-bl/by-id/:id").handler(this::handleModify);
+    router.put("/users-bl/:username").handler(this::handleModify);
+    router.post().handler(BodyHandler.create());
+    router.post("/users-bl").handler(this::handleCreate);
+
     server.requestHandler(router::accept).listen(port, serverResult -> {
       if(serverResult.failed()) {
         future.fail(serverResult.cause());
@@ -104,13 +109,15 @@ public class MainVerticle extends AbstractVerticle {
         }
       } else {
         JsonObject masterResponseObject = new JsonObject();
+        String retrievedUsername = userRecordResult.result().getString("username");
+
         Future<JsonObject> credentialsObjectFuture;
         Future<JsonObject> permissionsObjectFuture;
         
-        credentialsObjectFuture = this.getCredentialsRecord(username, tenant, okapiURL, token);
-        permissionsObjectFuture = this.getPermissionsRecord(username, tenant, okapiURL, token);
+        credentialsObjectFuture = this.getCredentialsRecord(retrievedUsername, tenant, okapiURL, token);
+        permissionsObjectFuture = this.getPermissionsRecord(retrievedUsername, tenant, okapiURL, token);
         
-	logger.debug("Creating composite future");
+        logger.debug("Creating composite future");
         CompositeFuture compositeFuture = CompositeFuture.all(credentialsObjectFuture, permissionsObjectFuture);
         compositeFuture.setHandler(compositeResult -> {
           if(compositeResult.failed()) {
@@ -127,6 +134,148 @@ public class MainVerticle extends AbstractVerticle {
                     .end(masterResponseObject.encode());
           }
         });
+      }
+    });
+    
+  }
+
+  private void handleModify(RoutingContext context) {
+    String id = context.request().getParam("id");
+    String username = context.request().getParam("username");
+    String okapiURL;
+    if(dummyOkapiURL == null) {
+      okapiURL = context.request().getHeader(OKAPI_URL_HEADER);
+    } else {
+      okapiURL = dummyOkapiURL;
+    }
+    String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
+    String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
+    Future<JsonObject> userRecordFuture;
+    //if they have not provided a username, we're going to have to look it up
+    if(username != null) {
+      userRecordFuture = Future.succeededFuture(new JsonObject().put("username", username));
+    } else {
+      userRecordFuture = getRecordByKey(id, tenant, okapiURL + "/users", token);
+    }
+    userRecordFuture.setHandler(userRecordResult->{
+      if(userRecordResult.failed()) {
+        if(userRecordResult.cause() instanceof RecordNotFoundException) {
+          context.response().setStatusCode(404)
+            .end("No user found with id '" + id + "'");
+        } else {
+          context.response()
+            .setStatusCode(500)
+            .end("Server error");
+          logger.error("Error retrieving user record: " + userRecordResult.cause().getLocalizedMessage());
+        }
+      } else {
+        JsonObject userRecord = userRecordResult.result();
+        JsonObject entity = context.getBodyAsJson();
+        String userUsername = userRecord.getString("username");
+        JsonObject userPayload = entity.getJsonObject("user");
+        JsonObject credentialsPayload = entity.getJsonObject("credentials");
+        JsonObject permissionsPayload = entity.getJsonObject("permissions");
+
+        Future<JsonObject> userFuture;
+        Future<JsonObject> credentialsFuture;
+        Future<JsonObject> permissionsFuture;
+
+        if(userPayload != null) {
+          userFuture = putUserRecord(userUsername, userPayload, tenant, okapiURL, token);
+        } else {
+          userFuture = Future.succeededFuture(null);
+        }
+
+        if(credentialsPayload != null) {
+          credentialsFuture = putCredentialsRecord(userUsername, credentialsPayload, tenant, okapiURL, token);
+        } else {
+          credentialsFuture = Future.succeededFuture(null);
+        }
+
+        if(permissionsPayload != null) {
+          permissionsFuture = putPermissionsRecord(userUsername, permissionsPayload, tenant, okapiURL, token);
+        } else {
+          permissionsFuture = Future.succeededFuture(null);
+        }
+
+        CompositeFuture compositeFuture = CompositeFuture.all(userFuture, credentialsFuture, permissionsFuture);
+        compositeFuture.setHandler(compositeResult -> {
+          if(compositeResult.failed()) {
+            context.response()
+              .setStatusCode(500)
+              .end("Server error");
+              logger.error("Composite future failed: " + compositeResult.cause().getLocalizedMessage());
+          } else {
+            JsonObject masterResultRecord = new JsonObject();
+            masterResultRecord.put("user", userFuture.result());
+            masterResultRecord.put("credentials", credentialsFuture.result());
+            masterResultRecord.put("permissions", permissionsFuture.result());
+            context.response()
+              .setStatusCode(200)
+              .end(masterResultRecord.encode());
+          }
+        });
+      }
+    });
+  }
+
+  private void handleCreate(RoutingContext context) {
+    String okapiURL;
+    if(dummyOkapiURL == null) {
+      okapiURL = context.request().getHeader(OKAPI_URL_HEADER);
+    } else {
+      okapiURL = dummyOkapiURL;
+    }
+    String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
+    String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
+    JsonObject entity = context.getBodyAsJson();
+    if(entity == null) {
+      context.response()
+        .setStatusCode(400)
+        .end("POST body must be a JSON object");
+        return;
+    }
+    JsonObject userPayload = entity.getJsonObject("user");
+    JsonObject credentialsPayload = entity.getJsonObject("credentials");
+    JsonObject permissionsPayload = entity.getJsonObject("permissions");
+  
+    Future<JsonObject> userFuture;
+    Future<JsonObject> credentialsFuture;
+    Future<JsonObject> permissionsFuture;
+
+    if(userPayload != null) {
+      userFuture = postUserRecord(userPayload, tenant, okapiURL, token);
+    } else {
+      userFuture = Future.succeededFuture(null);
+    }
+
+    if(credentialsPayload != null) {
+      credentialsFuture = postCredentialsRecord(credentialsPayload, tenant, okapiURL, token);
+    } else {
+      credentialsFuture = Future.succeededFuture(null);
+    }
+
+    if(permissionsPayload != null) {
+      permissionsFuture = postPermissionsRecord(permissionsPayload, tenant, okapiURL, token);
+    } else {
+      permissionsFuture = Future.succeededFuture(null);
+    }
+
+    CompositeFuture compositeFuture = CompositeFuture.all(userFuture, credentialsFuture, permissionsFuture);
+    compositeFuture.setHandler(compositeResult -> {
+      if(compositeResult.failed()) {
+        context.response()
+          .setStatusCode(500)
+          .end("Server error");
+          logger.error("Composite future failed on POSTs: " + compositeResult.cause().getLocalizedMessage());
+      } else {
+        JsonObject masterResultRecord = new JsonObject();
+        masterResultRecord.put("user", userFuture.result());
+        masterResultRecord.put("credentials", credentialsFuture.result());
+        masterResultRecord.put("permissions", permissionsFuture.result());
+        context.response()
+          .setStatusCode(201)
+          .end(masterResultRecord.encode());
       }
     });
     
@@ -213,6 +362,66 @@ public class MainVerticle extends AbstractVerticle {
             .end();
     return future;
   }
+
+  private Future<JsonObject> putRecordByKey(String key, JsonObject entity, String tenant, String moduleURL, String requestToken) {
+    Future<JsonObject> future = Future.future();
+    HttpClient httpClient = vertx.createHttpClient();
+    HttpClientRequest request = httpClient.putAbs(moduleURL + "/" + key);
+    request.putHeader(OKAPI_TOKEN_HEADER, requestToken)
+            .putHeader(OKAPI_TENANT_HEADER, tenant)
+            .putHeader("Accept", "application/json")
+            .putHeader("Content-Type", "application/json");
+    request.handler(queryResult -> {
+      if(queryResult.statusCode() != 200) {
+        queryResult.bodyHandler(body -> {
+          future.fail("Got status code " + queryResult.statusCode() + ": " + body.toString());
+        });
+      } else {
+        queryResult.bodyHandler(body -> {
+          JsonObject result;
+          try {
+            result = new JsonObject(body.toString());
+          } catch(Exception e) {
+            future.fail("Unable to parse body (" + body.toString() + ") as JSON: " + e.getLocalizedMessage());
+            return;
+          }
+          future.complete(result);
+        });
+      }
+    })
+    .end(entity.encode());
+    return future;
+  }
+
+  private Future<JsonObject> postRecord(JsonObject entity, String tenant, String moduleURL, String requestToken) {
+    Future<JsonObject> future = Future.future();
+    HttpClient httpClient = vertx.createHttpClient();
+    HttpClientRequest request = httpClient.postAbs(moduleURL);
+    request.putHeader(OKAPI_TOKEN_HEADER, requestToken)
+            .putHeader(OKAPI_TENANT_HEADER, tenant)
+            .putHeader("Accept", "application/json")
+            .putHeader("Content-Type", "application/json");
+    request.handler(queryResult -> {
+      if(queryResult.statusCode() != 201) {
+        queryResult.bodyHandler(body -> {
+          future.fail("Got status code " + queryResult.statusCode() + ": " + body.toString());
+        });
+      } else {
+        queryResult.bodyHandler(body -> {
+          JsonObject result;
+          try {
+            result = new JsonObject(body.toString());
+          } catch(Exception e) {
+            future.fail("Unable to parse body (" + body.toString() + ") as JSON: " + e.getLocalizedMessage());
+            return;
+          }
+          future.complete(result);
+        });
+      }
+    })
+    .end(entity.encode());
+    return future;
+  }
   
   private Future<JsonObject> getPermissionsRecord(String username, String tenant, String okapiURL, String requestToken) {
     Future<JsonObject> future = Future.future();
@@ -230,7 +439,7 @@ public class MainVerticle extends AbstractVerticle {
     return future;
   }
   
-    private Future<JsonObject> getCredentialsRecord(String username, String tenant, String okapiURL, String requestToken) {
+  private Future<JsonObject> getCredentialsRecord(String username, String tenant, String okapiURL, String requestToken) {
     Future<JsonObject> future = Future.future();
     getRecordByKey(username, tenant, okapiURL + "/authn/credentials", requestToken).setHandler(getResponse -> {
       if(getResponse.failed()) {
@@ -245,5 +454,29 @@ public class MainVerticle extends AbstractVerticle {
     });
     return future;
   }
+
+  private Future<JsonObject> putUserRecord(String username, JsonObject record, String tenant, String okapiURL, String requestToken) {
+    return putRecordByKey(username, record, tenant, okapiURL + "/users", requestToken);
+  }
+
+  private Future<JsonObject> putPermissionsRecord(String username, JsonObject record, String tenant, String okapiURL, String requestToken) {
+    return putRecordByKey(username, record, tenant, okapiURL + "/perms/users", requestToken);
+  }
+  
+  private Future<JsonObject> putCredentialsRecord(String username, JsonObject record, String tenant, String okapiURL, String requestToken) {
+    return putRecordByKey(username, record, tenant, okapiURL + "/authn/credentials", requestToken);
+  }
+
+  private Future<JsonObject> postUserRecord(JsonObject record, String tenant, String okapiURL, String requestToken) {
+    return postRecord(record, tenant, okapiURL + "/users", requestToken);
+  }
+  
+  private Future<JsonObject> postPermissionsRecord(JsonObject record, String tenant, String okapiURL, String requestToken) {
+    return postRecord(record, tenant, okapiURL + "/perms/users", requestToken);
+  }
     
+  private Future<JsonObject> postCredentialsRecord(JsonObject record, String tenant, String okapiURL, String requestToken) {
+    return postRecord(record, tenant, okapiURL + "/authn/credentials", requestToken);
+  }
+  
 }
