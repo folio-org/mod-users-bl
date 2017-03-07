@@ -29,6 +29,7 @@ public class MainVerticle extends AbstractVerticle {
   private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
   private String dummyOkapiURL = null;
+  private static String URL_ROOT = "/bl-users";
   
   private final Logger logger = LoggerFactory.getLogger("mod-users-bl");
   public void start(Future<Void> future) {
@@ -50,13 +51,13 @@ public class MainVerticle extends AbstractVerticle {
     
     dummyOkapiURL = System.getProperty("dummy.okapi.url", null);
     
-    router.get("/users-bl/by-id/:id").handler(this::handleRetrieve);
-    router.get("/users-bl/:username").handler(this::handleRetrieve);
+    router.get(URL_ROOT + "/by-id/:id").handler(this::handleRetrieve);
+    router.get(URL_ROOT + "/:username").handler(this::handleRetrieve);
     router.put().handler(BodyHandler.create());
-    router.put("/users-bl/by-id/:id").handler(this::handleModify);
-    router.put("/users-bl/:username").handler(this::handleModify);
+    router.put(URL_ROOT + "/by-id/:id").handler(this::handleModify);
+    router.put(URL_ROOT + "/:username").handler(this::handleModify);
     router.post().handler(BodyHandler.create());
-    router.post("/users-bl").handler(this::handleCreate);
+    router.post(URL_ROOT).handler(this::handleCreate);
 
     server.requestHandler(router::accept).listen(port, serverResult -> {
       if(serverResult.failed()) {
@@ -130,6 +131,7 @@ public class MainVerticle extends AbstractVerticle {
             masterResponseObject.put("credentials", credentialsObjectFuture.result());
             masterResponseObject.put("permissions", permissionsObjectFuture.result());
             context.response()
+                    .putHeader("Content-Type", "application/json")
                     .setStatusCode(200)
                     .end(masterResponseObject.encode());
           }
@@ -151,9 +153,10 @@ public class MainVerticle extends AbstractVerticle {
     String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
     String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
     Future<JsonObject> userRecordFuture;
-    //if they have not provided a username, we're going to have to look it up
+    //We're going to need to look up the user record to get both the id and the username
     if(username != null) {
-      userRecordFuture = Future.succeededFuture(new JsonObject().put("username", username));
+      //userRecordFuture = Future.succeededFuture(new JsonObject().put("username", username));
+      userRecordFuture = getRecordByQuery("username", username, "users", tenant, okapiURL + "/users", token);
     } else {
       userRecordFuture = getRecordByKey(id, tenant, okapiURL + "/users", token);
     }
@@ -170,8 +173,10 @@ public class MainVerticle extends AbstractVerticle {
         }
       } else {
         JsonObject userRecord = userRecordResult.result();
+        logger.debug("Got userRecord: " + userRecord.encode());
         JsonObject entity = context.getBodyAsJson();
         String userUsername = userRecord.getString("username");
+        String userId = userRecord.getString("id");
         JsonObject userPayload = entity.getJsonObject("user");
         JsonObject credentialsPayload = entity.getJsonObject("credentials");
         JsonObject permissionsPayload = entity.getJsonObject("permissions");
@@ -181,7 +186,7 @@ public class MainVerticle extends AbstractVerticle {
         Future<JsonObject> permissionsFuture;
 
         if(userPayload != null) {
-          userFuture = putUserRecord(userUsername, userPayload, tenant, okapiURL, token);
+          userFuture = putUserRecord(userId, userPayload, tenant, okapiURL, token);
         } else {
           userFuture = Future.succeededFuture(null);
         }
@@ -369,23 +374,27 @@ public class MainVerticle extends AbstractVerticle {
     HttpClientRequest request = httpClient.putAbs(moduleURL + "/" + key);
     request.putHeader(OKAPI_TOKEN_HEADER, requestToken)
             .putHeader(OKAPI_TENANT_HEADER, tenant)
-            .putHeader("Accept", "application/json")
+            .putHeader("Accept", "application/json, text/plain")
             .putHeader("Content-Type", "application/json");
     request.handler(queryResult -> {
-      if(queryResult.statusCode() != 200) {
+      if(queryResult.statusCode() != 200 && queryResult.statusCode() != 204) {
         queryResult.bodyHandler(body -> {
-          future.fail("Got status code " + queryResult.statusCode() + ": " + body.toString());
+          future.fail("Got status code " + queryResult.statusCode() + " from URL '" + moduleURL + "/" + key + "': " + body.toString());
         });
       } else {
         queryResult.bodyHandler(body -> {
-          JsonObject result;
-          try {
-            result = new JsonObject(body.toString());
-          } catch(Exception e) {
-            future.fail("Unable to parse body (" + body.toString() + ") as JSON: " + e.getLocalizedMessage());
-            return;
+          if(body.length() > 0) {
+            JsonObject result;
+            try {
+              result = new JsonObject(body.toString());
+            } catch(Exception e) {
+              future.fail("Unable to parse body (" + body.toString() + ") as JSON: " + e.getLocalizedMessage());
+              return;
+            }
+            future.complete(result);
+          } else {
+            future.complete(entity);
           }
-          future.complete(result);
         });
       }
     })
@@ -455,8 +464,8 @@ public class MainVerticle extends AbstractVerticle {
     return future;
   }
 
-  private Future<JsonObject> putUserRecord(String username, JsonObject record, String tenant, String okapiURL, String requestToken) {
-    return putRecordByKey(username, record, tenant, okapiURL + "/users", requestToken);
+  private Future<JsonObject> putUserRecord(String id, JsonObject record, String tenant, String okapiURL, String requestToken) {
+    return putRecordByKey(id, record, tenant, okapiURL + "/users", requestToken);
   }
 
   private Future<JsonObject> putPermissionsRecord(String username, JsonObject record, String tenant, String okapiURL, String requestToken) {
