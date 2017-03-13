@@ -119,22 +119,27 @@ public class MainVerticle extends AbstractVerticle {
         permissionsObjectFuture = this.getPermissionsRecord(retrievedUsername, tenant, okapiURL, token);
         
         logger.debug("Creating composite future");
-        CompositeFuture compositeFuture = CompositeFuture.all(credentialsObjectFuture, permissionsObjectFuture);
-        compositeFuture.setHandler(compositeResult -> {
+        CompositeFuture compositeFuture = CompositeFuture.join(credentialsObjectFuture, permissionsObjectFuture);
+        compositeFuture.setHandler(compositeResult -> {          
+          masterResponseObject.put("user", userRecordResult.result());
+          masterResponseObject.put("credentials", credentialsObjectFuture.result());
+          masterResponseObject.put("permissions", permissionsObjectFuture.result());
           if(compositeResult.failed()) {
             logger.debug("Error resolving composite future: " + compositeResult.cause().getLocalizedMessage());
-            context.response()
-                    .setStatusCode(400)
-                    .end("An error occurred");
-          } else {
-            masterResponseObject.put("user", userRecordResult.result());
-            masterResponseObject.put("credentials", credentialsObjectFuture.result());
-            masterResponseObject.put("permissions", permissionsObjectFuture.result());
-            context.response()
-                    .putHeader("Content-Type", "application/json")
-                    .setStatusCode(200)
-                    .end(masterResponseObject.encode());
+            JsonObject errorObject = new JsonObject();
+            masterResponseObject.put("errors", errorObject);
+            if(credentialsObjectFuture.failed()) {
+              errorObject.put("credentials", new JsonObject().put("message", credentialsObjectFuture.cause().getLocalizedMessage()));
+            }
+            if(permissionsObjectFuture.failed()) {
+              errorObject.put("permissions", new JsonObject().put("message", permissionsObjectFuture.cause().getLocalizedMessage()));
+            }
+
           }
+          context.response()
+                  .putHeader("Content-Type", "application/json")
+                  .setStatusCode(200)
+                  .end(masterResponseObject.encode());
         });
       }
     });
@@ -203,7 +208,7 @@ public class MainVerticle extends AbstractVerticle {
           permissionsFuture = Future.succeededFuture(null);
         }
 
-        CompositeFuture compositeFuture = CompositeFuture.all(userFuture, credentialsFuture, permissionsFuture);
+        CompositeFuture compositeFuture = CompositeFuture.join(userFuture, credentialsFuture, permissionsFuture);
         compositeFuture.setHandler(compositeResult -> {
           if(compositeResult.failed()) {
             context.response()

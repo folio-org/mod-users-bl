@@ -1,0 +1,47 @@
+{
+  "id": "users-bl",
+  "name": "users business logic",
+  "provides": [
+    {
+      "id": "users-bl",
+      "version": "0.0.1"
+    },
+    {
+      "id": "_tenant",
+      "version": "1.0.0"
+    }
+  ],
+  "routingEntries": [
+    {
+      "methods": [
+        "GET"
+      ],
+      "path": "/users-bl",
+      "level": "30",
+      "type": "request-response",
+      "permissionsRequired": [
+      ]
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "path": "/users-bl",
+      "level": "30",
+      "type": "request-response",
+      "permissionsRequired": [
+      ]
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "path": "/users-bl",
+      "level": "30",
+      "type": "request-response",
+      "permissionsRequired": [
+      ]
+    }
+  ],
+  "modulePermissions": []
+}
