@@ -11,10 +11,10 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.RoutingContext;
-import java.nio.file.attribute.UserPrincipalNotFoundException;
 import org.folio.bl.util.RecordNotFoundException;
 import org.folio.bl.util.ResultNotUniqueException;
 import java.lang.Integer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,28 +123,30 @@ public class MainVerticle extends AbstractVerticle {
         credentialsObjectFuture = this.getCredentialsRecord(retrievedUsername, tenant, okapiURL, token);
         permissionsObjectFuture = this.getPermissionsRecord(retrievedUsername, tenant, okapiURL, token);
         
+        List<Future> futureList = new ArrayList<>();
+        futureList.add(credentialsObjectFuture);
+        futureList.add(permissionsObjectFuture);
+        
         logger.debug("Creating composite future");
-        CompositeFuture compositeFuture = CompositeFuture.join(credentialsObjectFuture, permissionsObjectFuture);
+        CompositeFuture compositeFuture = CompositeFuture.join(futureList);
         compositeFuture.setHandler(compositeResult -> {          
           masterResponseObject.put("user", userRecordResult.result());
           masterResponseObject.put("credentials", credentialsObjectFuture.result());
           masterResponseObject.put("permissions", permissionsObjectFuture.result());
           if(compositeResult.failed()) {
-            logger.debug("Error resolving composite future: " + compositeResult.cause().getLocalizedMessage());
-            JsonObject errorObject = new JsonObject();
-            masterResponseObject.put("errors", errorObject);
-            if(credentialsObjectFuture.failed()) {
-              errorObject.put("credentials", new JsonObject().put("message", credentialsObjectFuture.cause().getLocalizedMessage()));
-            }
-            if(permissionsObjectFuture.failed()) {
-              errorObject.put("permissions", new JsonObject().put("message", permissionsObjectFuture.cause().getLocalizedMessage()));
-            }
-
+            Map<String, String> failMap = getCompositeFailureMap(getFailureMap(futureList));
+            logger.debug("Error resolving composite future: " + failMap.get("message"));
+            context.response()
+                    .putHeader("Content-Type", "text/plain")
+                    .setStatusCode(Integer.parseInt(failMap.get("code")))
+                    .end(failMap.get("message"));
+           
+          } else {
+            context.response()
+                    .putHeader("Content-Type", "application/json")
+                    .setStatusCode(200)
+                    .end(masterResponseObject.encode());
           }
-          context.response()
-                  .putHeader("Content-Type", "application/json")
-                  .setStatusCode(200)
-                  .end(masterResponseObject.encode());
         });
       }
     });
@@ -515,9 +517,9 @@ public class MainVerticle extends AbstractVerticle {
     return results;
   }
   
-  private Map<String, String> getFailureMap(Future[] futureArray) {
+  private Map<String, String> getFailureMap(List<Future> futureList) {
     Map<String, String> failMap = new HashMap<>();
-    for(Future f : futureArray) {
+    for(Future f : futureList) {
       if(f.failed()) {
         String[] failResults = splitErrorMessage(f.cause().getLocalizedMessage());
         failMap.put(failResults[0], failResults[1]);
@@ -526,7 +528,7 @@ public class MainVerticle extends AbstractVerticle {
     return failMap;
   }
   
-  private Map<String, String> getCompositeFailure(Map<String, String> failMap) {
+  private Map<String, String> getCompositeFailureMap(Map<String, String> failMap) {
     int highError = 0;
     Set<String> keySet = failMap.keySet();
     for(String key : keySet) {
