@@ -15,6 +15,11 @@ import java.nio.file.attribute.UserPrincipalNotFoundException;
 import org.folio.bl.util.RecordNotFoundException;
 import org.folio.bl.util.ResultNotUniqueException;
 import java.lang.Integer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -211,10 +216,18 @@ public class MainVerticle extends AbstractVerticle {
         CompositeFuture compositeFuture = CompositeFuture.join(userFuture, credentialsFuture, permissionsFuture);
         compositeFuture.setHandler(compositeResult -> {
           if(compositeResult.failed()) {
+            logger.error("Composite future failed: " + compositeResult.cause().getLocalizedMessage());
+            Future[] completedFutureArray = { userFuture, credentialsFuture, permissionsFuture };
+            Map<String, String> failMap = new HashMap<>();
+            for( Future f : completedFutureArray ) {
+              if(f.failed()) {
+                String[] messageParts = splitErrorMessage(f.cause().getLocalizedMessage());
+                failMap.put(messageParts[0], messageParts[1]);
+              }
+            }
             context.response()
               .setStatusCode(500)
-              .end("Server error");
-              logger.error("Composite future failed: " + compositeResult.cause().getLocalizedMessage());
+              .end("Server error");              
           } else {
             JsonObject masterResultRecord = new JsonObject();
             masterResultRecord.put("user", userFuture.result());
@@ -305,7 +318,7 @@ public class MainVerticle extends AbstractVerticle {
             .handler(queryResult -> {
               if(queryResult.statusCode() != 200) {
                 queryResult.bodyHandler(body -> {
-                  future.fail("Got status code "+ queryResult.statusCode() + ": " + body.toString());
+                  future.fail(queryResult.statusCode() + "||" + body.toString());
                 });
               } else {
                 logger.debug("Got status code " + queryResult.statusCode() + " - Calling bodyhandler to parse results");
@@ -353,7 +366,7 @@ public class MainVerticle extends AbstractVerticle {
                   future.fail(new RecordNotFoundException("No record found with key '"+ key + "'"));
                 } else {
                   queryResult.bodyHandler(body -> {
-                    future.fail("Got status code " + queryResult.statusCode() + ": " + body.toString());
+                    future.fail(queryResult.statusCode() + "||" + body.toString());
                   });
                 }
               } else {
@@ -384,7 +397,7 @@ public class MainVerticle extends AbstractVerticle {
     request.handler(queryResult -> {
       if(queryResult.statusCode() != 200 && queryResult.statusCode() != 204) {
         queryResult.bodyHandler(body -> {
-          future.fail("Got status code " + queryResult.statusCode() + " from URL '" + moduleURL + "/" + key + "': " + body.toString());
+          future.fail(queryResult.statusCode() + "||From URL '" + moduleURL + "/" + key + "': " + body.toString());
         });
       } else {
         queryResult.bodyHandler(body -> {
@@ -418,7 +431,7 @@ public class MainVerticle extends AbstractVerticle {
     request.handler(queryResult -> {
       if(queryResult.statusCode() != 201) {
         queryResult.bodyHandler(body -> {
-          future.fail("Got status code " + queryResult.statusCode() + ": " + body.toString());
+          future.fail(queryResult.statusCode() + "||" + body.toString());
         });
       } else {
         queryResult.bodyHandler(body -> {
@@ -491,6 +504,42 @@ public class MainVerticle extends AbstractVerticle {
     
   private Future<JsonObject> postCredentialsRecord(JsonObject record, String tenant, String okapiURL, String requestToken) {
     return postRecord(record, tenant, okapiURL + "/authn/credentials", requestToken);
+  }
+  
+  private String[] splitErrorMessage(String message) {
+    String[] results = message.split("\\|\\|", 2);
+    if(results.length != 2) {
+      String[] newResults = { "500", message };
+      return newResults;
+    }
+    return results;
+  }
+  
+  private Map<String, String> getFailureMap(Future[] futureArray) {
+    Map<String, String> failMap = new HashMap<>();
+    for(Future f : futureArray) {
+      if(f.failed()) {
+        String[] failResults = splitErrorMessage(f.cause().getLocalizedMessage());
+        failMap.put(failResults[0], failResults[1]);
+      }
+    }
+    return failMap;
+  }
+  
+  private Map<String, String> getCompositeFailure(Map<String, String> failMap) {
+    int highError = 0;
+    Set<String> keySet = failMap.keySet();
+    for(String key : keySet) {
+      int keyValue = Integer.parseInt(key);
+      if(keyValue > highError) {
+        highError = keyValue;
+      }
+    }
+    String valueComposite = StringUtils.join(failMap.values(), ",");
+    Map<String, String> result = new HashMap<>();
+    result.put("code", Integer.toString(highError));
+    result.put("message", valueComposite);
+    return result;
   }
   
 }
