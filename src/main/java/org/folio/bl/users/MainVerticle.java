@@ -123,18 +123,18 @@ public class MainVerticle extends AbstractVerticle {
         credentialsObjectFuture = this.getCredentialsRecord(retrievedUsername, tenant, okapiURL, token);
         permissionsObjectFuture = this.getPermissionsRecord(retrievedUsername, tenant, okapiURL, token);
         
-        List<Future> futureList = new ArrayList<>();
-        futureList.add(credentialsObjectFuture);
-        futureList.add(permissionsObjectFuture);
+        Map<String, Future> futureMap = new HashMap<>();
+        futureMap.put("Login Module", credentialsObjectFuture);
+        futureMap.put("Permissions Module", permissionsObjectFuture);
         
         logger.debug("Creating composite future");
-        CompositeFuture compositeFuture = CompositeFuture.join(futureList);
+        CompositeFuture compositeFuture = CompositeFuture.join(new ArrayList(futureMap.values()));
         compositeFuture.setHandler(compositeResult -> {          
           masterResponseObject.put("user", userRecordResult.result());
           masterResponseObject.put("credentials", credentialsObjectFuture.result());
           masterResponseObject.put("permissions", permissionsObjectFuture.result());
           if(compositeResult.failed()) {
-            Map<String, String> failMap = getCompositeFailureMap(getFailureMap(futureList));
+            Map<String, String> failMap = getCompositeFailureMap(getFailureMap(futureMap));
             logger.debug("Error resolving composite future: " + failMap.get("message"));
             context.response()
                     .putHeader("Content-Type", "text/plain")
@@ -517,30 +517,44 @@ public class MainVerticle extends AbstractVerticle {
     return results;
   }
   
-  private Map<String, String> getFailureMap(List<Future> futureList) {
-    Map<String, String> failMap = new HashMap<>();
-    for(Future f : futureList) {
+  private Map<String, Map<String, String>> getFailureMap(Map<String, Future> futureMap) {
+    Map<String, Map<String, String>> failMap = new HashMap<>();
+    for(String k : futureMap.keySet()) {
+      Future f = futureMap.get(k);
       if(f.failed()) {
         String[] failResults = splitErrorMessage(f.cause().getLocalizedMessage());
-        failMap.put(failResults[0], failResults[1]);
+        Map<String, String> resultsMap = new HashMap<>();
+        resultsMap.put("code", failResults[0]);
+        resultsMap.put("message", failResults[1]);
+        failMap.put(k, resultsMap);
       }
     }
     return failMap;
   }
   
-  private Map<String, String> getCompositeFailureMap(Map<String, String> failMap) {
+  private Map<String, String> getCompositeFailureMap(Map<String, Map<String, String>> failMap) {
+    String highKey = null;
     int highError = 0;
+    List<String> messageList = new ArrayList<>();
     Set<String> keySet = failMap.keySet();
     for(String key : keySet) {
-      int keyValue = Integer.parseInt(key);
+      Map<String, String> resultsMap = failMap.get(key);
+      messageList.add(key + ": " + resultsMap.get("message"));
+      int keyValue = Integer.parseInt(resultsMap.get("code"));
       if(keyValue > highError) {
         highError = keyValue;
+        highKey = key;
       }
     }
-    String valueComposite = StringUtils.join(failMap.values(), ",");
+    String valueComposite = StringUtils.join(messageList, ",");
     Map<String, String> result = new HashMap<>();
-    result.put("code", Integer.toString(highError));
-    result.put("message", valueComposite);
+    if(highError > 0) {
+      result.put("code", Integer.toString(highError));
+      result.put("message", valueComposite);
+    } else {
+      result.put("code", "500");
+      result.put("message", "Error getting output from backend modules");
+    }
     return result;
   }
   
