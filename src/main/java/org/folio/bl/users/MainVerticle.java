@@ -5,6 +5,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -15,6 +16,7 @@ import org.folio.bl.util.RecordNotFoundException;
 import org.folio.bl.util.ResultNotUniqueException;
 import java.lang.Integer;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +35,11 @@ public class MainVerticle extends AbstractVerticle {
   private static String OKAPI_URL_HEADER = "X-Okapi-URL";
   private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
+  private static String OKAPI_PERMISSIONS_HEADER = "X-Okapi-Permissions";
+  
   private String dummyOkapiURL = null;
   private static String URL_ROOT = "/bl-users";
+  private static String READ_PERMISSION = "user.bl.read";
   
   private final Logger logger = LoggerFactory.getLogger("mod-users-bl");
   public void start(Future<Void> future) {
@@ -85,6 +90,7 @@ public class MainVerticle extends AbstractVerticle {
     }
     String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
     String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
+    String permissions = context.request().getHeader(OKAPI_PERMISSIONS_HEADER);
 
     Future<JsonObject> userRecordFuture;
     
@@ -114,13 +120,32 @@ public class MainVerticle extends AbstractVerticle {
           logger.error("Error retrieving user record: " + userRecordResult.cause().getLocalizedMessage());
         }
       } else {
+        boolean selfOnly = true;
         JsonObject masterResponseObject = new JsonObject();
         String retrievedUsername = userRecordResult.result().getString("username");
+        
+        if(allowAccessByPermission(permissions, READ_PERMISSION)) {
+          selfOnly = false;
+        } else if(!allowAccessByName(token, username)) {
+          //deny access
+          context.response()
+                  .putHeader("Content-Type", "text/plain")
+                  .setStatusCode(403)
+                  .end("Insufficient permissions");
+          return;
+        } else {
+          selfOnly = true;
+        }
 
         Future<JsonObject> credentialsObjectFuture;
         Future<JsonObject> permissionsObjectFuture;
         
-        credentialsObjectFuture = this.getCredentialsRecord(retrievedUsername, tenant, okapiURL, token);
+        //only retrieve credentials if we have full permissions (e.g. selfOnly == false)
+        if(selfOnly) {
+          credentialsObjectFuture = Future.succeededFuture(new JsonObject());
+        } else {
+          credentialsObjectFuture = this.getCredentialsRecord(retrievedUsername, tenant, okapiURL, token);
+        }
         permissionsObjectFuture = this.getPermissionsRecord(retrievedUsername, tenant, okapiURL, token);
         
         Map<String, Future> futureMap = new HashMap<>();
@@ -129,8 +154,9 @@ public class MainVerticle extends AbstractVerticle {
         
         logger.debug("Creating composite future");
         CompositeFuture compositeFuture = CompositeFuture.join(new ArrayList(futureMap.values()));
+        JsonObject userRecordObject = userRecordResult.result();
         compositeFuture.setHandler(compositeResult -> {          
-          masterResponseObject.put("user", userRecordResult.result());
+          masterResponseObject.put("user", userRecordObject);
           masterResponseObject.put("credentials", credentialsObjectFuture.result());
           masterResponseObject.put("permissions", permissionsObjectFuture.result());
           if(compositeResult.failed()) {
@@ -142,10 +168,20 @@ public class MainVerticle extends AbstractVerticle {
                     .end(failMap.get("message"));
            
           } else {
-            context.response()
+            Future<JsonArray> userGroups = getGroupsForUser(userRecordObject.getString("id"), tenant, okapiURL, token);
+            userGroups.setHandler(userGroupsResult -> {
+              JsonArray groups;
+              if(userGroupsResult.failed()) {
+                groups = new JsonArray();
+              } else {
+                groups = userGroupsResult.result();
+              }
+              userRecordObject.put("patron_groups", groups);
+              context.response()
                     .putHeader("Content-Type", "application/json")
                     .setStatusCode(200)
                     .end(masterResponseObject.encode());
+            });            
           }
         });
       }
@@ -556,6 +592,127 @@ public class MainVerticle extends AbstractVerticle {
       result.put("message", "Error getting output from backend modules");
     }
     return result;
+  }
+  
+  private JsonObject parseTokenPayload(String token) {
+    String[] tokenParts = token.split("\\.");
+    if(tokenParts.length == 3) {
+      String encodedPayload = tokenParts[1];
+      byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
+      String decodedJson = new String(decodedJsonBytes);
+      return new JsonObject(decodedJson);
+    } else {
+      return null;
+    }
+  }
+
+  private String getUsername(String token) {
+    JsonObject payload = parseTokenPayload(token);
+    if(payload == null) { return null; }
+    String username = payload.getString("sub");
+    return username;
+  }
+
+  private boolean allowAccessByNameorPermission(String permissions, String permissionName, String token, String username) {
+   if(allowAccessByName(token, username)) {
+     return true;
+   }
+    return allowAccessByPermission(permissions, permissionName);
+  }
+
+  private boolean allowAccessByPermission(String permissions, String permissionName) {
+    if(permissions == null || permissions.isEmpty()) {
+      return false;
+    }
+    JsonArray permissionsArray = new JsonArray(permissions);
+    if(permissionsArray != null && permissionsArray.contains(permissionName)) {
+      logger.debug("Permission allowed for possessing permission bit '" + permissionName + "'");
+      return true;
+    }
+    return false;
+  }
+  
+  private boolean allowAccessByName(String token, String username) {
+    String tokenUsername = getUsername(token);
+    if(tokenUsername.equals(username)) {
+      logger.debug("Permission allowed for own username (" + username + ")");
+      return true;
+    }
+    return false;
+  }
+  
+  private Future<JsonArray> getGroupsForUser(String userId, String tenant, String okapiURL, String requestToken) {
+    Future<JsonArray> future = Future.future();
+    HttpClient httpClient = vertx.createHttpClient();
+    HttpClientRequest request = httpClient.getAbs(okapiURL + "/groups");
+    request.putHeader(OKAPI_TOKEN_HEADER, requestToken)
+            .putHeader(OKAPI_TENANT_HEADER, tenant)
+            .putHeader("Accept", "application/json")
+            .putHeader("Content-Type", "application/json");
+    request.handler(queryResult -> {
+      if(queryResult.statusCode() != 200) {
+        queryResult.bodyHandler(body-> {
+          future.fail(queryResult.statusCode() + "||" + body.toString());
+        });
+      } else {
+        queryResult.bodyHandler(body -> {
+          JsonObject groupListObject = new JsonObject(body.toString());
+          JsonArray groups = groupListObject.getJsonArray("usergroups");
+          List<Future> futureList = new ArrayList<>();
+          for(Object group : groups) {
+            String groupId = ((JsonObject)group).getString("_id");
+            Future<String> memberFuture = Future.future();
+            futureList.add(memberFuture);
+            memberFuture.setHandler(res -> {
+              HttpClient httpGroupClient = vertx.createHttpClient();
+              HttpClientRequest groupRequest = httpGroupClient.getAbs(okapiURL + "/groups/" + groupId + "/users");
+              groupRequest.putHeader(OKAPI_TOKEN_HEADER, requestToken)
+                  .putHeader(OKAPI_TENANT_HEADER, tenant)
+                  .putHeader("Accept", "application/json")
+                  .putHeader("Content-Type", "application/json");
+              groupRequest.handler(usersQueryResult -> {
+                if(usersQueryResult.statusCode() != 200) {
+                  logger.debug("Error retrieving users. Got status " + usersQueryResult.statusCode());
+                  memberFuture.complete(null);
+                } else {
+                  usersQueryResult.bodyHandler(usersBody -> {
+                    JsonObject usersListObject = new JsonObject(usersBody.toString());
+                    JsonArray users = usersListObject.getJsonArray("users");
+                    for(Object user : users) {
+                      if(((JsonObject)user).getString("id").equals(userId)) {
+                        memberFuture.complete(groupId);
+                        return;
+                      }
+                    }
+                    memberFuture.complete(null);
+                  });
+                }
+              });
+              groupRequest.end();
+            });
+          }
+          CompositeFuture compositeFuture = CompositeFuture.join(futureList);
+          compositeFuture.setHandler(compositeResult -> {
+            if(compositeFuture.failed()) {
+              logger.debug("Group retrieval failed: " + compositeFuture.cause().getLocalizedMessage());
+              future.complete(new JsonArray());
+            } else {
+              JsonArray result = new JsonArray();
+              for(Future completedFuture : futureList) {
+                String groupString = ((Future<String>)completedFuture).result();
+                if(groupString != null) {
+                  result.add(groupString);
+                }
+              }
+              future.complete(result);
+            }
+          });
+        });
+      }
+    });
+    request.end();
+            
+            
   }
   
 }
