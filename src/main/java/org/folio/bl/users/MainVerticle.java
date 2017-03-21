@@ -39,7 +39,7 @@ public class MainVerticle extends AbstractVerticle {
   
   private String dummyOkapiURL = null;
   private static String URL_ROOT = "/bl-users";
-  private static String READ_PERMISSION = "user.bl.read";
+  private static String READ_PERMISSION = "users-bl.read";
   
   private final Logger logger = LoggerFactory.getLogger("mod-users-bl");
   public void start(Future<Void> future) {
@@ -621,6 +621,7 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   private boolean allowAccessByPermission(String permissions, String permissionName) {
+    logger.debug("Checking for permission '" + permissionName + "' in array encoded by '" + permissions + "'");
     if(permissions == null || permissions.isEmpty()) {
       return false;
     }
@@ -644,7 +645,8 @@ public class MainVerticle extends AbstractVerticle {
   private Future<JsonArray> getGroupsForUser(String userId, String tenant, String okapiURL, String requestToken) {
     Future<JsonArray> future = Future.future();
     HttpClient httpClient = vertx.createHttpClient();
-    HttpClientRequest request = httpClient.getAbs(okapiURL + "/groups");
+    String requestURL = okapiURL + "/groups";
+    HttpClientRequest request = httpClient.getAbs(requestURL);
     request.putHeader(OKAPI_TOKEN_HEADER, requestToken)
             .putHeader(OKAPI_TENANT_HEADER, tenant)
             .putHeader("Accept", "application/json")
@@ -661,36 +663,10 @@ public class MainVerticle extends AbstractVerticle {
           List<Future> futureList = new ArrayList<>();
           for(Object group : groups) {
             String groupId = ((JsonObject)group).getString("_id");
-            Future<String> memberFuture = Future.future();
+            Future<String> memberFuture = getUserInGroup(groupId, userId, okapiURL, tenant, requestToken);
             futureList.add(memberFuture);
-            memberFuture.setHandler(res -> {
-              HttpClient httpGroupClient = vertx.createHttpClient();
-              HttpClientRequest groupRequest = httpGroupClient.getAbs(okapiURL + "/groups/" + groupId + "/users");
-              groupRequest.putHeader(OKAPI_TOKEN_HEADER, requestToken)
-                  .putHeader(OKAPI_TENANT_HEADER, tenant)
-                  .putHeader("Accept", "application/json")
-                  .putHeader("Content-Type", "application/json");
-              groupRequest.handler(usersQueryResult -> {
-                if(usersQueryResult.statusCode() != 200) {
-                  logger.debug("Error retrieving users. Got status " + usersQueryResult.statusCode());
-                  memberFuture.complete(null);
-                } else {
-                  usersQueryResult.bodyHandler(usersBody -> {
-                    JsonObject usersListObject = new JsonObject(usersBody.toString());
-                    JsonArray users = usersListObject.getJsonArray("users");
-                    for(Object user : users) {
-                      if(((JsonObject)user).getString("id").equals(userId)) {
-                        memberFuture.complete(groupId);
-                        return;
-                      }
-                    }
-                    memberFuture.complete(null);
-                  });
-                }
-              });
-              groupRequest.end();
-            });
           }
+          logger.debug("Creating composite future to get results from groups list (" + futureList.size() + " elements)");
           CompositeFuture compositeFuture = CompositeFuture.join(futureList);
           compositeFuture.setHandler(compositeResult -> {
             if(compositeFuture.failed()) {
@@ -711,10 +687,41 @@ public class MainVerticle extends AbstractVerticle {
       }
     });
     request.end();
+    logger.debug("Getting group list from " + requestURL);
     
-    return future;
-            
-            
+    return future;        
+  }
+
+  private Future<String> getUserInGroup (String groupId, String userId, String okapiURL, String tenant, String requestToken) {
+    Future<String> thisFuture = Future.future();
+    HttpClient httpGroupClient = vertx.createHttpClient();
+    String usersRequestURL = okapiURL + "/groups/" + groupId + "/users";
+    HttpClientRequest groupRequest = httpGroupClient.getAbs(usersRequestURL);
+    groupRequest.putHeader(OKAPI_TOKEN_HEADER, requestToken)
+        .putHeader(OKAPI_TENANT_HEADER, tenant)
+        .putHeader("Accept", "application/json")
+        .putHeader("Content-Type", "application/json");
+    groupRequest.handler(usersQueryResult -> {
+      if(usersQueryResult.statusCode() != 200) {
+        logger.debug("Error retrieving users. Got status " + usersQueryResult.statusCode());
+        thisFuture.complete(null);
+      } else {
+        usersQueryResult.bodyHandler(usersBody -> {
+          JsonObject usersListObject = new JsonObject(usersBody.toString());
+          JsonArray users = usersListObject.getJsonArray("users");
+          for(Object user : users) {
+            if(((JsonObject)user).getString("id").equals(userId)) {
+              thisFuture.complete(groupId);
+              return;
+            }
+          }
+          thisFuture.complete(null);
+        });
+      }
+    });
+    groupRequest.end();
+    logger.debug("Getting group users list from " + usersRequestURL);
+    return thisFuture;
   }
   
 }
