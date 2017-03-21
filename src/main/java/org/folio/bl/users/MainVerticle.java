@@ -711,6 +711,8 @@ public class MainVerticle extends AbstractVerticle {
       }
     });
     request.end();
+    
+    return future;
             
             
   }
