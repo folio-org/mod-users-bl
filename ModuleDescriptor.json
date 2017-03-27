@@ -4,45 +4,33 @@
   "provides": [
     {
       "id": "users-bl",
-      "version": "0.0.1"
-    }
-  ],
-  "routingEntries": [
-    {
-      "methods": [
-        "GET"
-      ],
-      "path": "/bl-users",
-      "level": "30",
-      "type": "request-response",
-      "permissionsRequired": [
-      ],
-      "permissionsDesired" : [
-        "users-bl.read"
-      ]
-    },
-    {
-      "methods": [
-        "POST"
-      ],
-      "path": "/bl-users",
-      "level": "30",
-      "type": "request-response",
-      "permissionsRequired": [
-        "users-bl.create"
-      ]
-    },
-    {
-      "methods": [
-        "PUT"
-      ],
-      "path": "/bl-users",
-      "level": "30",
-      "type": "request-response",
-      "permissionsRequired": [
-        "users-bl.modify"
+      "version": "0.0.1",
+      "handlers": [
+        {
+          "methods": ["GET"],
+          "pathPattern": "/bl-users",
+          "permissionsRequired": [ ],
+          "permissionsDesired": ["users-bl.read"],
+          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+        }, {
+          "methods": ["GET"],
+          "pathPattern": "/bl-users/{id}",
+          "permissionsRequired": [],
+          "permissionsDesired": ["users-bl.read"],
+          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+        }, {
+          "methods": ["POST"],
+          "pathPattern": "/bl-users",
+          "permissionsRequired": ["users-bl.create"],
+          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+        }, {
+          "methods": ["PUT"],
+          "pathPattern": "/bl-users/{id}",
+          "permissionsRequired": ["users-bl.modify"],
+          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+        }
+
       ]
     }
-  ],
-  "modulePermissions": ["users.read", "login.readUser", "perms.users.read" ]
+  ]
 }
