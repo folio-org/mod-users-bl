@@ -22,15 +22,48 @@
           "methods": ["POST"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.create"],
-          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+          "modulePermissions": ["users.read", "perms.users.create", "login.addUser"]
         }, {
           "methods": ["PUT"],
           "pathPattern": "/bl-users/{id}",
           "permissionsRequired": ["users-bl.modify"],
-          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+          "modulePermissions": ["users.edit", "perms.users.edit", "login.modifyUser"]
         }
-
       ]
     }
+  ],
+  "permissionSets": [
+    {
+      "permissionName": "users-bl.read",
+      "displayName": "Read user record",
+      "description": "Read user record",
+      "subPermissions": ["users.read", "perms.users.read", "login.readUser"]
+    }, {
+      "permissionName": "users-bl.create",
+      "displayName": "Create user record",
+      "description": "Can create user record",
+      "subPermissions": ["users.create", "perms.users.create", "login.addUser"]
+    }, {
+      "permissionName": "users-bl.modify",
+      "displayName": "Modify user record",
+      "description": "Can modify user record",
+      "subPermissions": ["users.edit", "perms.users.edit", "login.modifyUser"]
+    }, {
+      "permissionName": "users-bl.viewuser",
+      "displayName": "view user",
+      "description": "Can view user profile",
+      "subPermissions": ["users-bl.read"]
+    }, {
+      "permissionName": "users-bl.edituser",
+      "displayName": "edit user",
+      "description": "Can edit user profile",
+      "subPermissions": ["users-bl.read", "users-bl.modify"]
+    }, {
+      "permissionName": "users-bl.createuser",
+      "displayName": "create user",
+      "description": "Can create new user",
+      "subPermissions": ["users-bl.edituser", "users-bl.create"]
+    }
   ]
+
 }
