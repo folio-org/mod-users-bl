@@ -1,0 +1,107 @@
+{
+  "id": "users-bl",
+  "name": "users business logic",
+  "provides": [
+    {
+      "id": "users-bl",
+      "version": "0.0.1",
+      "handlers": [
+        {
+          "methods": ["GET"],
+          "pathPattern": "/bl-users",
+          "permissionsRequired": [ ],
+          "permissionsDesired": ["users-bl.collection.get"],
+          "modulePermissions": ["users.collection.get", "users.read"]
+        }, {
+          "methods": ["GET"],
+          "pathPattern": "/bl-users/{id}",
+          "permissionsRequired": [],
+                        "permissionsDesired": ["users-bl.item.get", "perms.users.get"],
+          "modulePermissions": ["users.item.get", "users.read",
+            "perms.users.get", "login.get"]
+        }, {
+          "methods": ["POST"],
+          "pathPattern": "/bl-users",
+          "permissionsRequired": ["users-bl.item.post"],
+          "modulePermissions": ["users.create", "perms.users.create", "login.adddUser"]
+        }, {
+          "methods": ["PUT"],
+          "pathPattern": "/bl-users/{id}",
+          "permissionsRequired": ["users-bl.item.put"],
+          "modulePermissions": ["users.edit", "perms.users.modify", "login.modifyUser"]
+        }
+      ]
+    }
+  ],
+  "permissionSets": [
+    {
+      "permissionName": "users-bl.view",
+      "displayName": "Can view user profile",
+      "description": "Some subperms can be deleted later when submodules use modern permission names",
+      "subPermissions": ["users-bl.get.collection", "users-bl.get.item",
+        "users.collection.get", "users.item.get", "users.read",
+        "perms.users.get", "login.get"]
+    }, {
+      "permissionName": "users-bl.edit",
+      "displayName": "Can edit user profile",
+      "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
+      "subPermissions": ["users-bl.item.put",
+        "users-bl.view",
+        "users.put", "perms.users.put", "login.put",
+        "users.edit", "perms.users.modify", "login.modifyUser"]
+    }, {
+      "permissionName": "users-bl.create",
+      "displayName": "Can create new user",
+      "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
+      "subPermissions": ["users-bl.edit", "perms.users.create"]
+    }, {
+      "permissionName": "users-bl.viewperms",
+      "displayName": "Can view permissions assigned to users",
+      "description": "Includes all of view",
+      "subPermissions": ["perms.users.get", "users-bl.view"]
+    }, {
+      "permissionName": "users-bl.editperms",
+      "displayName": "Can assign and unassign permissions to users",
+      "description": "",
+      "subPermissions": ["perms.users.modify", "perms.users.create", "users-bl.viewperms"]
+    }, {
+      "permissionName": "users-bl.editpermsets",
+      "displayName": "Can create, edit and remove permission sets",
+      "description": "This seems out of place in users-bl, maybe it belongs under perms or settings",
+      "subPermissions": ["perms.users.read", "perms.users.modify", "perms.users.create", "perms.users.delete"]
+    }
+  ]
+}
+
+Comments about this descriptor
+        (Remove these comments before posting this to Okapi!)
+        (bloody netbeans wants to format these too)
+
+  handlers in general
+    - the modulePermissions mention the perms from other modules as I see them
+    on their descriptors now, not as I think they should be
+
+  item.get
+    - Assuming we still use the PermissionDesired trick to get the details of
+    the durrent user.
+    - The PermissionsDesired also indicate if the module should attempt to get
+    the permissions for the user, etc.
+
+  PermissionSets in general
+    - Have all kind of subpermissions
+      - Old-style permissions that the other modules use at the moment
+      - SubPermissions also for the underlying modules. These can be removed once 
+        bl supports updates, and modulePermissions will work
+
+  Can view user profile
+    - Does not include perms.user.get, use "Can view permissions assigned to users"
+
+  Can edit user profile
+    - Includes the whole view permission set
+
+  Can create user profile
+    - Includes the whole edit permission set, and through that, the view permissions
+
+  Can create, edit and remove permission sets
+    - Does not seem to belong in users-bl at all. Should probably be moved elsewhere.
+
