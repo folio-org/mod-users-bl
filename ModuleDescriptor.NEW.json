@@ -23,12 +23,16 @@
           "methods": ["POST"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.item.post"],
-          "modulePermissions": ["users.create", "perms.users.create", "login.adddUser"]
+          "modulePermissions": ["users.create",
+            "perms.users.create", "perms.users.item.post",
+            "login.adddUser"]
         }, {
           "methods": ["PUT"],
           "pathPattern": "/bl-users/{id}",
           "permissionsRequired": ["users-bl.item.put"],
-          "modulePermissions": ["users.edit", "perms.users.modify", "login.modifyUser"]
+          "modulePermissions": ["users.edit",
+            "perms.users.modify", "perms.users.item.put",
+            "login.modifyUser"]
         }
       ]
     }
@@ -40,35 +44,39 @@
       "description": "Some subperms can be deleted later when submodules use modern permission names",
       "subPermissions": ["users-bl.get.collection", "users-bl.get.item",
         "users.collection.get", "users.item.get", "users.read",
-        "perms.users.get", "login.get"]
+        "perms.users.get",
+        "login.get"]
     }, {
       "permissionName": "users-bl.edit",
       "displayName": "Can edit user profile",
       "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
-      "subPermissions": ["users-bl.item.put",
-        "users-bl.view",
-        "users.put", "perms.users.put", "login.put",
-        "users.edit", "perms.users.modify", "login.modifyUser"]
+      "subPermissions": [ "users-bl.view", "users-bl.item.put",
+        "users.put", "users.edit",
+        "perms.users.item.put", "perms.users.modify",
+        "login.put", "login.modifyUser"]
     }, {
       "permissionName": "users-bl.create",
       "displayName": "Can create new user",
       "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
-      "subPermissions": ["users-bl.edit", "perms.users.create"]
+      "subPermissions": ["users-bl.edit",
+        "perms.users.create", "perms.users.item.post"]
     }, {
       "permissionName": "users-bl.viewperms",
       "displayName": "Can view permissions assigned to users",
       "description": "Includes all of view",
-      "subPermissions": ["perms.users.get", "users-bl.view"]
+      "subPermissions": ["users-bl.view", "perms.users.get"]
     }, {
       "permissionName": "users-bl.editperms",
       "displayName": "Can assign and unassign permissions to users",
       "description": "",
-      "subPermissions": ["perms.users.modify", "perms.users.create", "users-bl.viewperms"]
+      "subPermissions": ["users-bl.viewperms",
+        "perms.users.item.put", "perms.users.item.post", "perms.users.modify", "perms.users.create" ]
     }, {
       "permissionName": "users-bl.editpermsets",
       "displayName": "Can create, edit and remove permission sets",
       "description": "This seems out of place in users-bl, maybe it belongs under perms or settings",
-      "subPermissions": ["perms.users.read", "perms.users.modify", "perms.users.create", "perms.users.delete"]
+      "subPermissions": [
+        "perms.permissions.get", "perms.permissions.item.post", "perms.permissions.item.delete" ]
     }
   ]
 }
