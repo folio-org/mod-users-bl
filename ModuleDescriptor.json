@@ -11,23 +11,23 @@
           "pathPattern": "/bl-users",
           "permissionsRequired": [ ],
           "permissionsDesired": ["users-bl.read"],
-          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+          "modulePermissions": ["users.read", "perms.users.get", "login.readUser"]
         }, {
           "methods": ["GET"],
           "pathPattern": "/bl-users/{id}",
           "permissionsRequired": [],
           "permissionsDesired": ["users-bl.read"],
-          "modulePermissions": ["users.read", "perms.users.read", "login.readUser"]
+          "modulePermissions": ["users.read", "perms.users.get", "login.readUser"]
         }, {
           "methods": ["POST"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.create"],
-          "modulePermissions": ["users.read", "perms.users.create", "login.addUser"]
+          "modulePermissions": ["users.create", "perms.users.item.post", "login.addUser"]
         }, {
           "methods": ["PUT"],
           "pathPattern": "/bl-users/{id}",
           "permissionsRequired": ["users-bl.modify"],
-          "modulePermissions": ["users.edit", "perms.users.edit", "login.modifyUser"]
+          "modulePermissions": ["users.edit", "perms.users.item.put", "login.modifyUser"]
         }
       ]
     }
@@ -37,17 +37,17 @@
       "permissionName": "users-bl.read",
       "displayName": "Read user record",
       "description": "Read user record",
-      "subPermissions": ["users.read", "perms.users.read", "login.readUser"]
+      "subPermissions": ["users.read", "perms.users.get", "login.readUser"]
     }, {
       "permissionName": "users-bl.create",
       "displayName": "Create user record",
       "description": "Can create user record",
-      "subPermissions": ["users.create", "perms.users.create", "login.addUser"]
+      "subPermissions": ["users.create", "perms.users.item.post", "login.addUser"]
     }, {
       "permissionName": "users-bl.modify",
       "displayName": "Modify user record",
       "description": "Can modify user record",
-      "subPermissions": ["users.edit", "perms.users.edit", "login.modifyUser"]
+      "subPermissions": ["users.edit", "perms.users.item.put", "login.modifyUser"]
     }, {
       "permissionName": "users-bl.viewuser",
       "displayName": "view user",
