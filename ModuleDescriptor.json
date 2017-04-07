@@ -59,7 +59,7 @@
       "permissionName": "users-bl.create",
       "displayName": "Can create new user",
       "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
-      "subPermissions": ["users-bl.edit",
+      "subPermissions": ["users-bl.edit", "users-bl.item.post",
         "users.create", "users.item.post",
         "perms.users.item.post", "perms.users.create",
         "login.adddUser", "login.item.post" ]
