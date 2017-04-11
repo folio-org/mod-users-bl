@@ -39,7 +39,7 @@ public class MainVerticle extends AbstractVerticle {
   
   private String dummyOkapiURL = null;
   private static String URL_ROOT = "/bl-users";
-  private static String READ_PERMISSION = "users-bl.viewuser";
+  private static String READ_PERMISSION = "users-bl.item.get";
   
   private final Logger logger = LoggerFactory.getLogger("mod-users-bl");
   public void start(Future<Void> future) {

@@ -42,6 +42,26 @@
   ],
   "permissionSets": [
     {
+      "permissionName": "users-bl.collection.get",
+      "displayName" : "users-bl collection get",
+      "description" : "Get a list of composite user records"
+    },
+    {
+      "permissionName" : "users-bl.item.get",
+      "displayName" : "users-bl item get",
+      "description" : "Get a single composite user record by id"
+    },
+    {
+      "permissionName" : "users-bl.item.post",
+      "displayName" : "users-bl item post",
+      "description" : "Create a new composite user record"
+    },
+    {
+      "permissionName" : "users-bl.item.put",
+      "displayName" : "users-bl item put",
+      "description" : "Modify a composite user record"
+    },
+    {
       "permissionName": "users-bl.view",
       "displayName": "Can view user profile",
       "description": "Some subperms can be deleted later when submodules use modern permission names",
