@@ -20,7 +20,15 @@
           "modulePermissions": ["users.item.get", "users.collection.get",
             "perms.users.get", 
             "login.item.get"]
-        }, {
+        },
+ 	{
+          "methods": ["GET"],
+          "pathPattern": "/bl-users/by-id/{id}",
+          "permissionsRequired": [],
+          "permissionsDesired": ["users-bl.item.get", "perms.users.get"],
+          "modulePermissions": ["users.item.get", "users.collection.get",
+            "perms.users.get", "login.item.get"]
+        },{
           "methods": ["POST"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.item.post"],
@@ -81,7 +89,7 @@
       "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
       "subPermissions": ["users-bl.edit", "users-bl.item.post",
         "users.item.post",
-        "perms.users.item.post",
+        "perms.users.item.post", "perms.users.create",
         "login.item.post" ]
     }, {
       "permissionName": "users-bl.viewperms",
