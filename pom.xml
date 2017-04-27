@@ -4,7 +4,7 @@
     <groupId>org.folio</groupId>
     <artifactId>users_bl</artifactId>
     <name>users_bl</name>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.2-SNAPSHOT</version>
     <licenses>
         <license>
             <name>Apache License 2.0</name>
