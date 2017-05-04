@@ -9,14 +9,21 @@
         {
           "methods": ["GET"],
           "pathPattern": "/bl-users",
-          "permissionsRequired": [ ],
-          "permissionsDesired": ["users-bl.collection.get"],
+          "permissionsRequired": ["users-bl.collection.get"],
           "modulePermissions": ["users.collection.get"]
-        }, {
+        },
+	{
+          "methods" : [ "GET" ],
+          "pathPattern" : "/bl-users/_self",
+          "permissionsRequired" : [],
+	  "modulePermissions": ["users.item.get", "users.collection.get",
+            "perms.users.get", 
+            "login.item.get"]
+	},
+        {
           "methods": ["GET"],
-          "pathPattern": "/bl-users/{id}",
-          "permissionsRequired": [],
-          "permissionsDesired": ["users-bl.item.get", "perms.users.get"],
+          "pathPattern": "/bl-users/by-username/{id}",
+          "permissionsRequired": ["users-bl.item.get", "perms.users.get"],
           "modulePermissions": ["users.item.get", "users.collection.get",
             "perms.users.get", 
             "login.item.get"]
@@ -24,11 +31,11 @@
  	{
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-id/{id}",
-          "permissionsRequired": [],
-          "permissionsDesired": ["users-bl.item.get", "perms.users.get"],
+          "permissionsRequired": ["users-bl.item.get", "perms.users.get"],
           "modulePermissions": ["users.item.get", "users.collection.get",
             "perms.users.get", "login.item.get"]
-        },{
+        },
+	{
           "methods": ["POST"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.item.post"],

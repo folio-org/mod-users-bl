@@ -61,11 +61,12 @@ public class MainVerticle extends AbstractVerticle {
     
     dummyOkapiURL = System.getProperty("dummy.okapi.url", null);
     
-    router.get(URL_ROOT + "/by-id/:id").handler(this::handleRetrieve);
-    router.get(URL_ROOT + "/:username").handler(this::handleRetrieve);
+    router.get(URL_ROOT + "/by-id/:id").handler(this::handleIdRetrieve);
+    router.get(URL_ROOT + "/by-username/:username").handler(this::handleUsernameRetrieve);
+    router.get(URL_ROOT + "/_self").handler(this::handleSelfRetrieve);
     router.put().handler(BodyHandler.create());
-    router.put(URL_ROOT + "/by-id/:id").handler(this::handleModify);
-    router.put(URL_ROOT + "/:username").handler(this::handleModify);
+    //router.put(URL_ROOT + "/by-id/:id").handler(this::handleModify);
+    //router.put(URL_ROOT + "/:username").handler(this::handleModify);
     router.post().handler(BodyHandler.create());
     router.post(URL_ROOT).handler(this::handleCreate);
 
@@ -78,64 +79,79 @@ public class MainVerticle extends AbstractVerticle {
     });
     logger.debug("users-bl module listening on port " + port);
   }
-  
-  private void handleRetrieve(RoutingContext context) {
-    String id = context.request().getParam("id");
-    String username = context.request().getParam("username");
-    String okapiURL;
+
+  private String getOkapiURL(RoutingContext context) {
     if(dummyOkapiURL == null) {
-      okapiURL = context.request().getHeader(OKAPI_URL_HEADER);
-    } else {
-      okapiURL = dummyOkapiURL;
+      return context.request().getHeader(OKAPI_URL_HEADER);
     }
+    return dummyOkapiURL;
+  }
+  
+  private void handleSelfRetrieve(RoutingContext context) {
+    String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
+    String username = getUsername(token);
+    handleRetrieve(context, username, true);
+  }
+
+  private void handleUsernameRetrieve(RoutingContext context) {
+    String username = context.request().getParam("username");
+    handleRetrieve(context, username, false);
+  }
+
+  private void handleIdRetrieve(RoutingContext context) {
+    String id = context.request().getParam("id");
+    String okapiURL = getOkapiURL(context);
+    String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
+    String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
+    String permissions = context.request().getHeader(OKAPI_PERMISSIONS_HEADER);
+    Future<JsonObject> userRecordFuture = getRecordByKey(id, tenant, okapiURL + "/users", token);
+    userRecordFuture.setHandler(userRecordResult -> {
+      if(userRecordResult.failed()) {
+        if(userRecordResult.cause() instanceof RecordNotFoundException) {
+          context.response()
+            .setStatusCode(404)
+            .end("Unable to locate user with id '" + id + "'");
+        } else {
+          String message = "Error retrieving user record: " + userRecordResult.cause().getLocalizedMessage();
+          context.response()
+            .setStatusCode(500)
+            .end(message);
+          logger.error(message);
+        }
+      } else {
+        handleRetrieve(context, userRecordResult.result().getString("username"), false);
+      }
+    });
+  }
+
+  private void handleRetrieve(RoutingContext context, String username, boolean selfOnly) {
+    String okapiURL = getOkapiURL(context);
     String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
     String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
     String permissions = context.request().getHeader(OKAPI_PERMISSIONS_HEADER);
 
     Future<JsonObject> userRecordFuture;
-    
-    if(id != null) {
-      userRecordFuture = getRecordByKey(id, tenant, okapiURL + "/users", token);
-    } else {
-      userRecordFuture = getRecordByQuery("username", username, "users", tenant, okapiURL + "/users", token);
-    }
+    userRecordFuture = getRecordByQuery("username", username, "users", tenant, okapiURL + "/users", token);
     
     userRecordFuture.setHandler(userRecordResult -> {
       if(userRecordResult.failed()) {
         if(userRecordResult.cause() instanceof RecordNotFoundException) {
           context.response().setStatusCode(404);
-          if(id != null) {
-            context.response().end("Unable to locate user with id '" + id + "'");
-          } else {
-            context.response().end("Unable to find user '" + username + "'");
-          }
+          context.response().end("Unable to find user '" + username + "'");
         } else if(userRecordResult.cause() instanceof ResultNotUniqueException) {
           context.response()
                   .setStatusCode(400)
                   .end("Username '" + username + "' is not unique");
         } else {
+          String message = "Error retrieving user record: " + userRecordResult.cause().getLocalizedMessage();
           context.response()
                   .setStatusCode(500)
-                  .end("An error has occurred, please contact your system administrator");
-          logger.error("Error retrieving user record: " + userRecordResult.cause().getLocalizedMessage());
+                  .end(message);
+          logger.error(message);
         }
       } else {
-        boolean selfOnly = true;
         JsonObject masterResponseObject = new JsonObject();
         String retrievedUsername = userRecordResult.result().getString("username");
-        
-        if(allowAccessByPermission(permissions, READ_PERMISSION)) {
-          selfOnly = false;
-        } else if(!allowAccessByName(token, username)) {
-          //deny access
-          context.response()
-                  .putHeader("Content-Type", "text/plain")
-                  .setStatusCode(403)
-                  .end("Insufficient permissions");
-          return;
-        } else {
-          selfOnly = true;
-        }
 
         Future<JsonObject> credentialsObjectFuture;
         Future<JsonObject> permissionsObjectFuture;
