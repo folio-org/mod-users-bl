@@ -4,7 +4,7 @@
   "provides": [
     {
       "id": "users-bl",
-      "version": "0.1",
+      "version": "0.2",
       "handlers": [
         {
           "methods": ["GET"],
@@ -54,6 +54,20 @@
         }
       ]
     }
+  ],
+  "requires" : [
+    {
+      "id" : "users",
+      "version" : "8.0"
+    },
+    {
+      "id" : "permissions",
+      "version" : "2.4"
+    },
+    {
+      "id" : "login",
+      "version" : "2.2"
+    }      
   ],
   "permissionSets": [
     {
