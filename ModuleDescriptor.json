@@ -110,7 +110,7 @@
       "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
       "subPermissions": ["users-bl.edit", "users-bl.item.post",
         "users.item.post",
-        "perms.users.item.post", "perms.users.create",
+        "perms.users.item.post", 
         "login.item.post" ]
     }, {
       "permissionName": "users-bl.viewperms",
