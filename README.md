@@ -13,7 +13,7 @@ Business logic "join" module to provide simple access to all user-centric data.
 
 Other [modules](http://dev.folio.org/source-code/#server-side).
 
-See project [MODUSERS](https://issues.folio.org/browse/MODUSERS)
+See project [MODUSERBL](https://issues.folio.org/browse/MODUSERBL)
 at the [FOLIO issue tracker](http://dev.folio.org/community/guide-issues).
 
 Other FOLIO Developer documentation is at [dev.folio.org](http://dev.folio.org/)
