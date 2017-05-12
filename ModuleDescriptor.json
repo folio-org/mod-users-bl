@@ -58,15 +58,15 @@
   "requires" : [
     {
       "id" : "users",
-      "version" : "8.0"
+      "version" : "9.0"
     },
     {
       "id" : "permissions",
-      "version" : "2.4"
+      "version" : "3.0"
     },
     {
       "id" : "login",
-      "version" : "2.2"
+      "version" : "3.0"
     }      
   ],
   "permissionSets": [
