@@ -17,7 +17,7 @@
           "pathPattern" : "/bl-users/_self",
           "permissionsRequired" : [],
 	  "modulePermissions": ["users.item.get", "users.collection.get",
-            "perms.users.get", 
+            "perms.users.get",
             "login.item.get"]
 	},
         {
@@ -25,7 +25,7 @@
           "pathPattern": "/bl-users/by-username/{id}",
           "permissionsRequired": ["users-bl.item.get", "perms.users.get"],
           "modulePermissions": ["users.item.get", "users.collection.get",
-            "perms.users.get", 
+            "perms.users.get",
             "login.item.get"]
         },
  	{
@@ -67,7 +67,7 @@
     {
       "id" : "login",
       "version" : "3.0"
-    }      
+    }
   ],
   "permissionSets": [
     {
@@ -95,6 +95,7 @@
       "displayName": "Can view user profile",
       "description": "Some subperms can be deleted later when submodules use modern permission names",
       "subPermissions": ["users-bl.collection.get", "users-bl.item.get",
+        "module.users.enabled",
         "users.collection.get", "users.item.get",
         "login.item.get"]
     }, {
@@ -110,7 +111,7 @@
       "description": "Some subperms can be deleted later when bl does updates and ModulePermissions can be used",
       "subPermissions": ["users-bl.edit", "users-bl.item.post",
         "users.item.post",
-        "perms.users.item.post", 
+        "perms.users.item.post",
         "login.item.post" ]
     }, {
       "permissionName": "users-bl.viewperms",
@@ -128,7 +129,7 @@
       "displayName": "Can create, edit and remove permission sets",
       "description": "This seems out of place in users-bl, maybe it belongs under perms or settings",
       "subPermissions": [
-        "perms.permissions.get","perms.permissions.item.put", 
+        "perms.permissions.get","perms.permissions.item.put",
         "perms.permissions.item.post", "perms.permissions.item.delete" ]
     },
     {
