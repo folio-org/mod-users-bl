@@ -91,6 +91,11 @@
       "description" : "Modify a composite user record"
     },
     {
+      "permissionName": "module.users.enabled",
+      "displayName": "User module visible in the UI",
+      "description": "Should be defined in the UIs own MD, some day"
+    },
+    {
       "permissionName": "users-bl.view",
       "displayName": "Can view user profile",
       "description": "Some subperms can be deleted later when submodules use modern permission names",
