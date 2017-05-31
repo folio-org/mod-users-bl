@@ -1,3 +1,6 @@
+## 2017-05-31
+ * Change ModuleDescriptor to set visibility of selection permissions
+
 ## 2017-05-26
  * Update to use version 10 of mod-users, version 4 of mod-permissions
 
