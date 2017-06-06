@@ -12,6 +12,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import org.folio.bl.util.RecordNotFoundException;
 import org.folio.bl.util.ResultNotUniqueException;
 import java.lang.Integer;
@@ -61,13 +62,14 @@ public class MainVerticle extends AbstractVerticle {
     
     dummyOkapiURL = System.getProperty("dummy.okapi.url", null);
     
+    router.post().handler(BodyHandler.create());
     router.get(URL_ROOT + "/by-id/:id").handler(this::handleIdRetrieve);
     router.get(URL_ROOT + "/by-username/:username").handler(this::handleUsernameRetrieve);
     router.get(URL_ROOT + "/_self").handler(this::handleSelfRetrieve);
+    router.post(URL_ROOT + "/login").handler(this::handleLogin);
     router.put().handler(BodyHandler.create());
     //router.put(URL_ROOT + "/by-id/:id").handler(this::handleModify);
     //router.put(URL_ROOT + "/:username").handler(this::handleModify);
-    router.post().handler(BodyHandler.create());
     router.post(URL_ROOT).handler(this::handleCreate);
 
     server.requestHandler(router::accept).listen(port, serverResult -> {
@@ -86,16 +88,42 @@ public class MainVerticle extends AbstractVerticle {
     }
     return dummyOkapiURL;
   }
-  
+  private void handleLogin(RoutingContext context) {
+		String okapiURL = getOkapiURL(context);
+		String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
+		JsonObject credentialsObject = context.getBodyAsJson();
+		if(credentialsObject == null || !credentialsObject.containsKey("username") || !credentialsObject.containsKey("password")) {
+			context.response().setStatusCode(400)
+				.end("Improperly formatted request");
+		} else {
+			Future<String> JWTFuture = getLoginToken(credentialsObject.getString("username"), credentialsObject.getString("password"), okapiURL + "/authn/login", tenant);
+			JWTFuture.setHandler( res -> {
+				if(res.failed()) {
+					String[] parts = splitErrorMessage(res.cause().getLocalizedMessage());
+					int returnCode = Integer.parseInt(parts[0]);
+					String message = parts[1];
+					logger.debug("Login request failed. Got status " + returnCode + ", " + message);
+					context.response().setStatusCode(returnCode)
+						.end(message);
+				} else {
+					String token = res.result();
+				  CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+					headers.add(OKAPI_TOKEN_HEADER, token);
+					handleRetrieve(context, credentialsObject.getString("username"), false, 201, headers);
+				}
+			});
+		}
+	}
+
   private void handleSelfRetrieve(RoutingContext context) {
     String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
-    handleRetrieve(context, username, true);
+    handleRetrieveSimple(context, username, true);
   }
 
   private void handleUsernameRetrieve(RoutingContext context) {
     String username = context.request().getParam("username");
-    handleRetrieve(context, username, false);
+    handleRetrieveSimple(context, username, false);
   }
 
   private void handleIdRetrieve(RoutingContext context) {
@@ -119,12 +147,16 @@ public class MainVerticle extends AbstractVerticle {
           logger.error(message);
         }
       } else {
-        handleRetrieve(context, userRecordResult.result().getString("username"), false);
+        handleRetrieveSimple(context, userRecordResult.result().getString("username"), false);
       }
     });
   }
 
-  private void handleRetrieve(RoutingContext context, String username, boolean selfOnly) {
+ 	private void handleRetrieveSimple(RoutingContext context, String username, boolean selfOnly) {
+		handleRetrieve(context, username, selfOnly, 200, null);
+	}
+
+  private void handleRetrieve(RoutingContext context, String username, boolean selfOnly, int returnCode, CaseInsensitiveHeaders headers) {
     String okapiURL = getOkapiURL(context);
     String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
     String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
@@ -153,27 +185,30 @@ public class MainVerticle extends AbstractVerticle {
         JsonObject masterResponseObject = new JsonObject();
         String retrievedUsername = userRecordResult.result().getString("username");
 
-        Future<JsonObject> credentialsObjectFuture;
+        //Future<JsonObject> credentialsObjectFuture;
         Future<JsonObject> permissionsObjectFuture;
         
         //only retrieve credentials if we have full permissions (e.g. selfOnly == false)
+				/*
         if(selfOnly) {
           credentialsObjectFuture = Future.succeededFuture(new JsonObject());
         } else {
           credentialsObjectFuture = this.getCredentialsRecord(retrievedUsername, tenant, okapiURL, token);
         }
+				*/
         permissionsObjectFuture = this.getPermissionsRecord(retrievedUsername, tenant, okapiURL, token);
         
         Map<String, Future> futureMap = new HashMap<>();
-        futureMap.put("Login Module", credentialsObjectFuture);
+        //futureMap.put("Login Module", credentialsObjectFuture);
         futureMap.put("Permissions Module", permissionsObjectFuture);
         
         logger.debug("Creating composite future");
         CompositeFuture compositeFuture = CompositeFuture.join(new ArrayList(futureMap.values()));
         JsonObject userRecordObject = userRecordResult.result();
         compositeFuture.setHandler(compositeResult -> {          
+					masterResponseObject.put("userId", userRecordObject.getString("id"));
           masterResponseObject.put("user", userRecordObject);
-          masterResponseObject.put("credentials", credentialsObjectFuture.result());
+					masterResponseObject.put("permissionsId", userRecordObject.getString("username"));
           masterResponseObject.put("permissions", permissionsObjectFuture.result());
           if(compositeResult.failed()) {
             Map<String, String> failMap = getCompositeFailureMap(getFailureMap(futureMap));
@@ -203,14 +238,17 @@ public class MainVerticle extends AbstractVerticle {
               }
               context.response()
                     .putHeader("Content-Type", "application/json")
-                    .setStatusCode(200)
-                    .end(masterResponseObject.encode());
+                    .setStatusCode(returnCode);
+							if(headers != null) {
+								context.response().headers().addAll(headers);
+							}
+							context.response().end(masterResponseObject.encode());
             });            
           }
         });
       }
     });
-    
+   
   }
 
   private void handleModify(RoutingContext context) {
@@ -367,6 +405,28 @@ public class MainVerticle extends AbstractVerticle {
   }
   
   
+	private Future<String> getLoginToken(String username, String password, String moduleURL, String tenant) {
+		Future<String> future = Future.future();
+		HttpClient httpClient = vertx.createHttpClient();
+		logger.debug("Requesting login from " + moduleURL);
+		HttpClientRequest request = httpClient.postAbs(moduleURL);
+		request.putHeader(OKAPI_TENANT_HEADER, tenant)
+			.putHeader("Accept", "application/json")
+			.putHeader("Content-type", "application/json")
+			.handler(queryResult -> {
+				if(queryResult.statusCode() != 201) {
+					queryResult.bodyHandler(body -> {
+						future.fail(queryResult.statusCode() + "||" + body.toString());
+					});
+				} else {
+					String token = queryResult.getHeader(OKAPI_TOKEN_HEADER);
+					future.complete(token);
+				}
+			})
+			.end("{ \"username\": " + " \"" + username + "\", \"password\": " + "\"" + password + "\" }");
+		return future;
+	}
+
   private Future<JsonObject> getRecordByQuery(String field, String value, String resultKey, String tenant, String moduleURL, String requestToken) {
     Future<JsonObject> future = Future.future();
     HttpClient httpClient = vertx.createHttpClient();

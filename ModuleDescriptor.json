@@ -20,6 +20,12 @@
             "perms.users.get",
             "login.item.get"]
 	},
+	{
+	  "methods" : [ "POST" ],
+	  "pathPattern" : "/bl-users/login",
+          "permissionsRequired" : [],
+          "modulePermissions" : [ "users.item.get", "perms.users.item.get" ]
+	},
         {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-username/{id}",
