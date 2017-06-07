@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>users_bl</artifactId>
   <name>users_bl</name>
-  <version>0.6.1-SNAPSHOT</version>
+  <version>0.7.0</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -31,7 +31,7 @@
     <url>https://github.com/folio-org/mod-users-bl</url>
     <connection>scm:git:git://github.com/folio-org/mod-users-bl.git</connection>
     <developerConnection>scm:git:git@github.com:folio-org/mod-users-bl.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>v0.7.0</tag>
   </scm>
   <dependencies>
     <dependency>
