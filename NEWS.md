@@ -1,3 +1,8 @@
+## 2017-06-07
+ * Change response format to match id/object format
+ * Fix bug in Group lookup
+ * Add /login endpoint
+
 ## 2017-05-31
  * Change ModuleDescriptor to set visibility of selection permissions
 
