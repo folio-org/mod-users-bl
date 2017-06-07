@@ -24,7 +24,7 @@
 	  "methods" : [ "POST" ],
 	  "pathPattern" : "/bl-users/login",
           "permissionsRequired" : [],
-          "modulePermissions" : [ "users.item.get", "perms.users.item.get" ]
+          "modulePermissions" : [ "users.item.get", "users.collection.get", "perms.users.item.get", "perms.users.get", "usergroups.item.get" ]
 	},
         {
           "methods": ["GET"],
