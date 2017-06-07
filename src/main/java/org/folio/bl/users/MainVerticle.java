@@ -203,7 +203,7 @@ public class MainVerticle extends AbstractVerticle {
 				if(userRecordResult.result().getString("patronGroup") != null) {
 					groupObjectFuture = getRecordByKey(userRecordResult.result().getString("patronGroup"), tenant, okapiURL + "/groups", token);
 				} else {
-					groupObjectFuture = Future.succeededFuture(new JsonObject());
+					groupObjectFuture = Future.succeededFuture(null);
 				}
        
         Map<String, Future> futureMap = new HashMap<>();
@@ -227,16 +227,17 @@ public class MainVerticle extends AbstractVerticle {
           if(compositeResult.failed()) {
             Map<String, String> failMap = getCompositeFailureMap(getFailureMap(futureMap));
             logger.debug("Error resolving composite future: " + failMap.get("message"));
+						/*
             context.response()
                     .putHeader("Content-Type", "text/plain")
                     .setStatusCode(Integer.parseInt(failMap.get("code")))
                     .end(failMap.get("message"));
-           
-          } else {
-            //Future<JsonArray> userGroups = getGroupsForUser(userRecordObject.getString("id"), tenant, okapiURL, token);
-          	masterResponseObject.put("permissions", permissionsObjectFuture.result());
-						masterResponseObject.put("group", groupObjectFuture.result());
-						if(expandPerms) {
+           */
+          } 
+					//Future<JsonArray> userGroups = getGroupsForUser(userRecordObject.getString("id"), tenant, okapiURL, token);
+					if(permissionsObjectFuture.succeeded()) {
+						masterResponseObject.put("permissions", permissionsObjectFuture.result());
+						if(expandPerms && userPermsFuture.succeeded()) {
 							logger.debug("Expanded perms: " + userPermsFuture.result().encode());
 							JsonArray expandedPermList = userPermsFuture.result().getJsonArray("permissionNames");
 							if(!expandedPermList.isEmpty()) {
@@ -244,15 +245,23 @@ public class MainVerticle extends AbstractVerticle {
 								masterResponseObject.getJsonObject("permissions").put("permissions", expandedPermList );
 							}
 						}
-            
-						context.response()
-            	.putHeader("Content-Type", "application/json")
-              .setStatusCode(returnCode);
-						if(headers != null) {
-								context.response().headers().addAll(headers);
-						}
-						context.response().end(masterResponseObject.encode());
-          }
+					} else {
+						masterResponseObject.put("permissions", (JsonObject)null);
+					}
+					if(groupObjectFuture.succeeded()) {
+						masterResponseObject.put("group", groupObjectFuture.result());
+					} else {
+						masterResponseObject.put("group", (JsonObject)null);
+					}
+				
+					context.response()
+						.putHeader("Content-Type", "application/json")
+						.setStatusCode(returnCode);
+					if(headers != null) {
+							context.response().headers().addAll(headers);
+					}
+					context.response().end(masterResponseObject.encode());
+				
         });
       }
     });
