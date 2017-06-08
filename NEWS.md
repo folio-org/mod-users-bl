@@ -2,6 +2,7 @@
  * Update ModuleDescriptor to use v11 of mod-users
  * Implement expandPermissions flag for requests
  * Add users-bl.all permission (set to hidden)
+ * Update submodule path to use https instead of ssh
 
 ## 2017-06-07
  * Change response format to match id/object format
