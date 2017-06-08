@@ -18,13 +18,14 @@
           "permissionsRequired" : [],
 	  "modulePermissions": ["users.item.get", "users.collection.get",
             "perms.users.get",
-            "login.item.get"]
+            "usergroups.item.get"]
 	},
 	{
 	  "methods" : [ "POST" ],
 	  "pathPattern" : "/bl-users/login",
           "permissionsRequired" : [],
-          "modulePermissions" : [ "users.item.get", "users.collection.get", "perms.users.item.get", "perms.users.get", "usergroups.item.get" ]
+          "modulePermissions" : [ "users.item.get", "users.collection.get",
+            "perms.users.item.get", "perms.users.get", "usergroups.item.get" ]
 	},
         {
           "methods": ["GET"],
@@ -148,6 +149,21 @@
         "perms.permissions.get","perms.permissions.item.put",
         "perms.permissions.item.post", "perms.permissions.item.delete"],
       "visible": true
+	
+    },
+    {
+      "permissionName" : "users-bl.all",
+      "displayName" : "users-bl all",
+      "description" : "All user business-logic permissions",
+      "subPermissions" : [
+        "users-bl.view",
+        "users-bl.edit",
+        "users-bl.create",
+        "users-bl.viewperms",
+        "users-bl.editperms",
+        "users-bl.editpermsets"
+      ],
+      "visible" : true
     }
   ]
 }
