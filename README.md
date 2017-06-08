@@ -16,21 +16,26 @@ The module exposes a number of endpoints to provide a composite object that link
 #### `/bl-users/by-id/<id>`
 * Description: Return a composite object referenced by the user's id
 * Supported operations: GET
+* queryParameters supported: expandPermissions
 * Permissions required?: Yes
+
 
 #### `/bl-users/by-username/<username>`
 * Description: Return a composite object referenced by the user's username
 * Supported operations: GET
+* queryParameters supported: expandPermissions
 * Permissions required?: Yes
 
 #### `/bl-users/_self`
 * Description: Return a composite object for the currently logged in user
 * Supported operations: GET
+* queryParameters supported: expandPermissions
 * Permissions required?: No
 
 #### `/bl-users/login`
 * Description: Log a user in and return a composite object for that user, as well as the JWT
 * Support operations: POST
+* queryParameters supported: expandPermissions
 * Permissions required?: No
 
 ## Object Format
@@ -77,6 +82,9 @@ Example:
   }
 }
 ~~~~
+
+## Query Parameters
+ * expandPermissions: Supply a boolean value to determine whether or not to expand the permissions listing in the permissions object section of the composite result.
 
 ## Additional information
 
