@@ -1,3 +1,8 @@
+## 2017-06-08
+ * Update ModuleDescriptor to use v11 of mod-users
+ * Implement expandPermissions flag for requests
+ * Add users-bl.all permission
+
 ## 2017-06-07
  * Change response format to match id/object format
  * Fix bug in Group lookup

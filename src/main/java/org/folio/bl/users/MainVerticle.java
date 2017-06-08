@@ -37,6 +37,7 @@ public class MainVerticle extends AbstractVerticle {
   private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
   private static String OKAPI_PERMISSIONS_HEADER = "X-Okapi-Permissions";
+	private static String EXPAND_PERMS_PARAM = "expandPermissions";
   
   private String dummyOkapiURL = null;
   private static String URL_ROOT = "/bl-users";
@@ -89,6 +90,7 @@ public class MainVerticle extends AbstractVerticle {
     return dummyOkapiURL;
   }
   private void handleLogin(RoutingContext context) {
+		boolean expandPerms = tryToGetTrue(context.request().getParam(EXPAND_PERMS_PARAM));
 		String okapiURL = getOkapiURL(context);
 		String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
     String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
@@ -110,24 +112,27 @@ public class MainVerticle extends AbstractVerticle {
 					String jwt = res.result();
 				  CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
 					headers.add(OKAPI_TOKEN_HEADER, jwt);
-					handleRetrieve(context, credentialsObject.getString("username"), false, true, 201, headers);
+					handleRetrieve(context, credentialsObject.getString("username"), false, expandPerms, 201, headers);
 				}
 			});
 		}
 	}
 
   private void handleSelfRetrieve(RoutingContext context) {
+		boolean expandPerms = tryToGetTrue(context.request().getParam(EXPAND_PERMS_PARAM));
     String token = context.request().getHeader(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
-    handleRetrieveSimple(context, username, true);
+    handleRetrieveSimple(context, username, true, expandPerms);
   }
 
   private void handleUsernameRetrieve(RoutingContext context) {
     String username = context.request().getParam("username");
-    handleRetrieveSimple(context, username, false);
+		boolean expandPerms = tryToGetTrue(context.request().getParam(EXPAND_PERMS_PARAM));
+    handleRetrieveSimple(context, username, false, expandPerms);
   }
 
   private void handleIdRetrieve(RoutingContext context) {
+		boolean expandPerms = tryToGetTrue(context.request().getParam(EXPAND_PERMS_PARAM));
     String id = context.request().getParam("id");
     String okapiURL = getOkapiURL(context);
     String tenant = context.request().getHeader(OKAPI_TENANT_HEADER);
@@ -148,13 +153,13 @@ public class MainVerticle extends AbstractVerticle {
           logger.error(message);
         }
       } else {
-        handleRetrieveSimple(context, userRecordResult.result().getString("username"), false);
+        handleRetrieveSimple(context, userRecordResult.result().getString("username"), false, expandPerms);
       }
     });
   }
 
- 	private void handleRetrieveSimple(RoutingContext context, String username, boolean selfOnly) {
-		handleRetrieve(context, username, selfOnly, false, 200, null);
+ 	private void handleRetrieveSimple(RoutingContext context, String username, boolean selfOnly, boolean expandPerms) {
+		handleRetrieve(context, username, selfOnly, expandPerms, 200, null);
 	}
 
   private void handleRetrieve(RoutingContext context, String username, boolean selfOnly, boolean expandPerms, int returnCode, CaseInsensitiveHeaders headers) {
@@ -881,5 +886,16 @@ public class MainVerticle extends AbstractVerticle {
     logger.debug("Getting group users list from " + usersRequestURL);
     return thisFuture;
   }
+
+	boolean tryToGetTrue(String value) {
+		if(value == null) { return false; }
+		boolean result = false;
+		try {
+			result = Boolean.parseBoolean(value);
+		} catch(Exception e) {
+			result = false;
+		}
+		return result;
+	}
   
 }
