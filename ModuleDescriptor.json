@@ -163,7 +163,7 @@
         "users-bl.editperms",
         "users-bl.editpermsets"
       ],
-      "visible" : true
+      "visible" : false
     }
   ]
 }
