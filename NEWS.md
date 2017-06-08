@@ -1,7 +1,7 @@
 ## 2017-06-08
  * Update ModuleDescriptor to use v11 of mod-users
  * Implement expandPermissions flag for requests
- * Add users-bl.all permission
+ * Add users-bl.all permission (set to hidden)
 
 ## 2017-06-07
  * Change response format to match id/object format
