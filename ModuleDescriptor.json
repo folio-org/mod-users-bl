@@ -109,6 +109,7 @@
       "subPermissions": ["users-bl.collection.get", "users-bl.item.get",
         "module.users.enabled",
         "users.collection.get", "users.item.get",
+        "usergroups.collection.get",
         "login.item.get"],
       "visible": true
     }, {
