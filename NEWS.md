@@ -1,3 +1,6 @@
+## 1.0.3 2017-06-22
+ * Add usergroups.collection.get permission to permission set
+
 ## 2017-06-08
  * Update ModuleDescriptor to use v11 of mod-users
  * Implement expandPermissions flag for requests
