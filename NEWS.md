@@ -1,3 +1,7 @@
+## 1.0.4 2017-06-26
+ * Require mod-user version 13
+ * Correct desired field for users record count
+
 ## 1.0.3 2017-06-22
  * Add usergroups.collection.get permission to permission set
 

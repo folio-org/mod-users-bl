@@ -506,7 +506,7 @@ public class MainVerticle extends AbstractVerticle {
                     future.fail("Unable to parse body as JSON: " + e.getLocalizedMessage());
                     return;
                   }
-                  Integer totalRecords = result.getInteger("total_records");
+                  Integer totalRecords = result.getInteger("totalRecords");
                   if(totalRecords == null || totalRecords < 1) {
                     future.fail(new RecordNotFoundException("No record found for query '" + queryString + "'"));
                   } else if(totalRecords > 1) {
