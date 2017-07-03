@@ -1,0 +1,356 @@
+{
+  "mocks": [
+    {
+      "description" : "url -> when this url is called with the method [get / put  / etc...] than if the request requires input data ",
+      "url": "/users?offset=0&limit=10",
+      "method": "get",
+      "status": 200,
+      "receivedData": {
+		  "users": [
+		    {
+		      "username": "diku_admin",
+		      "id": "1ad737b0-d847-11e6-bf26-cec0c932ce01",
+		      "active": true,
+		      "personal": {
+		        "lastName": "ADMINISTRATOR",
+		        "firstName": "DIKU",
+		        "email": "admin@diku.example.org",
+		        "addresses": []
+		      }
+		    },
+		    {
+		      "username": "auth_test1",
+		      "id": "77136CF1-FF93-4C45-B7B5-187BCB711745",
+		      "active": true,
+		      "type": "employee",
+		      "personal": {
+		        "lastName": "Boyle",
+		        "firstName": "Maureen",
+		        "email": "kayla@collins-grady.lr",
+		        "addresses": []
+		      }
+		    },
+		    {
+		      "username": "auth_test2",
+		      "id": "17B39C4D-FFAE-4D62-A75D-1B22F45A081E",
+		      "active": false,
+		      "type": "employee",
+		      "personal": {
+		        "lastName": "Conroy",
+		        "firstName": "Allison",
+		        "email": "vita@schroeder-emard-and-weissnat.pro",
+		        "addresses": []
+		      }
+		    },
+		    {
+		      "username": "gregory",
+		      "id": "97a47e70-9d4c-42ce-aaf1-7770f8af1f4d",
+		      "barcode": "449730034437365",
+		      "active": true,
+		      "type": "patron",
+		      "patronGroup": "a397c719-b937-4b27-87f0-a540fe221037",
+		      "personal": {
+		        "lastName": "Quigley",
+		        "firstName": "Kiel",
+		        "email": "gussie@sauer-price-and-nader.nt",
+		        "phone": "(831)924-5049",
+		        "dateOfBirth": "1986-05-17T00:00:00.000+0000",
+		        "addresses": [
+		          {
+		            "countryId": "US",
+		            "addressLine1": "14055 Ebony Pike",
+		            "city": "Bellflower",
+		            "region": "TX",
+		            "postalCode": "44651-4378",
+		            "addressTypeId": "002",
+		            "primaryAddress": true
+		          }
+		        ],
+		        "preferredContactTypeId": "001"
+		      },
+		      "enrollmentDate": "1973-01-28T00:00:00.000+0000",
+		      "expirationDate": "1992-04-05T00:00:00.000+0000",
+		      "createdDate": "1982-07-10T00:00:00.000+0000",
+		      "updatedDate": "1998-04-17T00:00:00.000+0000"
+		    },
+		    {
+		      "username": "jonatan",
+		      "id": "0f90de8b-ab68-4f5c-a0b5-35d0afadaf40",
+		      "barcode": "131163922693829",
+		      "active": false,
+		      "type": "patron",
+		      "patronGroup": "f5e98626-db61-429c-9a79-3dde0056e29c",
+		      "personal": {
+		        "lastName": "Ward",
+		        "firstName": "Georgette",
+		        "email": "isabelle@goldner-llc.af",
+		        "phone": "771.630.3063",
+		        "dateOfBirth": "1970-04-20T00:00:00.000+0000",
+		        "addresses": [
+		          {
+		            "countryId": "US",
+		            "addressLine1": "35524 Torp Street",
+		            "city": "Glendora",
+		            "region": "WI",
+		            "postalCode": "32305",
+		            "addressTypeId": "002",
+		            "primaryAddress": true
+		          }
+		        ],
+		        "preferredContactTypeId": "002"
+		      },
+		      "enrollmentDate": "1992-05-10T00:00:00.000+0000",
+		      "expirationDate": "2007-03-17T00:00:00.000+0000",
+		      "createdDate": "1978-01-24T00:00:00.000+0000",
+		      "updatedDate": "2010-01-10T00:00:00.000+0000"
+		    },
+		    {
+		      "username": "jazmyn",
+		      "id": "11c66070-ab5c-45ca-93ae-3a4aca88b44b",
+		      "barcode": "278008959167657",
+		      "active": true,
+		      "type": "patron",
+		      "patronGroup": "a397c719-b937-4b27-87f0-a540fe221037",
+		      "personal": {
+		        "lastName": "Schuster",
+		        "firstName": "Marlin",
+		        "middleName": "Sherman",
+		        "email": "krista@bechtelar-rice.nd.us",
+		        "phone": "885.816.0420 x613",
+		        "dateOfBirth": "1979-08-24T00:00:00.000+0000",
+		        "addresses": [
+		          {
+		            "countryId": "US",
+		            "addressLine1": "48848 Thompson Fort",
+		            "city": "Mesa",
+		            "region": "SD",
+		            "postalCode": "88866-3033",
+		            "addressTypeId": "002",
+		            "primaryAddress": true
+		          }
+		        ],
+		        "preferredContactTypeId": "002"
+		      },
+		      "enrollmentDate": "1970-12-28T00:00:00.000+0000",
+		      "expirationDate": "2002-01-20T00:00:00.000+0000",
+		      "createdDate": "2017-02-12T00:00:00.000+0000",
+		      "updatedDate": "2012-11-09T00:00:00.000+0000"
+		    },
+		    {
+		      "username": "hipolito",
+		      "id": "23ebc681-dec1-48dc-a445-bdd920b95cdd",
+		      "barcode": "252989441843428",
+		      "active": false,
+		      "type": "patron",
+		      "patronGroup": "f5e98626-db61-429c-9a79-3dde0056e29c",
+		      "personal": {
+		        "lastName": "Hackett",
+		        "firstName": "Lindsay",
+		        "middleName": "Jacques",
+		        "email": "osvaldo@pagac-dickinson.cg",
+		        "phone": "(873)172-4270 x952",
+		        "mobilePhone": "1-462-399-7936 x516",
+		        "dateOfBirth": "1990-07-05T00:00:00.000+0000",
+		        "addresses": [
+		          {
+		            "countryId": "US",
+		            "addressLine1": "86154 Luz Via",
+		            "city": "Murray",
+		            "region": "OK",
+		            "postalCode": "72193",
+		            "addressTypeId": "002",
+		            "primaryAddress": true
+		          }
+		        ],
+		        "preferredContactTypeId": "005"
+		      },
+		      "enrollmentDate": "2011-08-27T00:00:00.000+0000",
+		      "expirationDate": "1970-09-19T00:00:00.000+0000",
+		      "createdDate": "2002-12-15T00:00:00.000+0000",
+		      "updatedDate": "2011-09-27T00:00:00.000+0000"
+		    },
+		    {
+		      "username": "tatum",
+		      "id": "1b6bd728-4ef0-4015-94a5-1918ad1a4446",
+		      "barcode": "111204737147428",
+		      "active": false,
+		      "type": "patron",
+		      "patronGroup": "a397c719-b937-4b27-87f0-a540fe221037",
+		      "personal": {
+		        "lastName": "Stoltenberg",
+		        "firstName": "Garrison",
+		        "middleName": "Magali",
+		        "email": "frank@towne-llc.aq",
+		        "phone": "1-200-777-1273 x4539",
+		        "mobilePhone": "1-641-968-8954 x250",
+		        "dateOfBirth": "1972-08-09T00:00:00.000+0000",
+		        "addresses": [
+		          {
+		            "countryId": "US",
+		            "addressLine1": "19850 Napoleon Creek",
+		            "city": "Springdale",
+		            "region": "CT",
+		            "postalCode": "84710-7797",
+		            "addressTypeId": "002",
+		            "primaryAddress": true
+		          }
+		        ],
+		        "preferredContactTypeId": "003"
+		      },
+		      "enrollmentDate": "2014-11-04T00:00:00.000+0000",
+		      "expirationDate": "1990-01-10T00:00:00.000+0000",
+		      "createdDate": "1996-07-09T00:00:00.000+0000",
+		      "updatedDate": "1970-06-29T00:00:00.000+0000"
+		    },
+		    {
+		      "username": "conor",
+		      "id": "dc39a2ba-187a-4183-a7e8-b41887462bd4",
+		      "barcode": "351772359181325",
+		      "active": true,
+		      "type": "patron",
+		      "patronGroup": "a397c719-b937-4b27-87f0-a540fe221037",
+		      "personal": {
+		        "lastName": "Hegmann",
+		        "firstName": "Ova",
+		        "email": "rod@jakubowski-llc.rw",
+		        "phone": "138-770-9441 x76090",
+		        "dateOfBirth": "2004-01-26T00:00:00.000+0000",
+		        "addresses": [
+		          {
+		            "countryId": "US",
+		            "addressLine1": "58833 Jo Neck",
+		            "city": "Temple City",
+		            "region": "IL",
+		            "postalCode": "27532",
+		            "addressTypeId": "006",
+		            "primaryAddress": true
+		          }
+		        ],
+		        "preferredContactTypeId": "001"
+		      },
+		      "enrollmentDate": "1983-04-19T00:00:00.000+0000",
+		      "expirationDate": "2016-06-10T00:00:00.000+0000",
+		      "createdDate": "2002-04-16T00:00:00.000+0000",
+		      "updatedDate": "1995-03-27T00:00:00.000+0000"
+		    },
+		    {
+		      "username": "ronny",
+		      "id": "d8a383c7-c480-4476-b0c0-df8a17c9c9f4",
+		      "barcode": "866177016627663",
+		      "active": true,
+		      "type": "patron",
+		      "patronGroup": "f5e98626-db61-429c-9a79-3dde0056e29c",
+		      "personal": {
+		        "lastName": "Dach",
+		        "firstName": "Eugene",
+		        "middleName": "Loma",
+		        "email": "linnea@bailey-wehner.md.us",
+		        "phone": "076.106.9021",
+		        "dateOfBirth": "1989-07-25T00:00:00.000+0000",
+		        "addresses": [
+		          {
+		            "countryId": "US",
+		            "addressLine1": "59203 Pagac Pine Apt. 164",
+		            "city": "Walnut",
+		            "region": "KS",
+		            "postalCode": "33999",
+		            "addressTypeId": "006",
+		            "primaryAddress": true
+		          }
+		        ],
+		        "preferredContactTypeId": "001"
+		      },
+		      "enrollmentDate": "2009-08-13T00:00:00.000+0000",
+		      "expirationDate": "2013-11-17T00:00:00.000+0000",
+		      "createdDate": "1982-03-25T00:00:00.000+0000",
+		      "updatedDate": "1977-06-05T00:00:00.000+0000"
+		    }
+		  ],
+		  "total_records": 203
+		},
+      "receivedPath": "",
+      "sendData" : {},
+      "headers" : [
+        {"name": "x-okapi-token", "value": "12345"},
+        {"name": "x-okapi-tenant", "value": "eeee"}
+      ]
+    },
+    {
+      "url": "/perms/users?query=username==diku_admin+or+username==auth_test1+or+username==auth_test2+or+username==gregory+or+username==jonatan+or+username==jazmyn+or+username==hipolito+or+username==tatum+or+username==conor+or+username==ronny",
+      "method": "get",
+      "status": 200,
+      "receivedData" : {
+		  "permissionUsers": [
+		    {
+		      "username": "auth_test2",
+		      "permissions": []
+		    },
+		    {
+		      "username": "auth_test1",
+		      "permissions": [
+		        "module.trivial.enabled",
+		        "module.users.enabled",
+		        "module.items.enabled",
+		        "module.scan.enabled",
+		        "module.okapi-console.enabled",
+		        "module.organization.enabled"
+		      ]
+		    },
+		    {
+		      "username": "diku_admin",
+		      "permissions": [
+		        "perms.all",
+		        "login.all",
+		        "users.all",
+		        "module.trivial.enabled",
+		        "module.users.enabled",
+		        "module.items.enabled",
+		        "module.scan.enabled",
+		        "module.okapi-console.enabled",
+		        "module.organization.enabled",
+		        "configuration.all",
+		        "users-bl.all",
+		        "inventory-storage.all",
+		        "inventory.all",
+		        "loan-storage.all",
+		        "circulation.all"
+		      ]
+		    },
+		    {
+		      "username": "gregory",
+		      "permissions": []
+		    },
+		    {
+		      "username": "jonatan",
+              "permissions": [
+                "perms.all"
+              ]
+		    },
+		    {
+		      "username": "jazmyn",
+		      "permissions": []
+		    },
+		    {
+		      "username": "hipolito",
+		      "permissions": []
+		    },
+		    {
+		      "username": "tatum",
+		      "permissions": []
+		    },
+		    {
+		      "username": "conor",
+		      "permissions": []
+		    },
+		    {
+		      "username": "ronny",
+		      "permissions": []
+		    }
+		  ],
+		  "totalRecords": 10
+		},
+      "receivedPath": "",
+      "sendData" : {}
+    }
+  ]
+}

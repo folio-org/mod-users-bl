@@ -17,9 +17,10 @@ import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.jaxrs.resource.BlUsersResource;
 import org.folio.rest.tools.client.BuildCQL;
-import org.folio.rest.tools.client.HttpModuleClient2;
+import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
+import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -74,6 +75,9 @@ public class BlUsersAPI implements BlUsersResource {
   private void handleError(Response response, boolean requireOneResult, boolean requireOneOrMoreResults, boolean stopOnError,
       boolean previousFailure[], Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler){
 
+    if(previousFailure[0]){
+      return;
+    }
     if(isNull(response)){
       //response is null, meaning the previous call failed.
       //set previousFailure flag to true so that we don't send another error response to the client
@@ -178,7 +182,8 @@ public class BlUsersAPI implements BlUsersResource {
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
     okapiHeaders.remove(OKAPI_URL_HEADER);
 
-    HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
+    //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
+    HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
 
     CompletableFuture<Response> []userIdResponse = new CompletableFuture[1];
     String userTemplate = "";
@@ -254,9 +259,9 @@ public class BlUsersAPI implements BlUsersResource {
             requireOneOrMoreResults = true;
           }
           handleError(userResponse, requireOneResult, requireOneOrMoreResults, true, aRequestHasFailed, asyncResultHandler);
-          if(aRequestHasFailed[0]){
-            return;
-          }
+        }
+        if(aRequestHasFailed[0]){
+          return;
         }
         CompositeUser cu = new CompositeUser();
         if(mode[0].equals("id")){
@@ -331,7 +336,9 @@ public class BlUsersAPI implements BlUsersResource {
     boolean []aRequestHasFailed = new boolean[]{false};
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-    HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
+    //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
+    HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+
     okapiHeaders.remove(OKAPI_URL_HEADER);
     CompletableFuture<Response> []userIdResponse = new CompletableFuture[1];
 
@@ -507,7 +514,9 @@ public class BlUsersAPI implements BlUsersResource {
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
 
-    HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
+    //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
+    HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+
     okapiHeaders.remove(OKAPI_URL_HEADER);
 
     CompletableFuture<Response> loginResponse[] = new CompletableFuture[1];
