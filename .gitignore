@@ -1,5 +1,9 @@
 /target/
 client/
+.vertx/
 *.swp
 *.swo
-
+bin/
+.settings/
+.classpath
+.project
