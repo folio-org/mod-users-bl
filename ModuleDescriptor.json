@@ -150,7 +150,7 @@
         "perms.permissions.get","perms.permissions.item.put",
         "perms.permissions.item.post", "perms.permissions.item.delete"],
       "visible": true
-        
+
     },
     {
       "permissionName" : "users-bl.all",
