@@ -542,7 +542,7 @@ public class BlUsersAPI implements BlUsersResource {
       //then get user by username, inject okapi headers from the login response into the user request
       //see 'true' flag passed into the chainedRequest
       userResponse[0] = loginResponse[0].thenCompose(client.chainedRequest(userUrl,
-        okapiHeaders, true, null, handlePreviousResponse(false, false, true, aRequestHasFailed, asyncResultHandler)));
+        okapiHeaders, false, null, handlePreviousResponse(false, false, true, aRequestHasFailed, asyncResultHandler)));
 
       //populate composite based on includes
       int includeCount = include.size();
