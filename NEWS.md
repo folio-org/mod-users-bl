@@ -1,10 +1,11 @@
-## 2.0.0 2017-07-07
+## 2.0.0 2017-07-16
  * Port module to RAML-Module-Builder Framework
  * Implement new composite object return format
  * Implement "includes" parameter
  * Allow mod-user v14 in requires
  * Add version string into Module Descriptor id
-
+ * MODUSERBL-15 /bl-users/login response contains incorrect set of permissions
+ 
 ## 1.0.4 2017-06-26
  * Require mod-user version 13
  * Correct desired field for users record count
