@@ -1,3 +1,6 @@
+## 2.0.1 2017-07-16
+ * Remove redundant permissions from ModuleDescriptor
+
 ## 2.0.0 2017-07-16
  * Port module to RAML-Module-Builder Framework
  * Implement new composite object return format
