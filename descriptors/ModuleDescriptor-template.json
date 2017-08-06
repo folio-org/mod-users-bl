@@ -1,5 +1,5 @@
 {
-  "id": "mod-users-bl-2.0.0",
+  "id": "${artifactId}-${version}",
   "name": "users business logic",
   "provides": [
     {
