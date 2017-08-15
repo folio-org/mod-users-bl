@@ -1,5 +1,5 @@
 {
-  "id": "mod-users-bl-2.0.0",
+  "id": "mod-users-bl-2.0.2-SNAPSHOT",
   "name": "users business logic",
   "provides": [
     {
