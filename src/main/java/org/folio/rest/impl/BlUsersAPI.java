@@ -554,7 +554,7 @@ public class BlUsersAPI implements BlUsersResource {
         if(include.get(i).equals(CREDENTIALS_INCLUDE)){
           //call credentials once the /users?query=username={username} completes
           CompletableFuture<Response> credResponse = userResponse[0].thenCompose(
-                client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+                client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                   handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
           requestedIncludes.add(credResponse);
           completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
@@ -562,7 +562,7 @@ public class BlUsersAPI implements BlUsersResource {
         else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
           //call perms once the /users?query=username={username} (same as creds) completes
           CompletableFuture<Response> permResponse = userResponse[0].thenCompose(
-                client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+                client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                   handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
           requestedIncludes.add(permResponse);
           completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
@@ -575,10 +575,14 @@ public class BlUsersAPI implements BlUsersResource {
           completedLookup.put(GROUPS_INCLUDE, groupResponse);
         }
       }
-
+				
       if(expandPerms != null && expandPerms){
-        CompletableFuture<Response> expandPermsResponse = userResponse[0].thenCompose(
-          client.chainedRequest("/perms/users/{users[0].username}/permissions?expanded=true&full=true", okapiHeaders, true, null,
+      	CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
+      	    client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
+      	      handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
+      	);
+        CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
+          client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(expandPermsResponse);
         completedLookup.put("expanded", expandPermsResponse);
