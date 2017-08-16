@@ -1,7 +1,7 @@
 {
-  "srvcId": "users-bl",
+  "srvcId": "mod-users-bl-2.0.2-SNAPSHOT",
   "nodeId": "localhost",
   "descriptor": {
-    "exec": "java -jar -Dlog.level=debug -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -Dport=%p -jar ../users-bl/users_bl-fat.jar"
+    "exec": "java -jar -Dlog.level=debug -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -Dport=%p -jar ../mod-users-bl/target/mod-users-bl-fat.jar"
   }
 }
