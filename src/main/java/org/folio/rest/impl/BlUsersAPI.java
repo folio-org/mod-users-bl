@@ -297,7 +297,7 @@ public class BlUsersAPI implements BlUsersResource {
           if(p != null){
             //expanded permissions requested and the array of permissions has been populated
             //add the username
-            p.setUsername(cf.get().getBody().getString("username"));
+            p.setUserId(cf.get().getBody().getString("id"));
           } else{
             cu.setPermissions((Permissions)Response.convertToPojo(cf.get().getBody(), Permissions.class));
           }
@@ -645,7 +645,7 @@ public class BlUsersAPI implements BlUsersResource {
               if(p != null){
                 //expanded permissions requested and the array of permissions has been populated
                 //add the username
-                p.setUsername(permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0).getString("username"));
+                p.setUserId(permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0).getString("id"));
               } else{
                 //data coming in from the service isnt returned as required by the composite user schema
                 JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
