@@ -1,3 +1,4 @@
 [submodule "raml"]
 	path = raml
 	url = https://github.com/folio-org/raml.git
+	branch = users-bl-intermediate
