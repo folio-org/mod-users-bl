@@ -193,14 +193,14 @@ public class BlUsersAPI implements BlUsersResource {
     if(userid != null) {
       userUrl.append("/").append(userid);
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
-      userTemplate = "{username}";
+      userTemplate = "{id}";
       groupTemplate = "{patronGroup}";
       mode[0] = "id";
     }
     else if(username != null){
       userUrl.append("?query=username=").append(username);
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
-      userTemplate = "{users[0].username}";
+      userTemplate = "{users[0].id}";
       groupTemplate = "{users[0].patronGroup}";
       mode[0] = "username";
     }
@@ -214,7 +214,7 @@ public class BlUsersAPI implements BlUsersResource {
       if(include.get(i).equals(CREDENTIALS_INCLUDE)){
         //call credentials once the /users?query=username={username} completes
         CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/authn/credentials/"+userTemplate, okapiHeaders, null,
+              client.chainedRequest("/authn/credentials?query=userId=="+userTemplate, okapiHeaders, null,
                 handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(credResponse);
         completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
@@ -222,7 +222,7 @@ public class BlUsersAPI implements BlUsersResource {
       else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
         //call perms once the /users?query=username={username} (same as creds) completes
         CompletableFuture<Response> permResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/perms/users/"+userTemplate, okapiHeaders, null,
+              client.chainedRequest("/perms/users?query=userId=="+userTemplate, okapiHeaders, null,
                 handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(permResponse);
         completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
@@ -235,10 +235,11 @@ public class BlUsersAPI implements BlUsersResource {
         completedLookup.put(GROUPS_INCLUDE, groupResponse);
       }
     }
-    if(expandPerms != null && expandPerms){
-      CompletableFuture<Response> expandPermsResponse = userIdResponse[0].thenCompose(
-        client.chainedRequest("/perms/users/"+userTemplate+"/permissions?expanded=true&full=true", okapiHeaders, true, null,
-          handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
+    if(expandPerms != null && expandPerms && completedLookup.containsKey(PERMISSIONS_INCLUDE)) {
+      CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE).thenCompose(
+              client.chainedRequest("/perms/users/{id}/permissions?expanded=true&full=true",
+                      okapiHeaders, true, null,
+                      handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
       requestedIncludes.add(expandPermsResponse);
       completedLookup.put("expanded", expandPermsResponse);
     }
@@ -282,7 +283,9 @@ public class BlUsersAPI implements BlUsersResource {
         }
         cf = completedLookup.get(PERMISSIONS_INCLUDE);
         if(cf != null && cf.get().getBody() != null){
-          cu.setPermissions((Permissions)Response.convertToPojo(cf.get().getBody(), Permissions.class));
+          JsonObject permissionsJson = new JsonObject();
+          permissionsJson.put("permissions", cf.get().getBody().getJsonArray("permissionUsers").getJsonObject(0).getJsonArray("permissions"));
+          cu.setPermissions((Permissions)Response.convertToPojo(permissionsJson, Permissions.class));
         }
         cf = completedLookup.get("expanded");
         if(cf != null && cf.get().getBody() != null){
@@ -297,7 +300,7 @@ public class BlUsersAPI implements BlUsersResource {
           if(p != null){
             //expanded permissions requested and the array of permissions has been populated
             //add the username
-            p.setUsername(cf.get().getBody().getString("username"));
+            //p.setId(cf.get().getBody().getString("username"));
           } else{
             cu.setPermissions((Permissions)Response.convertToPojo(cf.get().getBody(), Permissions.class));
           }
@@ -554,7 +557,7 @@ public class BlUsersAPI implements BlUsersResource {
         if(include.get(i).equals(CREDENTIALS_INCLUDE)){
           //call credentials once the /users?query=username={username} completes
           CompletableFuture<Response> credResponse = userResponse[0].thenCompose(
-                client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+                client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                   handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
           requestedIncludes.add(credResponse);
           completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
@@ -562,7 +565,7 @@ public class BlUsersAPI implements BlUsersResource {
         else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
           //call perms once the /users?query=username={username} (same as creds) completes
           CompletableFuture<Response> permResponse = userResponse[0].thenCompose(
-                client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+                client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                   handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
           requestedIncludes.add(permResponse);
           completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
@@ -575,10 +578,14 @@ public class BlUsersAPI implements BlUsersResource {
           completedLookup.put(GROUPS_INCLUDE, groupResponse);
         }
       }
-
+				
       if(expandPerms != null && expandPerms){
-        CompletableFuture<Response> expandPermsResponse = userResponse[0].thenCompose(
-          client.chainedRequest("/perms/users/{users[0].username}/permissions?expanded=true&full=true", okapiHeaders, true, null,
+      	CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
+      	    client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
+      	      handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
+      	);
+        CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
+          client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(expandPermsResponse);
         completedLookup.put("expanded", expandPermsResponse);
@@ -641,7 +648,7 @@ public class BlUsersAPI implements BlUsersResource {
               if(p != null){
                 //expanded permissions requested and the array of permissions has been populated
                 //add the username
-                p.setUsername(permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0).getString("username"));
+                p.setUserId(permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0).getString("id"));
               } else{
                 //data coming in from the service isnt returned as required by the composite user schema
                 JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
