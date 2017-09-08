@@ -1,3 +1,6 @@
+## 2.0.2 2017-08-25
+ * Patch RAML to allow for proxyFor field in users
+
 ## 2.0.1 2017-07-16
  * Remove redundant permissions from ModuleDescriptor
 
