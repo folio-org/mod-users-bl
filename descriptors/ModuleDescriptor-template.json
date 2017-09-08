@@ -4,7 +4,7 @@
   "provides": [
     {
       "id": "users-bl",
-      "version": "2.0",
+      "version": "2.1",
       "handlers": [
         {
           "methods": ["GET"],
@@ -69,11 +69,11 @@
     },
     {
       "id" : "permissions",
-      "version" : "4.0"
+      "version" : "5.0"
     },
     {
       "id" : "login",
-      "version" : "3.0"
+      "version" : "4.0"
     }
   ],
   "permissionSets": [
