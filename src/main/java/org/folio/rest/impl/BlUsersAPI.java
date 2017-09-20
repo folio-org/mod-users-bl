@@ -578,12 +578,12 @@ public class BlUsersAPI implements BlUsersResource {
           completedLookup.put(GROUPS_INCLUDE, groupResponse);
         }
       }
-				
+
       if(expandPerms != null && expandPerms){
-      	CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
-      	    client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
-      	      handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
-      	);
+        CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
+          client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
+            handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
+        );
         CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
           client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
@@ -652,7 +652,8 @@ public class BlUsersAPI implements BlUsersResource {
               } else{
                 //data coming in from the service isnt returned as required by the composite user schema
                 JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
-                cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));              }
+                cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              }
             }
           }
 
