@@ -652,7 +652,8 @@ public class BlUsersAPI implements BlUsersResource {
               } else{
                 //data coming in from the service isnt returned as required by the composite user schema
                 JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
-                cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));              }
+                cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              }
             }
           }
 
