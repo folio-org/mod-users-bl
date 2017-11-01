@@ -368,7 +368,7 @@ public class BlUsersAPI implements BlUsersResource {
       if(include.get(i).equals(CREDENTIALS_INCLUDE)){
         //call credentials once the /users?query=username={username} completes
         CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+              client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                 handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(credResponse);
         completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
@@ -376,7 +376,7 @@ public class BlUsersAPI implements BlUsersResource {
       else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
         //call perms once the /users?query=username={username} (same as creds) completes
         CompletableFuture<Response> permResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+              client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                 handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(permResponse);
         completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
@@ -434,7 +434,7 @@ public class BlUsersAPI implements BlUsersResource {
           //check for errors
           handleError(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
-            composite.joinOn("compositeUser[*].users.username", credsResponse, "credentials[*].username", "../", "../../credentials", false);
+            composite.joinOn("compositeUser[*].users.id", credsResponse, "credentials[*].userId", "../", "../../credentials", false);
           }
         }
         cf = completedLookup.get(PERMISSIONS_INCLUDE);
@@ -443,7 +443,7 @@ public class BlUsersAPI implements BlUsersResource {
           //check for errors
           handleError(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
-            composite.joinOn("compositeUser[*].users.username", permsResponse, "permissionUsers[*].username", "../permissions", "../../permissions.permissions", false);
+            composite.joinOn("compositeUser[*].users.id", permsResponse, "permissionUsers[*].userId", "../permissions", "../../permissions.permissions", false);
           }
         }
         client.closeClient();
