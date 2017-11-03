@@ -5,9 +5,14 @@
  */
 package org.folio.rest;
 
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -17,11 +22,46 @@ import java.util.regex.Pattern;
  *
  * @author kurt
  */
-public class MockOkapi {
+public class MockOkapi extends AbstractVerticle {
   private JsonStore userStore;
+  
+  public void start(Future<Void> future) {
+    final int port = context.config().getInteger("port");
+    Router router = Router.router(vertx);
+    HttpServer server = vertx.createHttpServer();
+    
+    router.route("/*").handler(BodyHandler.create());
+    router.route("/*").handler(this::handleRequest);
+    System.out.println("Running MockOkapi on port " + port);
+    server.requestHandler(router::accept).listen(port, result -> {
+      if(result.failed()) {
+        future.fail(result.cause());
+      }
+      else {
+        future.complete();
+      }
+    });
+    
+  }
   
   public MockOkapi() {
     userStore = new JsonStore();
+  }
+  
+  private void handleRequest(RoutingContext context) {
+    MockResponse mockResponse = null;
+    if(context.request().uri().startsWith("/users")) {
+      mockResponse = handleUsers(context.request().rawMethod(), context.request().uri(), context.getBodyAsString(), context);
+    } else {
+      context.response()
+              .setStatusCode(400)
+              .end("Endpoint " + context.request().uri() + " not supported");
+    }
+    if(mockResponse != null) {
+      context.response()
+              .setStatusCode(mockResponse.getCode())
+              .end(mockResponse.getContent());
+    }
   }
   
   private MockResponse handleUsers(String verb, String url, String payload, RoutingContext context) {
