@@ -116,6 +116,29 @@ public class MockOkapi extends AbstractVerticle {
     return new MockResponse(code, response);
   }
   
+  private MockResponse handlePermUsers(String verb, String url, String payload,
+          RoutingContext context) {
+    verb = verb.toUpperCase();
+    if(verb.equals("GET")) {
+      String id = context.pathParam("id");
+      if(id == null) {
+        //Get list of perm users
+      } else {
+        if(!url.endsWith("permissions")) {
+          //Get a single perm user
+        } else {
+          //Get a sing
+        }
+      }
+    } else if(verb.equals("POST")) {
+      
+    } else if(verb.equals("PUT")) {
+      
+    } else if(verb.equals("DELETE")) {
+      
+    }
+  }
+  
   private JsonObject wrapCollection(List<JsonObject> obList, String collectionName) {
     JsonObject result = new JsonObject();
     JsonArray obArray = new JsonArray();
