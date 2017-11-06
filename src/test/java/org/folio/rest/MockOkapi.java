@@ -127,15 +127,25 @@ public class MockOkapi extends AbstractVerticle {
         if(!url.endsWith("permissions")) {
           //Get a single perm user
         } else {
-          //Get a sing
+          //Get a single perm user's permissions
         }
       }
     } else if(verb.equals("POST")) {
-      
+      //Create a new perm user
     } else if(verb.equals("PUT")) {
-      
+      String id = context.pathParam("id");
+      if(id == null) {
+        //Error, no id
+      } else {
+        //Modify a user
+      }
     } else if(verb.equals("DELETE")) {
-      
+      String id = context.pathParam("id");
+      if(id == null) {
+        //Error, no id
+      } else {
+        //Modify a user
+      }
     }
   }
   
