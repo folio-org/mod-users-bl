@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
  */
 public class MockOkapi extends AbstractVerticle {
   private JsonStore userStore;
+  private JsonStore permsUserStore;
   
   public void start(Future<Void> future) {
     final int port = context.config().getInteger("port");
@@ -46,12 +47,17 @@ public class MockOkapi extends AbstractVerticle {
   
   public MockOkapi() {
     userStore = new JsonStore();
+    permsUserStore = new JsonStore();
   }
   
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
     if(context.request().uri().startsWith("/users")) {
-      mockResponse = handleUsers(context.request().rawMethod(), context.request().uri(), context.getBodyAsString(), context);
+      mockResponse = handleUsers(context.request().rawMethod(), 
+              context.request().uri(), context.getBodyAsString(), context);
+    } else if(context.request().uri().startsWith("/perms/users")) {
+      mockResponse = handlePermUsers(context.request().rawMethod(),
+              context.request().uri(), context.getBodyAsString(), context);
     } else {
       context.response()
               .setStatusCode(400)
@@ -119,15 +125,32 @@ public class MockOkapi extends AbstractVerticle {
   private MockResponse handlePermUsers(String verb, String url, String payload,
           RoutingContext context) {
     verb = verb.toUpperCase();
+    int code = 200;
+    String response = "";
     if(verb.equals("GET")) {
       String id = context.pathParam("id");
       if(id == null) {
         //Get list of perm users
+        List<JsonObject> userList = getCollectionWithContextParams(
+                permsUserStore, context, null);
+        JsonObject responseObject = wrapCollection(userList, "permissionUsers");
+        response = responseObject.encode();
       } else {
         if(!url.endsWith("permissions")) {
           //Get a single perm user
+          JsonObject item = permsUserStore.getItem(id);
+          if(item == null) {
+            code = 404;
+            response = "Not found";
+          } else {
+            response = item.encode();
+          }
         } else {
           //Get a single perm user's permissions
+          JsonObject item = permsUserStore.getItem(id);
+          JsonArray permissions = item.getJsonArray("permissions");
+          //Todo: Handle 'full' and 'expanded' params
+          
         }
       }
     } else if(verb.equals("POST")) {
@@ -147,6 +170,7 @@ public class MockOkapi extends AbstractVerticle {
         //Modify a user
       }
     }
+    return new MockResponse(code, response);
   }
   
   private JsonObject wrapCollection(List<JsonObject> obList, String collectionName) {

@@ -76,6 +76,8 @@ public class MockOkapiTest {
     Future<WrappedResponse> startFuture;
     startFuture = getEmptyUsers(context).compose(w -> {
       return postNewUser(context);
+    }).compose( w -> {
+      return getEmptyPermsUsers(context);
     });    
     startFuture.setHandler(res -> {
       if(res.succeeded()) {
@@ -125,6 +127,25 @@ public class MockOkapiTest {
         future.fail(res.cause());
       } else {
         context.assertEquals(res.result().getCode(), 201);
+        future.complete(res.result());
+      }
+    });
+    return future;
+  }
+  
+  private Future<WrappedResponse> getEmptyPermsUsers(TestContext context) {
+    Future<WrappedResponse> future = Future.future();
+    String url = "http://localhost:" + port + "/perms/users";
+    Future<WrappedResponse> futureResponse = testUtil.doRequest(vertx, url,
+            HttpMethod.GET, null, null);
+    futureResponse.setHandler(res -> {
+      if(res.failed()) {
+        future.fail(res.cause());
+      } else {
+        context.assertEquals(res.result().getCode(), 200);
+        context.assertNotNull(res.result().getJson());
+        context.assertEquals(res.result().getJson().getJsonArray("permissionUsers").size(), 0);
+        context.assertEquals(res.result().getJson().getInteger("totalRecords"), 0);
         future.complete(res.result());
       }
     });
