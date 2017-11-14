@@ -39,6 +39,7 @@ public class BlUsersAPI implements BlUsersResource {
   private static final String CREDENTIALS_INCLUDE = "credentials";
   private static final String GROUPS_INCLUDE = "groups";
   private static final String PERMISSIONS_INCLUDE = "perms";
+  private static final String PROXIESFOR_INCLUDE = "proxiesfor";
 
   private static String OKAPI_URL_HEADER = "X-Okapi-URL";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
@@ -234,6 +235,14 @@ public class BlUsersAPI implements BlUsersResource {
         requestedIncludes.add(groupResponse);
         completedLookup.put(GROUPS_INCLUDE, groupResponse);
       }
+      else if(include.get(i).equals(PROXIESFOR_INCLUDE)) {
+        CompletableFuture<Response> proxiesforResponse = userIdResponse[0].thenCompose(
+          client.chainedRequest("/proxiesfor?query=userId==" + userTemplate, okapiHeaders, 
+            null, handlePreviousResponse(true, false, true, aRequestHasFailed, 
+              asyncResultHandler)));
+        requestedIncludes.add(proxiesforResponse);
+        completedLookup.put(PROXIESFOR_INCLUDE, proxiesforResponse);
+      }
     }
     if(expandPerms != null && expandPerms && completedLookup.containsKey(PERMISSIONS_INCLUDE)) {
       CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE).thenCompose(
@@ -304,6 +313,10 @@ public class BlUsersAPI implements BlUsersResource {
           } else{
             cu.setPermissions((Permissions)Response.convertToPojo(cf.get().getBody(), Permissions.class));
           }
+        }
+        cf = completedLookup.get(PROXIESFOR_INCLUDE);
+        if(cf != null && cf.get().getBody() != null) {
+          
         }
         client.closeClient();
         if(mode[0].equals("id")){
