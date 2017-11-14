@@ -7,14 +7,15 @@ documentation:
     content: A front end for mod-users and mod-permissions
 
 schemas:
-  - compositeUser.json: !include ../../schemas/mod-users-bl/compositeUser.json
-  - compositeUserListObject: !include ../../schemas/mod-users-bl/compositeUserListObject.json
+  - compositeUser.json: !include ../../schemas/compositeUser.json
+  - compositeUserListObject: !include ../../schemas/compositeUserListObject.json
   - loginCredentials: !include ../../schemas/mod-login/loginCredentials.json
-  - ../mod-users/userdata.json: !include ../../schemas/mod-users/userdata.json
-  - ../mod-users/usergroup.json: !include ../../schemas/mod-users/usergroup.json
-  - ../mod-permissions/permissionUser.json: !include ../../schemas/mod-permissions/permissionUser.json
-  - ../mod-login/credentials.json: !include ../../schemas/mod-login/credentials.json
-  
+  - mod-users/userdata.json: !include ../../schemas/mod-users/userdata.json
+  - mod-users/usergroup.json: !include ../../schemas/mod-users/usergroup.json
+  - mod-permissions/permissionUser.json: !include ../../schemas/mod-permissions/permissionUser.json
+  - mod-login/credentials.json: !include ../../schemas/mod-login/credentials.json
+  - errors: !include ../../schemas/errors.schema
+
 traits:
   - secured: !include ../../traits/auth.raml
   - orderable: !include ../../traits/orderable.raml
@@ -68,7 +69,7 @@ resourceTypes:
   get:
     description: Get a number of user (and possibly related) records based on criteria in the user and related modules
     is: [
-      searchable: {description: "with valid searchable fields", example: "active=true"},
+      searchable: {description: "", example: "active=true"},
       pageable,
       includeable
     ]

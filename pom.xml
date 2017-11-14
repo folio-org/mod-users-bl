@@ -396,7 +396,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <raml-module-builder.version>13.0.1</raml-module-builder.version>
-    <ramlfiles_path>${basedir}/raml/ramls/mod-users-bl</ramlfiles_path>
+    <ramlfiles_path>${basedir}/raml-local/ramls/mod-users-bl</ramlfiles_path>
     <ramlfiles_util_path>${basedir}/raml</ramlfiles_util_path>
     <postgresrunner.port>5434</postgresrunner.port>
     <!-- Postgres port for Jenkins CI build environment https://issues.folio.org/browse/METADATA-10 -->
