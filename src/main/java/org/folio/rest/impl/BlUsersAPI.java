@@ -15,6 +15,7 @@ import org.folio.rest.jaxrs.model.LoginCredentials;
 import org.folio.rest.jaxrs.model.PatronGroup;
 import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.User;
+import org.folio.rest.jaxrs.model.ProxiesFor;
 import org.folio.rest.jaxrs.resource.BlUsersResource;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
@@ -26,6 +27,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -316,7 +318,14 @@ public class BlUsersAPI implements BlUsersResource {
         }
         cf = completedLookup.get(PROXIESFOR_INCLUDE);
         if(cf != null && cf.get().getBody() != null) {
-          
+          JsonArray array = cf.get().getBody().getJsonArray("proxiesFor");
+          List<ProxiesFor> proxyForList = new ArrayList<>();
+          for(Object ob : array) {
+            ProxiesFor proxyfor = new ProxiesFor();
+            proxyfor = (ProxiesFor)Response.convertToPojo((JsonObject)ob, ProxiesFor.class);
+            proxyForList.add((ProxiesFor)ob);
+          }
+          cu.setProxiesFor(proxyForList);
         }
         client.closeClient();
         if(mode[0].equals("id")){
@@ -401,6 +410,13 @@ public class BlUsersAPI implements BlUsersResource {
         requestedIncludes.add(groupResponse);
         completedLookup.put(GROUPS_INCLUDE, groupResponse);
       }
+      else if(include.get(i).equals(PROXIESFOR_INCLUDE)) {
+        CompletableFuture<Response> proxiesforResponse = userIdResponse[0].thenCompose(
+          client.chainedRequest("/proxiesfor", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
+            handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
+        requestedIncludes.add(proxiesforResponse);
+        completedLookup.put(PROXIESFOR_INCLUDE, proxiesforResponse);
+      }
     }
     requestedIncludes.add(userIdResponse[0]);
     CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
@@ -430,6 +446,7 @@ public class BlUsersAPI implements BlUsersResource {
         Response groupResponse = null;
         Response credsResponse = null;
         Response permsResponse = null;
+        Response proxiesforResponse = null;
         CompletableFuture<Response> cf = completedLookup.get(GROUPS_INCLUDE);
         if(cf != null){
           groupResponse = cf.get();
@@ -457,6 +474,14 @@ public class BlUsersAPI implements BlUsersResource {
           handleError(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
             composite.joinOn("compositeUser[*].users.id", permsResponse, "permissionUsers[*].userId", "../permissions", "../../permissions.permissions", false);
+          }
+        }
+        cf = completedLookup.get(PROXIESFOR_INCLUDE);
+        if(cf != null) {
+          proxiesforResponse = cf.get();
+          handleError(proxiesforResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+          if(!aRequestHasFailed[0]) {
+            composite.joinOn("compositeUser[*].users.id", proxiesforResponse, "proxiesFor[*].userId", "../", "../../proxiesFor", false);
           }
         }
         client.closeClient();

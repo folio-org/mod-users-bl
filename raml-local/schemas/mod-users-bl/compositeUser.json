@@ -20,7 +20,7 @@
     },
     "proxiesFor" : {
       "type" : "object",
-      "$ref" : "../mod-users/proxyforCollection.json"
+      "$ref" : "../mod-users/proxyfor.json"
     }
   }
 }
