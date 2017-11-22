@@ -323,9 +323,11 @@ public class BlUsersAPI implements BlUsersResource {
           for(Object ob : array) {
             ProxiesFor proxyfor = new ProxiesFor();
             proxyfor = (ProxiesFor)Response.convertToPojo((JsonObject)ob, ProxiesFor.class);
-            proxyForList.add((ProxiesFor)ob);
+            proxyForList.add(proxyfor);
           }
-          cu.setProxiesFor(proxyForList);
+          if(!proxyForList.isEmpty()) {
+            cu.setProxiesFor(proxyForList);
+          }
         }
         client.closeClient();
         if(mode[0].equals("id")){
