@@ -2,24 +2,20 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
-    "users": {
+    "addressTypes": {
       "type": "array",
-      "id": "usersData",
+      "id": "addressType",
       "items": {
         "type": "object",
-        "$ref": "userdata.json"
+        "$ref": "addresstype.json"
       }
     },
     "totalRecords": {
       "type": "integer"
-    },
-    "resultInfo": {
-      "$ref": "../resultInfo.schema",
-      "readonly": true
     }
   },
   "required": [
-    "users",
+    "addressTypes",
     "totalRecords"
   ]
 }

@@ -2,24 +2,20 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
-    "users": {
+    "proxiesFor": {
       "type": "array",
-      "id": "usersData",
+      "id": "proxyFor",
       "items": {
         "type": "object",
-        "$ref": "userdata.json"
+        "$ref": "proxyfor.json"
       }
     },
     "totalRecords": {
       "type": "integer"
-    },
-    "resultInfo": {
-      "$ref": "../resultInfo.schema",
-      "readonly": true
     }
   },
   "required": [
-    "users",
+    "proxiesFor",
     "totalRecords"
   ]
 }

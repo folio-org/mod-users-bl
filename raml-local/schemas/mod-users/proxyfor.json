@@ -1,21 +1,20 @@
 {
-  "title": "Credentials Schema",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "ProxyFor Schema",
   "type": "object",
   "properties": {
-    "id": {
-      "type": "string"
-    },
     "userId": {
       "type": "string"
     },
-    "hash": {
+    "proxyUserId": {
       "type": "string"
     },
-    "salt": {
+    "id": {
       "type": "string"
     },
-    "metadata": {
+    "meta": {
       "type": "object"
     }
-  }
+  },
+  "additionalProperties": false
 }

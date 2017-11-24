@@ -2,24 +2,24 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
-    "users": {
+    "compositeUsers": {
       "type": "array",
-      "id": "usersData",
+      "id": "compositeUserList",
       "items": {
         "type": "object",
-        "$ref": "userdata.json"
+        "$ref": "compositeUser.json"
       }
     },
-    "totalRecords": {
+    "totalResults": {
       "type": "integer"
     },
-    "resultInfo": {
-      "$ref": "../resultInfo.schema",
-      "readonly": true
+    "recordCount": {
+      "type": "integer"
     }
   },
   "required": [
-    "users",
-    "totalRecords"
+    "compositeUsers",
+    "totalResults",
+    "recordCount"
   ]
 }

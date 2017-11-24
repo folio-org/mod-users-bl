@@ -15,6 +15,7 @@ import org.folio.rest.jaxrs.model.LoginCredentials;
 import org.folio.rest.jaxrs.model.PatronGroup;
 import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.User;
+import org.folio.rest.jaxrs.model.ProxiesFor;
 import org.folio.rest.jaxrs.resource.BlUsersResource;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
@@ -26,6 +27,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -39,6 +41,7 @@ public class BlUsersAPI implements BlUsersResource {
   private static final String CREDENTIALS_INCLUDE = "credentials";
   private static final String GROUPS_INCLUDE = "groups";
   private static final String PERMISSIONS_INCLUDE = "perms";
+  private static final String PROXIESFOR_INCLUDE = "proxiesfor";
 
   private static String OKAPI_URL_HEADER = "X-Okapi-URL";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
@@ -234,6 +237,14 @@ public class BlUsersAPI implements BlUsersResource {
         requestedIncludes.add(groupResponse);
         completedLookup.put(GROUPS_INCLUDE, groupResponse);
       }
+      else if(include.get(i).equals(PROXIESFOR_INCLUDE)) {
+        CompletableFuture<Response> proxiesforResponse = userIdResponse[0].thenCompose(
+          client.chainedRequest("/proxiesfor?query=userId==" + userTemplate, okapiHeaders, 
+            null, handlePreviousResponse(true, false, true, aRequestHasFailed, 
+              asyncResultHandler)));
+        requestedIncludes.add(proxiesforResponse);
+        completedLookup.put(PROXIESFOR_INCLUDE, proxiesforResponse);
+      }
     }
     if(expandPerms != null && expandPerms && completedLookup.containsKey(PERMISSIONS_INCLUDE)) {
       CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE).thenCompose(
@@ -305,6 +316,19 @@ public class BlUsersAPI implements BlUsersResource {
             cu.setPermissions((Permissions)Response.convertToPojo(cf.get().getBody(), Permissions.class));
           }
         }
+        cf = completedLookup.get(PROXIESFOR_INCLUDE);
+        if(cf != null && cf.get().getBody() != null) {
+          JsonArray array = cf.get().getBody().getJsonArray("proxiesFor");
+          List<ProxiesFor> proxyForList = new ArrayList<>();
+          for(Object ob : array) {
+            ProxiesFor proxyfor = new ProxiesFor();
+            proxyfor = (ProxiesFor)Response.convertToPojo((JsonObject)ob, ProxiesFor.class);
+            proxyForList.add(proxyfor);
+          }
+          if(!proxyForList.isEmpty()) {
+            cu.setProxiesFor(proxyForList);
+          }
+        }
         client.closeClient();
         if(mode[0].equals("id")){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
@@ -368,7 +392,7 @@ public class BlUsersAPI implements BlUsersResource {
       if(include.get(i).equals(CREDENTIALS_INCLUDE)){
         //call credentials once the /users?query=username={username} completes
         CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+              client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                 handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(credResponse);
         completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
@@ -376,7 +400,7 @@ public class BlUsersAPI implements BlUsersResource {
       else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
         //call perms once the /users?query=username={username} (same as creds) completes
         CompletableFuture<Response> permResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].username", "username"),
+              client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
                 handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(permResponse);
         completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
@@ -387,6 +411,13 @@ public class BlUsersAPI implements BlUsersResource {
             handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(groupResponse);
         completedLookup.put(GROUPS_INCLUDE, groupResponse);
+      }
+      else if(include.get(i).equals(PROXIESFOR_INCLUDE)) {
+        CompletableFuture<Response> proxiesforResponse = userIdResponse[0].thenCompose(
+          client.chainedRequest("/proxiesfor", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
+            handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
+        requestedIncludes.add(proxiesforResponse);
+        completedLookup.put(PROXIESFOR_INCLUDE, proxiesforResponse);
       }
     }
     requestedIncludes.add(userIdResponse[0]);
@@ -417,6 +448,7 @@ public class BlUsersAPI implements BlUsersResource {
         Response groupResponse = null;
         Response credsResponse = null;
         Response permsResponse = null;
+        Response proxiesforResponse = null;
         CompletableFuture<Response> cf = completedLookup.get(GROUPS_INCLUDE);
         if(cf != null){
           groupResponse = cf.get();
@@ -434,7 +466,7 @@ public class BlUsersAPI implements BlUsersResource {
           //check for errors
           handleError(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
-            composite.joinOn("compositeUser[*].users.username", credsResponse, "credentials[*].username", "../", "../../credentials", false);
+            composite.joinOn("compositeUser[*].users.id", credsResponse, "credentials[*].userId", "../", "../../credentials", false);
           }
         }
         cf = completedLookup.get(PERMISSIONS_INCLUDE);
@@ -443,7 +475,15 @@ public class BlUsersAPI implements BlUsersResource {
           //check for errors
           handleError(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
-            composite.joinOn("compositeUser[*].users.username", permsResponse, "permissionUsers[*].username", "../permissions", "../../permissions.permissions", false);
+            composite.joinOn("compositeUser[*].users.id", permsResponse, "permissionUsers[*].userId", "../permissions", "../../permissions.permissions", false);
+          }
+        }
+        cf = completedLookup.get(PROXIESFOR_INCLUDE);
+        if(cf != null) {
+          proxiesforResponse = cf.get();
+          handleError(proxiesforResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+          if(!aRequestHasFailed[0]) {
+            composite.joinOn("compositeUser[*].users.id", proxiesforResponse, "proxiesFor[*].userId", "../", "../../proxiesFor", false);
           }
         }
         client.closeClient();

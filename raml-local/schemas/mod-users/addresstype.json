@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "User Group Schema",
+  "title": "Address Type Schema",
   "type": "object",
   "properties": {
-    "group": {
+    "addressType": {
       "type": "string"
     },
     "desc": {
@@ -11,14 +11,7 @@
     },
     "id": {
       "type": "string"
-    },
-    "metadata": {
-      "$ref": "../metadata.schema",
-      "readonly": true
     }
   },
-  "required": [
-    "group",
-    "desc"
-  ]
+  "additionalProperties": false
 }

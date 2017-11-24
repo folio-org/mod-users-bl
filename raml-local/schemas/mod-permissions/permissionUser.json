@@ -1,12 +1,15 @@
 {
   "type": "object",
   "properties": {
-    "username": {
+    "id": {
+      "type": "string"
+    },
+    "userId": {
       "type": "string"
     },
     "permissions": {
       "type": "array"
     }
   },
-  "additionalProperties" : false
+  "additionalProperties": false
 }
