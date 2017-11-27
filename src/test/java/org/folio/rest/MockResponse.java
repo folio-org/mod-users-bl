@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.folio.rest;
 
 /**
@@ -17,7 +12,7 @@ public class MockResponse {
     this.code = code;
     this.content = content;
   }
-  
+
   public int getCode() {
     return code;
   }
@@ -33,5 +28,5 @@ public class MockResponse {
   public void setContent(String content) {
     this.content = content;
   }
- 
+
 }

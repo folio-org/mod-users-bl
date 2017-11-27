@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.folio.rest;
 
 import io.vertx.core.json.JsonObject;
@@ -22,7 +17,7 @@ import org.junit.Test;
 
 public class JsonStoreTest {
   private JsonStore jsonStore;
-  
+
   @Before
   public void setup() {
     jsonStore = new JsonStore();
@@ -37,8 +32,8 @@ public class JsonStoreTest {
     jsonStore.addItem(null, new JsonObject().put("id", "d0f277d1-9be7-4627-b364-f1a9e9d1a5d7").put("name", "thing9"));
     jsonStore.addItem(null, new JsonObject().put("id", "01f3c7d3-05e0-4b5c-b3b7-2534bdff60ec").put("name", "thing10"));
   }
-  
-  
+
+
   @Test
   public void test1() {
     assertNotNull(jsonStore.getCollection(null, null, null));
@@ -46,7 +41,7 @@ public class JsonStoreTest {
     assertTrue(jsonStore.getCollection(null, null, null).get(0).getString("name").equals("thing1"));
     assertTrue(jsonStore.getItem("01f3c7d3-05e0-4b5c-b3b7-2534bdff60ec").getString("name").equals("thing10"));
   }
-  
+
   @Test
   public void test2() {
     List<JsonObject> jsonList = jsonStore.getCollection(3, 1, null);
@@ -58,15 +53,15 @@ public class JsonStoreTest {
 
     assertTrue(ob.getString("name").equals("thing4"));
   }
-  
+
   @Test
   public void test3() {
     String id = "83c7a936-87b3-4ac0-b2c9-03cc83c7ab5f";
     assertNotNull(jsonStore.getItem(id));
     jsonStore.deleteItem(id);
-    assertNull(jsonStore.getItem(id));    
+    assertNull(jsonStore.getItem(id));
   }
-  
+
   @Test
   public void test4() {
     String id = "5581c6ea-153f-46df-9c94-5a64d371a4f0";
@@ -74,7 +69,7 @@ public class JsonStoreTest {
     JsonObject ob = jsonStore.getItem(id);
     assertTrue(ob.getString("name").equals("thing11"));
   }
-  
+
  @Test
   public void test5() {
     Map getByMap = new HashMap<String, String>();
@@ -87,5 +82,5 @@ public class JsonStoreTest {
     assertNotNull(ob.getString("name"));
     assertTrue(ob.getString("name").equals("thing6"));
   }
-  
+
 }

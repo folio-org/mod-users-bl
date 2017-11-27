@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.folio.rest;
 
 import io.vertx.core.DeploymentOptions;
@@ -34,11 +29,11 @@ import org.junit.runner.RunWith;
  */
 @RunWith(VertxUnitRunner.class)
 public class MockOkapiTest {
-  
+
   private static int port;
   private static Vertx vertx;
   private static TestUtil testUtil;
-  
+
   @BeforeClass
   public static void setupClass(TestContext context) {
     vertx = Vertx.vertx();
@@ -54,22 +49,22 @@ public class MockOkapiTest {
       }
     });
   }
-  
+
   @AfterClass
   public static void teardownClass(TestContext context) {
     context.async().complete();
   }
-  
+
   @Before
   public void beforeTest(TestContext context) {
     context.async().complete();
   }
-  
+
   @After
   public void afterTest(TestContext context) {
     context.async().complete();
   }
-  
+
   @Test
   public void doSequentialTests(TestContext context) {
     Async async = context.async();
@@ -78,7 +73,7 @@ public class MockOkapiTest {
       return postNewUser(context);
     }).compose( w -> {
       return getEmptyPermsUsers(context);
-    });    
+    });
     startFuture.setHandler(res -> {
       if(res.succeeded()) {
         async.complete();
@@ -92,7 +87,7 @@ public class MockOkapiTest {
       }
     });
   }
-  
+
   private Future<WrappedResponse> getEmptyUsers(TestContext context) {
     System.out.println("Getting an empty user set\n");
     Future<WrappedResponse> future = Future.future();
@@ -112,7 +107,7 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
   private Future<WrappedResponse> postNewUser(TestContext context) {
     System.out.println("Adding a new user\n");
     Future<WrappedResponse> future = Future.future();
@@ -120,7 +115,7 @@ public class MockOkapiTest {
     JsonObject userPost = new JsonObject().put("username", "bongo")
             .put("id", "0bb4f26d-e073-4f93-afbc-dcc24fd88810")
             .put("active", true);
-    Future<WrappedResponse> futureResponse = testUtil.doRequest(vertx, url, 
+    Future<WrappedResponse> futureResponse = testUtil.doRequest(vertx, url,
             HttpMethod.POST, null, userPost.encode());
     futureResponse.setHandler(res -> {
       if(res.failed()) {
@@ -132,7 +127,7 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
   private Future<WrappedResponse> getEmptyPermsUsers(TestContext context) {
     Future<WrappedResponse> future = Future.future();
     String url = "http://localhost:" + port + "/perms/users";
@@ -151,8 +146,8 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
 }
-  
-  
-  
+
+
+

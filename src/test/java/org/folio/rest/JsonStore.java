@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.folio.rest;
 
 import io.vertx.core.json.JsonObject;
@@ -25,7 +20,7 @@ public class JsonStore {
   public JsonStore() {
     jsonMap = new LinkedHashMap<>();
   }
-  
+
   public List<JsonObject> getCollection(Integer offset, Integer limit, Map<String, String> getBy) {
     if(offset == null) {
       offset = 0;
@@ -43,7 +38,7 @@ public class JsonStore {
       }
       jsonIterator.next();
     }
-    
+
     while(returnList.size() < limit) {
       if(!jsonIterator.hasNext()) {
         break;
@@ -55,7 +50,7 @@ public class JsonStore {
     }
     return returnList;
   }
-  
+
   public JsonObject getItem(String id) {
     JsonObject returnObject;
     if(jsonMap.containsKey(id)) {
@@ -65,7 +60,7 @@ public class JsonStore {
     }
     return returnObject;
   }
-  
+
   public JsonObject addItem(String id, JsonObject ob) {
     if(id == null) {
       if(ob.containsKey("id")) {
@@ -80,7 +75,7 @@ public class JsonStore {
     jsonMap.put(id, ob);
     return jsonMap.get(id);
   }
-  
+
   public boolean updateItem(String id, JsonObject ob) {
     if(!jsonMap.containsKey(id)) {
       return false;
@@ -88,7 +83,7 @@ public class JsonStore {
     jsonMap.put(id, ob);
     return true;
   }
-  
+
   public boolean deleteItem(String id) {
     if(!jsonMap.containsKey(id)) {
       return false;
@@ -96,11 +91,11 @@ public class JsonStore {
     jsonMap.remove(id);
     return true;
   }
-  
+
   public void deleteAllitems() {
     jsonMap.clear();
   }
-  
+
   private boolean matchesCriteria(JsonObject ob, Map<String, String> getBy) {
     if(getBy == null) {
       return true;
@@ -116,5 +111,5 @@ public class JsonStore {
     }
     return true;
   }
-  
+
 }
