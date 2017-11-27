@@ -28,12 +28,12 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore userStore;
   private JsonStore permsUsersStore;
   private JsonStore permsPermissionsStore;
-  
+
   public void start(Future<Void> future) {
     final int port = context.config().getInteger("port");
     Router router = Router.router(vertx);
     HttpServer server = vertx.createHttpServer();
-    
+
     router.route("/*").handler(BodyHandler.create());
     router.route("/*").handler(this::handleRequest);
     System.out.println("Running MockOkapi on port " + port);
@@ -45,18 +45,18 @@ public class MockOkapi extends AbstractVerticle {
         future.complete();
       }
     });
-    
+
   }
-  
+
   public MockOkapi() {
     userStore = new JsonStore();
     permsUsersStore = new JsonStore();
   }
-  
+
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
     if(context.request().uri().startsWith("/users")) {
-      mockResponse = handleUsers(context.request().rawMethod(), 
+      mockResponse = handleUsers(context.request().rawMethod(),
               context.request().uri(), context.getBodyAsString(), context);
     } else if(context.request().uri().startsWith("/perms/users")) {
       mockResponse = handlePermUsers(context.request().rawMethod(),
@@ -72,7 +72,7 @@ public class MockOkapi extends AbstractVerticle {
               .end(mockResponse.getContent());
     }
   }
-  
+
   private MockResponse handleUsers(String verb, String url, String payload, RoutingContext context) {
     int code = 200;
     String response = "";
@@ -91,7 +91,7 @@ public class MockOkapi extends AbstractVerticle {
         List<JsonObject> responseList = getCollectionWithContextParams(userStore, context, null);
         JsonObject responseObject = wrapCollection(responseList, "users");
         response = responseObject.encode();
-      }      
+      }
     } else if(verb.toUpperCase().equals("PUT")) {
       String userId = context.pathParam("userId");
       boolean success = userStore.updateItem(userId, new JsonObject(payload));
@@ -124,7 +124,7 @@ public class MockOkapi extends AbstractVerticle {
     }
     return new MockResponse(code, response);
   }
-  
+
   private MockResponse handlePermUsers(String verb, String url, String payload,
           RoutingContext context) {
     verb = verb.toUpperCase();
@@ -168,7 +168,7 @@ public class MockOkapi extends AbstractVerticle {
             JsonArray expandedPerms = recursePermList(permissions, permsPermissionsStore);
             permNameListObject.put("permissionName", expandedPerms);
             permNameListObject.put("totalRecords", expandedPerms.size());
-          } else {       
+          } else {
             //full and expanded
             JsonArray expandedPerms = recursePermList(permissions, permsPermissionsStore);
             makeFullPerms(expandedPerms, permsPermissionsStore);
@@ -228,7 +228,7 @@ public class MockOkapi extends AbstractVerticle {
     }
     return new MockResponse(code, response);
   }
-  
+
   private JsonObject wrapCollection(List<JsonObject> obList, String collectionName) {
     JsonObject result = new JsonObject();
     JsonArray obArray = new JsonArray();
@@ -239,14 +239,14 @@ public class MockOkapi extends AbstractVerticle {
     result.put("totalRecords", obList.size() );
     return result;
   }
-  
+
   List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore, RoutingContext context, Map<String, String> filterMap) {
     List<JsonObject> result;
     int offset = Integer.parseInt(context.pathParams().getOrDefault("offset", "0"));
     int limit = Integer.parseInt(context.pathParams().getOrDefault("limit", "30"));
     return jsonStore.getCollection(offset, limit, filterMap);
   }
-  
+
   private JsonObject getPermObject(String permName, JsonStore permStore) {
     Map<String, String> getBy = new HashMap();
     getBy.put("permissionName", permName);
@@ -256,7 +256,7 @@ public class MockOkapi extends AbstractVerticle {
     }
     return obList.get(0);
   }
-  
+
   private void makeFullPerms(JsonArray permList, JsonStore permStore) {
     List<Object> deleteList = new ArrayList<>();
     List<Object> addList = new ArrayList<>();
@@ -270,7 +270,7 @@ public class MockOkapi extends AbstractVerticle {
     for(Object ob : deleteList) { permList.remove(ob); }
     for(Object ob : addList) { permList.add(ob); }
   }
-  
+
   private JsonArray recursePermList(JsonArray permList, JsonStore permStore) {
     JsonArray newList = new JsonArray();
     for(Object ob : permList) {

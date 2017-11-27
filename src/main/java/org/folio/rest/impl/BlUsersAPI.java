@@ -239,8 +239,8 @@ public class BlUsersAPI implements BlUsersResource {
       }
       else if(include.get(i).equals(PROXIESFOR_INCLUDE)) {
         CompletableFuture<Response> proxiesforResponse = userIdResponse[0].thenCompose(
-          client.chainedRequest("/proxiesfor?query=userId==" + userTemplate, okapiHeaders, 
-            null, handlePreviousResponse(true, false, true, aRequestHasFailed, 
+          client.chainedRequest("/proxiesfor?query=userId==" + userTemplate, okapiHeaders,
+            null, handlePreviousResponse(true, false, true, aRequestHasFailed,
               asyncResultHandler)));
         requestedIncludes.add(proxiesforResponse);
         completedLookup.put(PROXIESFOR_INCLUDE, proxiesforResponse);

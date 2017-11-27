@@ -55,7 +55,7 @@ public class HTTPMockTest {
   public void dummyTest(TestContext context) {
     context.async().complete();
   }
-  
+
   /** Commented out until I can figure out the HttpClientMock2 thing
   @Test
   public void test(TestContext context) {

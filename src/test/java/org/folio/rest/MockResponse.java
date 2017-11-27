@@ -17,7 +17,7 @@ public class MockResponse {
     this.code = code;
     this.content = content;
   }
-  
+
   public int getCode() {
     return code;
   }
@@ -33,5 +33,5 @@ public class MockResponse {
   public void setContent(String content) {
     this.content = content;
   }
- 
+
 }

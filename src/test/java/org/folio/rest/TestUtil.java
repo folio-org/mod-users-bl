@@ -25,7 +25,7 @@ public class TestUtil {
     private String body;
     private JsonObject json;
     private HttpClientResponse response;
-    
+
     public WrappedResponse(int code, String body, HttpClientResponse response) {
       this.code = code;
       this.body = body;
@@ -48,12 +48,12 @@ public class TestUtil {
     public HttpClientResponse getResponse() {
       return response;
     }
-    
+
     public JsonObject getJson() {
       return json;
     }
   }
-  
+
   public Future<WrappedResponse> doRequest(Vertx vertx, String url, HttpMethod method, MultiMap headers, String payload) {
     Future<WrappedResponse> future = Future.future();
     boolean addPayLoad = false;
@@ -82,7 +82,7 @@ public class TestUtil {
       request.end();
     }
     return future;
-  }  
+  }
 }
 
 
