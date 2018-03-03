@@ -1,3 +1,6 @@
+## Not yet released
+ * Update shared raml to ensure consistent schema declarations in RAML
+
 ## 2.0.3 2018-01-15
  * Update RAML definitions to recognize metadata field in users
 
