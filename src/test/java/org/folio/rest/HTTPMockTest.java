@@ -33,6 +33,7 @@ public class HTTPMockTest {
 
   @Before
   public void setUp(TestContext context) throws Exception {
+    System.setProperty(HttpClientMock2.MOCK_MODE, "true");
 
     vertx = Vertx.vertx();
 
@@ -40,7 +41,7 @@ public class HTTPMockTest {
     port = NetworkUtils.nextFreePort();
 
     DeploymentOptions options = new DeploymentOptions().setConfig(new JsonObject().put("http.port",
-      port).put(HttpClientMock2.MOCK_MODE, "true"));
+      port));
     vertx.deployVerticle(RestVerticle.class.getName(), options, context.asyncAssertSuccess(id -> {
       async.complete();
     }));
@@ -49,6 +50,7 @@ public class HTTPMockTest {
   @After
   public void tearDown(TestContext context) throws Exception {
     vertx.close(context.asyncAssertSuccess());
+    System.clearProperty(HttpClientMock2.MOCK_MODE);
   }
 
   @Test

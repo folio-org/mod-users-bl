@@ -386,12 +386,6 @@
           <systemPropertyVariables>
             <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
           </systemPropertyVariables>
-          <systemProperties>
-            <property>
-              <name>mock.httpclient</name>
-              <value>true</value>
-            </property>
-          </systemProperties>
         </configuration>
       </plugin>
     </plugins>
