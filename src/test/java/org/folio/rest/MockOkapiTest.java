@@ -40,7 +40,7 @@ public class MockOkapiTest {
     testUtil = new TestUtil();
     Async async = context.async();
     port = NetworkUtils.nextFreePort();
-    DeploymentOptions options = new DeploymentOptions().setConfig(new JsonObject().put("port", port));
+    DeploymentOptions options = new DeploymentOptions().setConfig(new JsonObject().put("http.port", port));
     vertx.deployVerticle(MockOkapi.class.getName(), options, res -> {
       if(res.failed()) {
         context.fail(res.cause());

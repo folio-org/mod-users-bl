@@ -23,9 +23,11 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore userStore;
   private JsonStore permsUsersStore;
   private JsonStore permsPermissionsStore;
+  private JsonStore groupsStore;
 
+  @Override
   public void start(Future<Void> future) {
-    final int port = context.config().getInteger("port");
+    final int port = context.config().getInteger("http.port");
     Router router = Router.router(vertx);
     HttpServer server = vertx.createHttpServer();
 
@@ -46,6 +48,7 @@ public class MockOkapi extends AbstractVerticle {
   public MockOkapi() {
     userStore = new JsonStore();
     permsUsersStore = new JsonStore();
+    groupsStore = new JsonStore();
   }
 
   private void handleRequest(RoutingContext context) {
@@ -56,6 +59,9 @@ public class MockOkapi extends AbstractVerticle {
     } else if(context.request().uri().startsWith("/perms/users")) {
       mockResponse = handlePermUsers(context.request().rawMethod(),
               context.request().uri(), context.getBodyAsString(), context);
+    } else if(context.request().uri().startsWith("/groups")) {
+      mockResponse = handleGroups(context.request().rawMethod(),
+              context.getBodyAsString(), context);
     } else {
       context.response()
               .setStatusCode(400)
@@ -220,6 +226,58 @@ public class MockOkapi extends AbstractVerticle {
     if(response == null) {
       code = 500;
       response = "Server error";
+    }
+    return new MockResponse(code, response);
+  }
+
+  private MockResponse handleGroups(String verb, String payload, RoutingContext context) {
+    int code = 200;
+    String response = "";
+    switch (verb.toUpperCase()) {
+    case "GET":
+      List<JsonObject> responseList = getCollectionWithContextParams(groupsStore, context, null);
+      JsonObject responseObject = wrapCollection(responseList, "groups");
+      response = responseObject.encode();
+      break;
+    case "PUT":
+      {
+        String groupId = context.pathParam("groupId");
+        boolean success = groupsStore.updateItem(groupId, new JsonObject(payload));
+        if(success) {
+          code = 204;
+          response = "";
+        } else {
+          code = 404;
+          response = "Not found";
+        }
+      }
+      break;
+    case "POST":
+      JsonObject ob = groupsStore.addItem(null, new JsonObject(payload));
+      if(ob == null) {
+        code = 422;
+        response = "Unable to add object";
+      } else {
+        code = 201;
+        response = ob.encode();
+      }
+      break;
+    case "DELETE":
+      {
+        String groupId = context.pathParam("groupId");
+        boolean ok = groupsStore.deleteItem(groupId);
+        if (ok) {
+          code = 204;
+          response = "";
+        } else {
+          code = 404;
+          response = "Not found";
+        }
+      }
+      break;
+    default:
+      code = 500;
+      response = "Request type not supported: " + verb;
     }
     return new MockResponse(code, response);
   }
