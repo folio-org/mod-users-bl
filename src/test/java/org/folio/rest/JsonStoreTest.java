@@ -1,5 +1,6 @@
 package org.folio.rest;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,7 @@ public class JsonStoreTest {
   private JsonStore jsonStore;
 
   @Before
-  public void setup() {
+  public void setup() throws Exception {
     jsonStore = new JsonStore();
     jsonStore.addItem(null, new JsonObject().put("id", "8fa9cdbf-528b-472b-9604-f70560fdacf4").put("name", "thing1"));
     jsonStore.addItem(null, new JsonObject().put("id", "b5197d8e-2c86-4e41-be10-d4562df524dd").put("name", "thing2"));
@@ -63,7 +64,7 @@ public class JsonStoreTest {
   }
 
   @Test
-  public void test4() {
+  public void test4() throws Exception {
     String id = "5581c6ea-153f-46df-9c94-5a64d371a4f0";
     jsonStore.addItem(null, new JsonObject().put("id", id).put("name", "thing11"));
     JsonObject ob = jsonStore.getItem(id);
@@ -81,6 +82,60 @@ public class JsonStoreTest {
     assertTrue(ob.containsKey("name"));
     assertNotNull(ob.getString("name"));
     assertTrue(ob.getString("name").equals("thing6"));
+  }
+  
+  @Test
+  public void testQueryset() {
+    JsonArray thingList = new JsonArray()
+            .add(new JsonObject()
+              .put("color","red")
+              .put("species","dog")
+              .put("size","small")
+              .put("name", "cliff")
+            )
+            .add(new JsonObject()
+              .put("color","blue")
+              .put("species","dog")
+              .put("size","small")
+              .put("name", "fido")
+            )
+            .add(new JsonObject()
+              .put("color","red")
+              .put("species","cat")
+              .put("size","large")
+              .put("name", "jumbo")
+            )
+            .add(new JsonObject()
+              .put("color","black")
+              .put("species","cat")
+              .put("size","small")
+              .put("name", "hector")
+            )
+            .add(new JsonObject()
+              .put("color","black")
+              .put("species","cat")
+              .put("size","large")
+              .put("name", "max")
+            );
+    Query sizeQuery = new Query().setField("size").setOperator(Operator.EQUALS)
+            .setValue("small");
+    Query speciesQuery = new Query().setField("species")
+            .setOperator(Operator.EQUALS).setValue("cat");
+    Query colorQuery = new Query().setField("color")
+            .setOperator(Operator.EQUALS).setValue("black");
+    QuerySet smallBlackCatQS = new QuerySet().setLeft(sizeQuery)
+            .setOperator(BooleanOperator.AND).setRight(
+                    new QuerySet().setLeft(speciesQuery)
+                    .setOperator(BooleanOperator.AND).setRight(colorQuery));
+    JsonArray resultList = new JsonArray();
+    for(Object ob : thingList) {
+      if(smallBlackCatQS.match((JsonObject)ob)) {
+        resultList.add(ob);
+      }
+    }
+    assertTrue(resultList.size() == 1);
+    assertTrue(resultList.getJsonObject(0).getString("name").equals("hector"));    
+            
   }
 
 }

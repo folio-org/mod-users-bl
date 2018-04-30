@@ -50,6 +50,7 @@ public class TestUtil {
   }
 
   public Future<WrappedResponse> doRequest(Vertx vertx, String url, HttpMethod method, MultiMap headers, String payload) {
+    System.out.println(String.format("Sending %s request to endpoint %s with payload %s\n", method.toString(), url, payload));
     Future<WrappedResponse> future = Future.future();
     boolean addPayLoad = false;
     HttpClient client = vertx.createHttpClient();
