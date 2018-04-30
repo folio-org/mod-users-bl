@@ -70,6 +70,12 @@
       <version>1.7.18</version>
     </dependency>
     <dependency>
+      <groupId>org.z3950.zing</groupId>
+      <artifactId>cql-java</artifactId>
+      <version>1.13</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.5</version>
@@ -408,6 +414,12 @@
       <name>FOLIO Maven repository</name>
       <url>https://repository.folio.org/repository/maven-folio</url>
     </repository>
+    <repository>
+      <id>indexdata</id>
+      <name>Index Data</name>
+      <url>http://maven.indexdata.com/</url>
+    </repository>
+
   </repositories>
 
 </project>

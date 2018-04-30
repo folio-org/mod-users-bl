@@ -6,6 +6,13 @@
 package org.folio.rest;
 
 import io.vertx.core.json.JsonObject;
+import org.z3950.zing.cql.CQLAndNode;
+import org.z3950.zing.cql.CQLBooleanNode;
+import org.z3950.zing.cql.CQLNode;
+import org.z3950.zing.cql.CQLOrNode;
+import org.z3950.zing.cql.CQLParseException;
+import org.z3950.zing.cql.CQLParser;
+import org.z3950.zing.cql.CQLTermNode;
 
 /**
  *
@@ -18,6 +25,54 @@ public class QuerySet {
   private Object right;
   private BooleanOperator operator;
 
+  public static QuerySet fromCQL(String query) throws CQLParseException {
+    CQLParser parser = new CQLParser();
+    CQLNode node = null;
+    QuerySet root = null;
+    try {
+      node = parser.parse(query);
+    } catch(CQLParseException cqlpe) {
+      throw cqlpe;
+    } catch(Exception e) {
+      
+    }
+    populateQuerySet(root, node);
+    return root;
+  }
+  
+  private static QuerySet populateQuerySet(QuerySet querySet, CQLNode node) {
+    if(node instanceof CQLTermNode) {
+      CQLTermNode termNode = (CQLTermNode)node;
+      Query query = new Query();
+      if("==".equals(termNode.getRelation().getBase()) ||
+              "=".equals(termNode.getRelation().getBase())) {
+        query.setOperator(Operator.EQUALS);
+      } else if("<>".equals(termNode.getRelation().getBase())) {
+        query.setOperator(Operator.NOTEQUALS);
+      } else {
+        throw new UnsupportedOperationException("Relation '" 
+                + termNode.getRelation().getBase() + "' is not supported");
+      }
+      query.setField(termNode.getIndex());
+      query.setValue(termNode.getTerm());
+      querySet.setLeft(query);
+      querySet.setRight(Boolean.TRUE);
+      querySet.setOperator(BooleanOperator.AND);
+    } else if(node instanceof CQLBooleanNode) {
+      CQLBooleanNode booleanNode = (CQLBooleanNode)node;
+      if(node instanceof CQLAndNode) {
+        querySet.setOperator(BooleanOperator.AND);
+      } else if(node instanceof CQLOrNode) {
+        querySet.setOperator(BooleanOperator.OR);
+      } else {
+        throw new UnsupportedOperationException("Unsupported Boolean operation: "
+                + node.getClass().getCanonicalName());
+      }
+      querySet.setLeft(populateQuerySet(new QuerySet(), booleanNode.getLeftOperand()));
+      querySet.setRight(populateQuerySet(new QuerySet(), booleanNode.getRightOperand()));
+    }
+    return querySet;
+  }
 
   public QuerySet setLeft(Object ob) {
     this.left = ob;
