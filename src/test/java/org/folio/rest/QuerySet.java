@@ -34,15 +34,23 @@ public class QuerySet {
     } catch(CQLParseException cqlpe) {
       throw cqlpe;
     } catch(Exception e) {
-      
+      throw new UnsupportedOperationException(String.format(
+              "Could not parse query %s: %s", query, e.getLocalizedMessage()));
     }
+    root = new QuerySet();
     populateQuerySet(root, node);
     return root;
   }
+  public String toString() {
+    return String.format("(%s) %s (%s)", this.left.toString(),
+            this.operator.toString(), this.right.toString());
+  }
   
   private static QuerySet populateQuerySet(QuerySet querySet, CQLNode node) {
+    System.out.println("populating queryset");
     if(node instanceof CQLTermNode) {
       CQLTermNode termNode = (CQLTermNode)node;
+      System.out.println("Processing term node\n");
       Query query = new Query();
       if("==".equals(termNode.getRelation().getBase()) ||
               "=".equals(termNode.getRelation().getBase())) {
@@ -60,6 +68,7 @@ public class QuerySet {
       querySet.setOperator(BooleanOperator.AND);
     } else if(node instanceof CQLBooleanNode) {
       CQLBooleanNode booleanNode = (CQLBooleanNode)node;
+      System.out.println("Processing boolean node\n");
       if(node instanceof CQLAndNode) {
         querySet.setOperator(BooleanOperator.AND);
       } else if(node instanceof CQLOrNode) {

@@ -52,4 +52,9 @@ public class Query {
     }
     return false;
   }
+  
+  public String toString() {
+    return String.format("field: '%s', operator: '%s', value: '%s'",
+            field, operator.toString(), value.toString());
+  }
 }
