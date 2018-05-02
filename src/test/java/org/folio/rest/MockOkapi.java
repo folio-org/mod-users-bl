@@ -37,8 +37,10 @@ public class MockOkapi extends AbstractVerticle {
   static final String GROUPS_ENDPOINT = "/groups";
   static final String PROXIES_ENDPOINT = "/proxiesfor";
 
+
+  @Override
   public void start(Future<Void> future) {
-    final int port = context.config().getInteger("port");
+    final int port = context.config().getInteger("http.port");
     Router router = Router.router(vertx);
     HttpServer server = vertx.createHttpServer();
 
