@@ -75,6 +75,12 @@
       <version>3.5</version>
     </dependency>
     <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <version>3.0.7</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.12</version>
@@ -403,12 +409,6 @@
           <systemPropertyVariables>
             <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
           </systemPropertyVariables>
-          <systemProperties>
-            <property>
-              <name>mock.httpclient</name>
-              <value>true</value>
-            </property>
-          </systemProperties>
         </configuration>
       </plugin>
     </plugins>
