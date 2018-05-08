@@ -164,7 +164,8 @@ public class MockOkapiTest {
     Async async = context.async();
     mockOkapiPort = NetworkUtils.nextFreePort();
     DeploymentOptions options = new DeploymentOptions().setConfig(
-            new JsonObject().put("port", mockOkapiPort));
+            new JsonObject().put("http.port", mockOkapiPort));
+
     vertx.deployVerticle(MockOkapi.class.getName(), options, res -> {
       if(res.failed()) {
         context.fail(res.cause());
@@ -227,6 +228,8 @@ public class MockOkapiTest {
               .add("alpha.a"));
     }).compose(w -> {
       return getBLUserList(context);
+    }).compose(w -> {
+      return getSingleBLUser(context, mphillipsId);
     });
     startFuture.setHandler(res -> {
       if(res.succeeded()) {
@@ -405,6 +408,27 @@ public class MockOkapiTest {
     });
     return future;
   }
+  
+  private Future<WrappedResponse> getSingleBLUser(TestContext context, String userId) {
+    Future<WrappedResponse> future = Future.future();
+     String url = String.format("http://localhost:%s/bl-users/by-id/%s",
+             mockUsersBLPort, userId);
+     CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+     headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
+     testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+       if(res.failed()) {
+         future.fail(res.cause());
+       } else {
+         if(res.result().getCode() != 200) {
+           future.fail("Expected 200, got code " + res.result().getCode());
+         } else {
+           future.complete(res.result());
+         }
+       }
+     });
+     return future;
+  }
+  
   
 }
 
