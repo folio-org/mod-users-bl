@@ -108,7 +108,12 @@ public class JsonStoreTest {
   public void test5() {
     Map getByMap = new HashMap<String, String>();
     getByMap.put("name", "thing6");
-    List<JsonObject> jsonList = jsonStore.getCollection(null, 1, getByMap);
+    QuerySet qs = new QuerySet()
+            .setLeft(new Query()
+              .setField("name").setOperator(Operator.EQUALS).setValue("thing6"))
+            .setOperator(BooleanOperator.AND)
+            .setRight(Boolean.TRUE);
+    List<JsonObject> jsonList = jsonStore.getCollection(null, 1, qs);
     JsonObject ob = jsonList.get(0);
     assertNotNull(ob);
     assertTrue(jsonList.size() == 1);

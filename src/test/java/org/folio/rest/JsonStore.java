@@ -21,6 +21,7 @@ public class JsonStore {
     jsonMap = new LinkedHashMap<>();
   }
 
+  /*
   public List<JsonObject> getCollection(Integer offset, Integer limit,
           Map<String, String> getBy) {
     if(offset == null) {
@@ -50,6 +51,35 @@ public class JsonStore {
       }
     }
     return returnList;
+  }
+  */
+  
+  public List<JsonObject> getCollection(Integer offset, Integer limit,
+          QuerySet qs) {
+    if(offset == null) { offset = 0; }
+    if(limit == null) { limit = 30; }
+    List<JsonObject> rawMatchList = new ArrayList<>();
+    List<JsonObject> returnList = new ArrayList<>();
+    Collection<JsonObject> jsonList = jsonMap.values();
+    Iterator<JsonObject> jsonIterator = jsonList.iterator();
+    while(jsonIterator.hasNext()) {
+      JsonObject ob = jsonIterator.next();
+      if(qs == null || qs.match(ob)) {
+        rawMatchList.add(ob);
+      }
+    }
+    Iterator<JsonObject> rawMatchIterator = rawMatchList.iterator();
+    //skip past the offset
+    for(int i=0;i < offset && rawMatchIterator.hasNext(); i++) {
+      rawMatchIterator.next();
+    }
+    
+    while(returnList.size() < limit && rawMatchIterator.hasNext()) {
+      returnList.add(rawMatchIterator.next());
+    }
+    
+    return returnList; 
+        
   }
 
   public JsonObject getItem(String id) {

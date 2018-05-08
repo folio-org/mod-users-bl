@@ -204,6 +204,7 @@ public class MockOkapi extends AbstractVerticle {
     return handleBasicCrud(permsPermissionsStore, "permissions", method, id, url,
             payload, context);
   }
+  
   private MockResponse handleBasicCrud(JsonStore store, String collectionName,
           HttpMethod method, String id, String url, String payload,
           RoutingContext context) {
@@ -386,17 +387,21 @@ public class MockOkapi extends AbstractVerticle {
   }
 
   List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore,
-          RoutingContext context, Map<String, String> filterMap) {
+          RoutingContext context, QuerySet qs) {
     List<JsonObject> result;
     int offset = Integer.parseInt(context.pathParams().getOrDefault("offset", "0"));
     int limit = Integer.parseInt(context.pathParams().getOrDefault("limit", "30"));
-    return jsonStore.getCollection(offset, limit, filterMap);
+    return jsonStore.getCollection(offset, limit, qs);
   }
 
   private JsonObject getPermObject(String permName, JsonStore permStore) {
-    Map<String, String> getBy = new HashMap();
-    getBy.put("permissionName", permName);
-    List<JsonObject> obList = permStore.getCollection(0, 1, getBy);
+    Query query = new Query().setField("permissionName")
+            .setOperator(Operator.EQUALS)
+            .setValue(permName);
+    QuerySet querySet = new QuerySet().setLeft(query)
+            .setOperator(BooleanOperator.AND)
+            .setRight(Boolean.TRUE);
+    List<JsonObject> obList = permStore.getCollection(0, 1, querySet);
     if(obList.isEmpty()) {
       return null;
     }
