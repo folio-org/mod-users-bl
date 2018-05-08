@@ -23,11 +23,11 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class BIUsersAPITest {
+public class BLUsersAPITest {
   Vertx vertx;
   RequestSpecification okapi;
   int okapiPort;
-  /** port of BIUsersAPI */
+  /** port of BLUsersAPI */
   int port;
 
   @Before

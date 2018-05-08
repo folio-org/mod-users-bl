@@ -36,7 +36,7 @@ import io.vertx.core.logging.LoggerFactory;
  * @author shale
  *
  */
-public class BlUsersAPI implements BlUsersResource {
+public class BLUsersAPI implements BlUsersResource {
 
   private static final String CREDENTIALS_INCLUDE = "credentials";
   private static final String GROUPS_INCLUDE = "groups";
@@ -47,7 +47,7 @@ public class BlUsersAPI implements BlUsersResource {
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
   private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   private static String OKAPI_PERMISSIONS_HEADER = "X-Okapi-Permissions";
-  private final Logger logger = LoggerFactory.getLogger(BlUsersAPI.class);
+  private final Logger logger = LoggerFactory.getLogger(BLUsersAPI.class);
 
   private List<String> getDefaultIncludes(){
     List<String> defaultIncludes = new ArrayList<>();
