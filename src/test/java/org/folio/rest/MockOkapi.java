@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.z3950.zing.cql.CQLParseException;
 
 /**
  *
@@ -99,32 +100,41 @@ public class MockOkapi extends AbstractVerticle {
         continue;
       }
     }
-    switch(activeEndpoint) {
-      case USERS_ENDPOINT:
-        mockResponse = handleUsers(method, id, remainder,
-                context.getBodyAsString(), context);
-        break;
-      case PERMS_USERS_ENDPOINT:
-        mockResponse = handlePermsUsers(method, id, remainder,
-                context.getBodyAsString(), context);
-        break;
-      case PERMS_PERMISSIONS_ENDPOINT:
-        mockResponse = handlePermsPermissions(method, id, remainder,
-                context.getBodyAsString(), context);
-        break;
-      case GROUPS_ENDPOINT:
-        mockResponse = handleGroups(method, id, remainder,
-                context.getBodyAsString(), context);
-        break;
-      case PROXIES_ENDPOINT:
-        mockResponse = handleProxies(method, id, remainder,
-                context.getBodyAsString(), context);
-        break;
-      default:
-        break;      
+    try {
+      switch(activeEndpoint) {
+        case USERS_ENDPOINT:
+          mockResponse = handleUsers(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case PERMS_USERS_ENDPOINT:
+          mockResponse = handlePermsUsers(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case PERMS_PERMISSIONS_ENDPOINT:
+          mockResponse = handlePermsPermissions(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case GROUPS_ENDPOINT:
+          mockResponse = handleGroups(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case PROXIES_ENDPOINT:
+          mockResponse = handleProxies(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        default:
+          break;      
+      }
+    } catch(Exception e) {
+      context.fail(e);
+      return;
     }
 
+    
     if(mockResponse != null) {
+      System.out.println(String.format("Got mockResponse, code: %s, content: %s",
+            mockResponse.getCode(), mockResponse.getContent()));
+      
       context.response()
               .setStatusCode(mockResponse.getCode())
               .end(mockResponse.getContent());
@@ -136,7 +146,7 @@ public class MockOkapi extends AbstractVerticle {
   }
 
   private MockResponse handleUsers(HttpMethod method, String id, String url,
-          String payload, RoutingContext context) {
+          String payload, RoutingContext context) throws CQLParseException {
     int code = 200;
     String response = "";
     if(method == GET) {
@@ -151,7 +161,7 @@ public class MockOkapi extends AbstractVerticle {
         }
       } else {
         List<JsonObject> responseList = getCollectionWithContextParams(userStore,
-                context, null);
+                context);
         JsonObject responseObject = wrapCollection(responseList, "users");
         response = responseObject.encode();
       }
@@ -190,32 +200,32 @@ public class MockOkapi extends AbstractVerticle {
   }
   
   private MockResponse handleGroups(HttpMethod method, String id, String url,
-          String payload, RoutingContext context) {
+          String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(groupsStore, "usergroups", method, id, url, payload,
             context);
   }
   
   private MockResponse handleProxies(HttpMethod method, String id, String url,
-          String payload, RoutingContext context) {
+          String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(proxiesStore, "proxiesFor", method, id, url, payload,
             context);
   }
   
   private MockResponse handlePermsPermissions(HttpMethod method, String id, String url,
-          String payload, RoutingContext context) {
+          String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(permsPermissionsStore, "permissions", method, id, url,
             payload, context);
   }
   
   private MockResponse handleBasicCrud(JsonStore store, String collectionName,
           HttpMethod method, String id, String url, String payload,
-          RoutingContext context) {
+          RoutingContext context) throws CQLParseException {
     int code = 200;
     String response = null;
     if(method == GET) {
       if(id == null) { //Get collection
         List<JsonObject> responseList = getCollectionWithContextParams(
-                store, context, null);
+                store, context);
         JsonObject responseObject = wrapCollection(responseList, collectionName);
         response = responseObject.encode();
       } else { //Get individual permission
@@ -263,7 +273,7 @@ public class MockOkapi extends AbstractVerticle {
   }
 
   private MockResponse handlePermsUsers(HttpMethod method, String id, String url,
-          String payload, RoutingContext context) {
+          String payload, RoutingContext context) throws CQLParseException {
     System.out.println(String.format("Calling handlePermsUsers with id '%s' and url '%s'\n",
             id, url));
     int code = 200;
@@ -271,8 +281,9 @@ public class MockOkapi extends AbstractVerticle {
     if(method == GET) {
       if(id == null) {
         System.out.println("Getting a list of permissions users\n");
-        //Get list of perm users
-        List<JsonObject> userList = getCollectionWithContextParams(permsUsersStore, context, null);
+        //Get list of perm users        
+        List<JsonObject> userList = getCollectionWithContextParams(
+                permsUsersStore, context);
         JsonObject responseObject = wrapCollection(userList, "permissionUsers");
         response = responseObject.encode();
       } else {
@@ -389,11 +400,33 @@ public class MockOkapi extends AbstractVerticle {
   }
 
   List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore,
-          RoutingContext context, QuerySet qs) {
+          RoutingContext context) throws CQLParseException {
     List<JsonObject> result;
-    int offset = Integer.parseInt(context.pathParams().getOrDefault("offset", "0"));
-    int limit = Integer.parseInt(context.pathParams().getOrDefault("limit", "30"));
+    String query = context.request().params().get("query");
+    int offset = Integer.parseInt(getParamDefault(context, "offset", "0"));
+    int limit = Integer.parseInt(getParamDefault(context, "limit", "30"));
+    System.out.println(String.format("Params for request: query: %s, offset %s, limit %s",
+            query, offset, limit));
+    QuerySet qs = null;
+    if(query != null) {
+      qs = QuerySet.fromCQL(query);
+    }
     return jsonStore.getCollection(offset, limit, qs);
+  }
+  
+  private String getParamDefault(RoutingContext context, String param, String defaultValue) {
+    String result = null;
+    try {
+      result = context.request().params().get(param);
+    } catch(Exception e) {
+      System.out.println(
+              String.format("Unable to get param %s: %s", param,
+              e.getLocalizedMessage()));
+    }
+    if(result == null) {
+      return defaultValue;
+    }
+    return result;
   }
 
   private JsonObject getPermObject(String permName, JsonStore permStore) {
@@ -410,7 +443,7 @@ public class MockOkapi extends AbstractVerticle {
     return obList.get(0);
   }
   
-  private Matcher parseMockUri(String uri, String endpoint) {
+  protected static Matcher parseMockUri(String uri, String endpoint) {
     Pattern pattern = Pattern.compile(
             //"([a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+(\\/.+)?)?");
             "\\/([a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+)(.+)?");

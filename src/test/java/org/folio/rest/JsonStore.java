@@ -58,6 +58,9 @@ public class JsonStore {
           QuerySet qs) {
     if(offset == null) { offset = 0; }
     if(limit == null) { limit = 30; }
+    System.out.println(String.format(
+            "Calling getCollection on JsonStore with parameters offset: %s, limit %s, qs %s",
+            offset, limit, qs));
     List<JsonObject> rawMatchList = new ArrayList<>();
     List<JsonObject> returnList = new ArrayList<>();
     Collection<JsonObject> jsonList = jsonMap.values();

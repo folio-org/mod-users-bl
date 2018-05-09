@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import org.folio.rest.TestUtil.WrappedResponse;
 import org.folio.rest.client.TenantClient;
 import org.folio.rest.tools.client.test.HttpClientMock2;
@@ -202,6 +203,21 @@ public class MockOkapiTest {
   public void afterTest(TestContext context) {
     context.async().complete();
   }
+  
+  @Test
+  public void testMatcher(TestContext context) {
+    String uri = "/perms/users/223d60af-a137-41e8-90d8-20c8a5991639/permissions";
+    String endpoint = "/perms/users";
+    Matcher matcher = MockOkapi.parseMockUri(uri, endpoint);
+    if(!matcher.matches()) { context.fail("No matches for uri"); }
+    else if(matcher.group(1) == null) {
+      context.fail(String.format("id from uri %s is null", uri));
+    } else if(matcher.group(2) == null) {
+      context.fail(String.format("No remainder for uri %s", uri));
+    } else {
+      context.async().complete();
+    }
+ }
 
   @Test
   public void doSequentialTests(TestContext context) {
@@ -226,7 +242,11 @@ public class MockOkapiTest {
               .add("gamma.a")
               .add("beta.b")
               .add("alpha.a"));
-    }).compose(w -> {
+    })
+      .compose(w -> {
+      return getUserByQuery(context, "bfrederi");
+    })
+      .compose(w -> {
       return getBLUserList(context);
     }).compose(w -> {
       return getSingleBLUser(context, mphillipsId);
@@ -429,7 +449,32 @@ public class MockOkapiTest {
      return future;
   }
   
-  
+  private Future<WrappedResponse> getUserByQuery(TestContext context, String username) {
+    Future<WrappedResponse> future = Future.future();
+    String url = String.format("http://localhost:%s/users?query=username==%s",
+            mockOkapiPort, username);
+    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
+      if(res.failed()) {
+        future.fail(res.cause()); 
+      } else {
+        if(res.result().getCode() != 200) {
+          future.fail(String.format("Expected code 200, got %s: %s", 
+                  res.result().getCode(), res.result().getBody()));
+        } else {
+          if(res.result().getJson().getInteger("totalResults") != 1) {
+            future.fail(String.format("Expected 1 result, got %s",
+                    res.result().getJson().getInteger("totalResults")));
+          } else if(!res.result().getJson().getJsonArray("users")
+                  .getJsonObject(0).getString("username").equals(username)) {
+            future.fail(String.format("Username does not equal %s", username));
+          } else {
+            future.complete(res.result());
+          }
+        }
+      }
+    });
+    return future;
+  }  
 }
 
 
