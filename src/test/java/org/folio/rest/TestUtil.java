@@ -97,7 +97,12 @@ public class TestUtil {
           System.out.println(String.format(
                   "WrappedResponse Future for request at url %s is completed", url));
         } catch(Exception e) {
-          future.fail(e);
+          if(!future.tryFail(e)) {
+            System.out.println(String.format(
+                    "Got exception %s, but future already complete: %s",
+                    e, e.getLocalizedMessage()));
+            e.printStackTrace();
+          }
         }
       });
     });

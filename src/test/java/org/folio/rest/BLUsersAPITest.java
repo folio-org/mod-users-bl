@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.folio.rest.tools.client.test.HttpClientMock2;
 
 @RunWith(VertxUnitRunner.class)
 public class BLUsersAPITest {
@@ -44,7 +45,7 @@ public class BLUsersAPITest {
 
     port = NetworkUtils.nextFreePort();
     DeploymentOptions options = new DeploymentOptions()
-        .setConfig(new JsonObject().put("http.port", port));
+        .setConfig(new JsonObject().put("http.port", port).putNull(HttpClientMock2.MOCK_MODE));
     vertx.deployVerticle(RestVerticle.class.getName(), options, context.asyncAssertSuccess());
 
     RestAssured.port = port;
@@ -65,19 +66,20 @@ public class BLUsersAPITest {
   }
 
   private void insertData() {
+    String userId = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
     JsonObject userPost = new JsonObject()
         .put("username", "maxi")
-        .put("id", "0bb4f26d-e073-4f93-afbc-dcc24fd88810")
+        .put("id", userId)
         .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
         .put("active", true);
-    given().body(userPost).
+    given().body(userPost.encode()).
     when().post("http://localhost:" + okapiPort + "/users").
     then().statusCode(201);
 
     JsonObject groupPost = new JsonObject().put("group", "staff")
         .put("desc", "people running the library")
         .put("id", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d");
-    given().body(groupPost).
+    given().body(groupPost.encode()).
     when().post("http://localhost:" + okapiPort + "/groups").
     then().statusCode(201);
 
@@ -86,10 +88,13 @@ public class BLUsersAPITest {
         put("displayName", "Check in: All permissions").
         put("id", "604a6236-1c9d-4681-ace1-a0dd1bba5058");
     JsonObject permsUsersPost = new JsonObject()
-        .put("permissionNames", new JsonArray().add(permission));
-    given().body(permsUsersPost).
+        .put("permissions", new JsonArray().add(permission))
+        .put("userId", userId);
+    given().body(permsUsersPost.encode()).
     when().post("http://localhost:" + okapiPort + "/perms/users").
     then().statusCode(201);
+    
+
   }
 
   @After
@@ -100,11 +105,11 @@ public class BLUsersAPITest {
   @Test
   public void getBlUsers(TestContext context) {
     given().
-            spec(okapi).
+            spec(okapi).port(port).
     when().
             get("/bl-users").
     then().
             statusCode(200).
-            body("compositeUsers[0].users.map.username", equalTo("maxi"));
+            body("compositeUsers[0].users.username", equalTo("maxi"));
   }
 }

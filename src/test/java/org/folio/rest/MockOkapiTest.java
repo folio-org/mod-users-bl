@@ -175,7 +175,7 @@ public class MockOkapiTest {
         DeploymentOptions usersBLOptions = new DeploymentOptions()
                 .setConfig(new JsonObject()
                         .put("http.port", mockUsersBLPort)
-                        .put(HttpClientMock2.MOCK_MODE, "false")
+                        .putNull(HttpClientMock2.MOCK_MODE)
                 );
         vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions, 
                 res2 -> {
@@ -461,9 +461,11 @@ public class MockOkapiTest {
           future.fail(String.format("Expected code 200, got %s: %s", 
                   res.result().getCode(), res.result().getBody()));
         } else {
-          if(res.result().getJson().getInteger("totalResults") != 1) {
+          if(res.result().getJson() == null) {
+            future.fail(String.format("%s returned null json", res.result().getBody()));
+          } else if(res.result().getJson().getInteger("totalRecords") != 1) {
             future.fail(String.format("Expected 1 result, got %s",
-                    res.result().getJson().getInteger("totalResults")));
+                    res.result().getJson().getInteger("totalRecords")));
           } else if(!res.result().getJson().getJsonArray("users")
                   .getJsonObject(0).getString("username").equals(username)) {
             future.fail(String.format("Username does not equal %s", username));
