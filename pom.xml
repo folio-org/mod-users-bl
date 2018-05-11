@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>2.2.1-SNAPSHOT</version>
+  <version>2.2.2-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -70,6 +70,12 @@
       <version>1.7.18</version>
     </dependency>
     <dependency>
+      <groupId>org.z3950.zing</groupId>
+      <artifactId>cql-java</artifactId>
+      <version>1.13</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.5</version>
@@ -89,7 +95,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
-      <version>3.4.0</version>
+      <version>3.5.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -418,7 +424,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <raml-module-builder.version>19.0.0</raml-module-builder.version>
+    <raml-module-builder.version>19.1.0</raml-module-builder.version>
     <ramlfiles_path>${basedir}/raml/ramls/mod-users-bl</ramlfiles_path>
     <ramlfiles_util_path>${basedir}/raml</ramlfiles_util_path>
     <postgresrunner.port>5434</postgresrunner.port>
@@ -431,6 +437,12 @@
       <name>FOLIO Maven repository</name>
       <url>https://repository.folio.org/repository/maven-folio</url>
     </repository>
+    <repository>
+      <id>indexdata</id>
+      <name>Index Data</name>
+      <url>http://maven.indexdata.com/</url>
+    </repository>
+
   </repositories>
 
 </project>

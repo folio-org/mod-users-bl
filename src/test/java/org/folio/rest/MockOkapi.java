@@ -2,6 +2,11 @@ package org.folio.rest;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.http.HttpMethod;
+import static io.vertx.core.http.HttpMethod.DELETE;
+import static io.vertx.core.http.HttpMethod.GET;
+import static io.vertx.core.http.HttpMethod.POST;
+import static io.vertx.core.http.HttpMethod.PUT;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -12,6 +17,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.z3950.zing.cql.CQLParseException;
 
 /**
  *
@@ -22,6 +30,14 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore permsUsersStore;
   private JsonStore permsPermissionsStore;
   private JsonStore groupsStore;
+  private JsonStore proxiesStore;
+  
+  static final String USERS_ENDPOINT = "/users";
+  static final String PERMS_USERS_ENDPOINT = "/perms/users";
+  static final String PERMS_PERMISSIONS_ENDPOINT = "/perms/permissions";
+  static final String GROUPS_ENDPOINT = "/groups";
+  static final String PROXIES_ENDPOINT = "/proxiesfor";
+
 
   @Override
   public void start(Future<Void> future) {
@@ -46,39 +62,96 @@ public class MockOkapi extends AbstractVerticle {
   public MockOkapi() {
     userStore = new JsonStore();
     permsUsersStore = new JsonStore();
+    permsPermissionsStore = new JsonStore();
     groupsStore = new JsonStore();
+    proxiesStore = new JsonStore();
   }
 
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
-    if(context.request().uri().startsWith("/users")) {
-      mockResponse = handleUsers(context.request().rawMethod(),
-              context.request().uri(), context.getBodyAsString(), context);
-    } else if(context.request().uri().startsWith("/perms/users")) {
-      mockResponse = handlePermUsers(context.request().rawMethod(),
-              context.request().uri(), context.getBodyAsString(), context);
-    } else if(context.request().uri().startsWith("/groups")) {
-      mockResponse = handleGroups(context.request().rawMethod(),
-              context.getBodyAsString(), context);
-    } else {
-      context.response()
-              .setStatusCode(400)
-              .end("Endpoint " + context.request().uri() + " not supported");
+    
+    String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT, 
+      PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT};
+    String uri = context.request().path();
+    Matcher matcher;
+    String id = null;
+    String remainder = null;
+    String activeEndpoint = null;
+    HttpMethod method = context.request().method();
+    for(String endpoint : endpoints) {
+      if(uri.startsWith(endpoint)) {
+        matcher = parseMockUri(uri, endpoint);
+        if(matcher.matches()) {
+          if(matcher.group(1) != null) {
+            id = matcher.group(1);
+            System.out.println("Found id " + id + "\n");
+          }
+          if(matcher.group(2) != null) {
+            remainder = matcher.group(2);
+            System.out.println("Remainder of url is: " + remainder + "\n");
+          }
+        } else {
+          System.out.println(String.format(
+                  "No match found for uri %s and endpoint %s", uri, endpoint));
+        }
+        activeEndpoint = endpoint;
+        break;
+      } else {
+        continue;
+      }
     }
+    try {
+      switch(activeEndpoint) {
+        case USERS_ENDPOINT:
+          mockResponse = handleUsers(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case PERMS_USERS_ENDPOINT:
+          mockResponse = handlePermsUsers(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case PERMS_PERMISSIONS_ENDPOINT:
+          mockResponse = handlePermsPermissions(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case GROUPS_ENDPOINT:
+          mockResponse = handleGroups(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        case PROXIES_ENDPOINT:
+          mockResponse = handleProxies(method, id, remainder,
+                  context.getBodyAsString(), context);
+          break;
+        default:
+          break;      
+      }
+    } catch(Exception e) {
+      context.fail(e);
+      return;
+    }
+
+    
     if(mockResponse != null) {
+      System.out.println(String.format("Got mockResponse, code: %s, content: %s",
+            mockResponse.getCode(), mockResponse.getContent()));
+      
       context.response()
               .setStatusCode(mockResponse.getCode())
               .end(mockResponse.getContent());
+    } else {
+      context.response()
+              .setStatusCode(400)
+              .end("No such endpoint defined");
     }
   }
 
-  private MockResponse handleUsers(String verb, String url, String payload, RoutingContext context) {
+  private MockResponse handleUsers(HttpMethod method, String id, String url,
+          String payload, RoutingContext context) throws CQLParseException {
     int code = 200;
     String response = "";
-    if(verb.toUpperCase().equals("GET")) {
-      String userId = context.pathParam("userId");
-      if(userId != null) {
-        JsonObject item = userStore.getItem(userId);
+    if(method == GET) {
+      if(id != null) {
+        JsonObject item = userStore.getItem(id);
         if(item == null) {
           code = 404;
           response = "Not found";
@@ -87,13 +160,13 @@ public class MockOkapi extends AbstractVerticle {
           response = item.encode();
         }
       } else {
-        List<JsonObject> responseList = getCollectionWithContextParams(userStore, context, null);
+        List<JsonObject> responseList = getCollectionWithContextParams(userStore,
+                context);
         JsonObject responseObject = wrapCollection(responseList, "users");
         response = responseObject.encode();
       }
-    } else if(verb.toUpperCase().equals("PUT")) {
-      String userId = context.pathParam("userId");
-      boolean success = userStore.updateItem(userId, new JsonObject(payload));
+    } else if(method == PUT) {
+      boolean success = userStore.updateItem(id, new JsonObject(payload));
       if(success) {
         code = 204;
         response = "";
@@ -101,18 +174,20 @@ public class MockOkapi extends AbstractVerticle {
         code = 404;
         response = "Not found";
       }
-    } else if(verb.toUpperCase().equals("POST")) {
-      JsonObject ob = userStore.addItem(null, new JsonObject(payload));
-      if(ob == null) {
+    } else if(method == POST) {
+      JsonObject ob = null;
+      try {
+        ob = userStore.addItem(null, new JsonObject(payload));
+      } catch(Exception e) {
         code = 422;
-        response = "Unable to add object";
-      } else {
+        response = "Unable to add object: " + e.getLocalizedMessage();
+      } 
+      if(ob != null) {
         code = 201;
         response = ob.encode();
       }
-    } else if(verb.toUpperCase().equals("DELETE")) {
-      String userId = context.pathParam("userId");
-      boolean success = userStore.deleteItem(userId);
+    } else if(method == DELETE) {
+      boolean success = userStore.deleteItem(id);
       if(success) {
         code = 204;
         response = "";
@@ -123,21 +198,97 @@ public class MockOkapi extends AbstractVerticle {
     }
     return new MockResponse(code, response);
   }
-
-  private MockResponse handlePermUsers(String verb, String url, String payload,
-          RoutingContext context) {
-    verb = verb.toUpperCase();
+  
+  private MockResponse handleGroups(HttpMethod method, String id, String url,
+          String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(groupsStore, "usergroups", method, id, url, payload,
+            context);
+  }
+  
+  private MockResponse handleProxies(HttpMethod method, String id, String url,
+          String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(proxiesStore, "proxiesFor", method, id, url, payload,
+            context);
+  }
+  
+  private MockResponse handlePermsPermissions(HttpMethod method, String id, String url,
+          String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(permsPermissionsStore, "permissions", method, id, url,
+            payload, context);
+  }
+  
+  private MockResponse handleBasicCrud(JsonStore store, String collectionName,
+          HttpMethod method, String id, String url, String payload,
+          RoutingContext context) throws CQLParseException {
     int code = 200;
     String response = null;
-    if(verb.equals("GET")) {
-      String id = context.pathParam("id");
+    if(method == GET) {
+      if(id == null) { //Get collection
+        List<JsonObject> responseList = getCollectionWithContextParams(
+                store, context);
+        JsonObject responseObject = wrapCollection(responseList, collectionName);
+        response = responseObject.encode();
+      } else { //Get individual permission
+        JsonObject item = store.getItem(id);
+        if(item == null) {
+          code = 404;
+          response = "Item id '" + id + "' not found";
+        } else {
+          code = 200;
+          response = item.encode();
+        }
+      }
+    } else if(method == PUT) {
+      boolean success = store.updateItem(id, new JsonObject(payload));
+      if(success) {
+        code = 204;
+        response = "";
+      } else {
+        code = 404;
+        response = "Not found";
+      }
+    } else if(method == POST) {
+      JsonObject ob = null;
+      try {
+        ob = store.addItem(null, new JsonObject(payload));
+      } catch(Exception e) {
+        code = 422;
+        response = "Unable to add item: " + e.getLocalizedMessage();
+      }
+      if(ob != null) {
+        code = 201;
+        response = ob.encode();
+      }
+    } else if(method == DELETE) {
+      boolean success = store.deleteItem(id);
+      if(success) {
+        code = 204;
+        response = "";
+      } else {
+        code = 404;
+        response = "Not found";
+      }
+    } 
+    return new MockResponse(code, response);
+  }
+
+  private MockResponse handlePermsUsers(HttpMethod method, String id, String url,
+          String payload, RoutingContext context) throws CQLParseException {
+    System.out.println(String.format("Calling handlePermsUsers with id '%s' and url '%s'\n",
+            id, url));
+    int code = 200;
+    String response = null;
+    if(method == GET) {
       if(id == null) {
-        //Get list of perm users
-        List<JsonObject> userList = getCollectionWithContextParams(permsUsersStore, context, null);
+        System.out.println("Getting a list of permissions users\n");
+        //Get list of perm users        
+        List<JsonObject> userList = getCollectionWithContextParams(
+                permsUsersStore, context);
         JsonObject responseObject = wrapCollection(userList, "permissionUsers");
         response = responseObject.encode();
       } else {
-        if(!url.endsWith("permissions")) {
+        if(!url.contains("/permissions")) {
+          System.out.println("Getting a single perm user\n");
           //Get a single perm user
           JsonObject item = permsUsersStore.getItem(id);
           if(item == null) {
@@ -148,47 +299,57 @@ public class MockOkapi extends AbstractVerticle {
           }
         } else {
           //Get a single perm user's permissions
+          System.out.println("Getting permissions for perm user " + id + "\n");
           JsonObject item = permsUsersStore.getItem(id);
-          String full = context.pathParam("full");
-          String expanded = context.pathParam("expanded");
+          String full = context.request().getParam("full");
+          String expanded = context.request().getParam("expanded");
           JsonArray permissions = item.getJsonArray("permissions");
           JsonObject permNameListObject = new JsonObject();
           code = 200;
-          if(!expanded.equals("true") && !full.equals("true")) {
-            permNameListObject.put("permissionName", permissions);
+          if( (expanded == null || !expanded.equals("true")) && (full == null ||
+                  !full.equals("true")) ) {
+            System.out.println("Getting unmodified permission list\n");
+            permNameListObject.put("permissionNames", permissions);
             permNameListObject.put("totalRecords", permissions.size());
-          } else if(!expanded.equals("true")) {
+          } else if(expanded == null || !expanded.equals("true")) {
             //full only
+            System.out.println("Getting full permission list\n");
             makeFullPerms(permissions, permsPermissionsStore);
-            permNameListObject.put("permissionName", permissions);
+            permNameListObject.put("permissionNames", permissions);
             permNameListObject.put("totalRecords", permissions.size());
-          } else if(!full.equals("true")) {
+          } else if(full == null || !full.equals("true")) {
             //expanded only
-            JsonArray expandedPerms = recursePermList(permissions, permsPermissionsStore);
-            permNameListObject.put("permissionName", expandedPerms);
+            System.out.println("Getting expanded permission list\n");
+            JsonArray expandedPerms = recursePermList(permissions,
+                    permsPermissionsStore);
+            permNameListObject.put("permissionNames", expandedPerms);
             permNameListObject.put("totalRecords", expandedPerms.size());
           } else {
             //full and expanded
-            JsonArray expandedPerms = recursePermList(permissions, permsPermissionsStore);
+            System.out.println("Getting recursive AND expanded permission list\n");
+            JsonArray expandedPerms = recursePermList(permissions,
+                    permsPermissionsStore);
             makeFullPerms(expandedPerms, permsPermissionsStore);
-            permNameListObject.put("permissionName", expandedPerms);
+            permNameListObject.put("permissionNames", expandedPerms);
             permNameListObject.put("totalRecords", expandedPerms.size());
           }
           response = permNameListObject.encode();
         }
       }
-    } else if(verb.equals("POST")) {
+    } else if(method == POST) {
       //Create a new perm user
-      JsonObject ob = permsUsersStore.addItem(null, new JsonObject(payload));
-      if(ob == null) {
+      JsonObject ob = null;
+      try {
+        ob = permsUsersStore.addItem(null, new JsonObject(payload));
+      } catch(Exception e) {
         code = 422;
-        response = "Unable to add object";
-      } else {
+        response = "Unable to add object: " + e.getLocalizedMessage();
+      }
+      if(ob != null) {
         code = 201;
         response = ob.encode();
       }
-    } else if(verb.equals("PUT")) {
-      String id = context.pathParam("id");
+    } else if(method == PUT) {
       if(id == null) {
         code = 400;
         response = "No identifier provided";
@@ -203,8 +364,7 @@ public class MockOkapi extends AbstractVerticle {
           response = "Not found";
         }
       }
-    } else if(verb.equals("DELETE")) {
-      String id = context.pathParam("id");
+    } else if(method == DELETE) {
       if(id == null) {
         //Error, no id
         code = 400;
@@ -228,58 +388,6 @@ public class MockOkapi extends AbstractVerticle {
     return new MockResponse(code, response);
   }
 
-  private MockResponse handleGroups(String verb, String payload, RoutingContext context) {
-    int code = 200;
-    String response = "";
-    switch (verb.toUpperCase()) {
-    case "GET":
-      List<JsonObject> responseList = getCollectionWithContextParams(groupsStore, context, null);
-      JsonObject responseObject = wrapCollection(responseList, "groups");
-      response = responseObject.encode();
-      break;
-    case "PUT":
-      {
-        String groupId = context.pathParam("groupId");
-        boolean success = groupsStore.updateItem(groupId, new JsonObject(payload));
-        if(success) {
-          code = 204;
-          response = "";
-        } else {
-          code = 404;
-          response = "Not found";
-        }
-      }
-      break;
-    case "POST":
-      JsonObject ob = groupsStore.addItem(null, new JsonObject(payload));
-      if(ob == null) {
-        code = 422;
-        response = "Unable to add object";
-      } else {
-        code = 201;
-        response = ob.encode();
-      }
-      break;
-    case "DELETE":
-      {
-        String groupId = context.pathParam("groupId");
-        boolean ok = groupsStore.deleteItem(groupId);
-        if (ok) {
-          code = 204;
-          response = "";
-        } else {
-          code = 404;
-          response = "Not found";
-        }
-      }
-      break;
-    default:
-      code = 500;
-      response = "Request type not supported: " + verb;
-    }
-    return new MockResponse(code, response);
-  }
-
   private JsonObject wrapCollection(List<JsonObject> obList, String collectionName) {
     JsonObject result = new JsonObject();
     JsonArray obArray = new JsonArray();
@@ -291,21 +399,57 @@ public class MockOkapi extends AbstractVerticle {
     return result;
   }
 
-  List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore, RoutingContext context, Map<String, String> filterMap) {
+  List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore,
+          RoutingContext context) throws CQLParseException {
     List<JsonObject> result;
-    int offset = Integer.parseInt(context.pathParams().getOrDefault("offset", "0"));
-    int limit = Integer.parseInt(context.pathParams().getOrDefault("limit", "30"));
-    return jsonStore.getCollection(offset, limit, filterMap);
+    String query = context.request().params().get("query");
+    int offset = Integer.parseInt(getParamDefault(context, "offset", "0"));
+    int limit = Integer.parseInt(getParamDefault(context, "limit", "30"));
+    System.out.println(String.format("Params for request: query: %s, offset %s, limit %s",
+            query, offset, limit));
+    QuerySet qs = null;
+    if(query != null) {
+      qs = QuerySet.fromCQL(query);
+    }
+    return jsonStore.getCollection(offset, limit, qs);
+  }
+  
+  private String getParamDefault(RoutingContext context, String param, String defaultValue) {
+    String result = null;
+    try {
+      result = context.request().params().get(param);
+    } catch(Exception e) {
+      System.out.println(
+              String.format("Unable to get param %s: %s", param,
+              e.getLocalizedMessage()));
+    }
+    if(result == null) {
+      return defaultValue;
+    }
+    return result;
   }
 
   private JsonObject getPermObject(String permName, JsonStore permStore) {
-    Map<String, String> getBy = new HashMap();
-    getBy.put("permissionName", permName);
-    List<JsonObject> obList = permStore.getCollection(0, 1, getBy);
+    Query query = new Query().setField("permissionName")
+            .setOperator(Operator.EQUALS)
+            .setValue(permName);
+    QuerySet querySet = new QuerySet().setLeft(query)
+            .setOperator(BooleanOperator.AND)
+            .setRight(Boolean.TRUE);
+    List<JsonObject> obList = permStore.getCollection(0, 1, querySet);
     if(obList.isEmpty()) {
       return null;
     }
     return obList.get(0);
+  }
+  
+  protected static Matcher parseMockUri(String uri, String endpoint) {
+    Pattern pattern = Pattern.compile(
+            //"([a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+(\\/.+)?)?");
+            "\\/([a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+)(.+)?");
+    String remainder = uri.substring(endpoint.length());
+    Matcher matcher = pattern.matcher(remainder);
+    return matcher;
   }
 
   private void makeFullPerms(JsonArray permList, JsonStore permStore) {

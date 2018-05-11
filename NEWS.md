@@ -1,4 +1,9 @@
-## Not yet released
+## 2.2.2 2018-05-11
+ * Upgrade to raml-module-builder 19.1.0
+ * Expand testing infrastructure to allow for more comprehensive unit tests to be written
+ * Correct template bug for retrieving expanded permissions
+
+## 2.2.1
  * Update shared raml to ensure consistent schema declarations in RAML
 
 ## 2.0.3 2018-01-15

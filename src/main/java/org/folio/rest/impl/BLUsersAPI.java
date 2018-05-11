@@ -36,7 +36,7 @@ import io.vertx.core.logging.LoggerFactory;
  * @author shale
  *
  */
-public class BlUsersAPI implements BlUsersResource {
+public class BLUsersAPI implements BlUsersResource {
 
   private static final String CREDENTIALS_INCLUDE = "credentials";
   private static final String GROUPS_INCLUDE = "groups";
@@ -47,7 +47,7 @@ public class BlUsersAPI implements BlUsersResource {
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
   private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   private static String OKAPI_PERMISSIONS_HEADER = "X-Okapi-Permissions";
-  private final Logger logger = LoggerFactory.getLogger(BlUsersAPI.class);
+  private final Logger logger = LoggerFactory.getLogger(BLUsersAPI.class);
 
   private List<String> getDefaultIncludes(){
     List<String> defaultIncludes = new ArrayList<>();
@@ -169,9 +169,10 @@ public class BlUsersAPI implements BlUsersResource {
     run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler, vertxContext);
   }
 
-  private void run(String userid, String username, Boolean expandPerms, List<String> include,
-      Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-      Context vertxContext) throws Exception {
+  private void run(String userid, String username, Boolean expandPerms,
+          List<String> include, Map<String, String> okapiHeaders, 
+          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+          Context vertxContext) throws Exception {
 
     //works on single user, no joins needed , just aggregate
 
@@ -201,7 +202,7 @@ public class BlUsersAPI implements BlUsersResource {
       mode[0] = "id";
     }
     else if(username != null){
-      userUrl.append("?query=username=").append(username);
+      userUrl.append("?query=username==").append(username);
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
       userTemplate = "{users[0].id}";
       groupTemplate = "{users[0].patronGroup}";
@@ -211,6 +212,7 @@ public class BlUsersAPI implements BlUsersResource {
     int includeCount = include.size();
     ArrayList<CompletableFuture<Response>> requestedIncludes = new ArrayList<>();
     Map<String, CompletableFuture<Response>> completedLookup = new HashMap<>();
+    logger.info(String.format("Received includes: %s", String.join(",", include)));
 
     for (int i = 0; i < includeCount; i++) {
 
@@ -225,8 +227,9 @@ public class BlUsersAPI implements BlUsersResource {
       else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
         //call perms once the /users?query=username={username} (same as creds) completes
         CompletableFuture<Response> permResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/perms/users?query=userId=="+userTemplate, okapiHeaders, null,
-                handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
+              client.chainedRequest("/perms/users?query=userId=="+userTemplate,
+              okapiHeaders, null, handlePreviousResponse(true, false, true,
+              aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(permResponse);
         completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
       }
@@ -247,8 +250,9 @@ public class BlUsersAPI implements BlUsersResource {
       }
     }
     if(expandPerms != null && expandPerms && completedLookup.containsKey(PERMISSIONS_INCLUDE)) {
+      logger.info("Getting expanded permissions");
       CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE).thenCompose(
-              client.chainedRequest("/perms/users/{id}/permissions?expanded=true&full=true",
+              client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true",
                       okapiHeaders, true, null,
                       handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
       requestedIncludes.add(expandPermsResponse);
@@ -524,7 +528,7 @@ public class BlUsersAPI implements BlUsersResource {
     String username = payload.getString("sub");
     return username;
   }
-
+  
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if(tokenParts.length == 3) {
@@ -538,8 +542,10 @@ public class BlUsersAPI implements BlUsersResource {
   }
 
   @Override
-  public void getBlUsersSelf(List<String> include, Boolean expandPerms, Map<String, String> okapiHeaders,
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext)
+  public void getBlUsersSelf(List<String> include, Boolean expandPerms,
+          Map<String, String> okapiHeaders, 
+          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, 
+          Context vertxContext)
       throws Exception {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);

@@ -18,7 +18,7 @@ public class TestUtil {
   class WrappedResponse {
     private int code;
     private String body;
-    private JsonObject json;
+    private JsonObject json = null;
     private HttpClientResponse response;
 
     public WrappedResponse(int code, String body, HttpClientResponse response) {
@@ -30,6 +30,8 @@ public class TestUtil {
       } catch(Exception e) {
         json = null;
       }
+      System.out.println(String.format("Returning new WrappedResponse with body %s",
+              body));
     }
 
     public int getCode() {
@@ -49,7 +51,10 @@ public class TestUtil {
     }
   }
 
-  public Future<WrappedResponse> doRequest(Vertx vertx, String url, HttpMethod method, MultiMap headers, String payload) {
+  public Future<WrappedResponse> doRequest(Vertx vertx, String url,
+          HttpMethod method, MultiMap headers, String payload) {
+    System.out.println(String.format("Sending %s request to endpoint %s with payload %s\n",
+            method.toString(), url, payload));
     Future<WrappedResponse> future = Future.future();
     boolean addPayLoad = false;
     HttpClient client = vertx.createHttpClient();
@@ -64,11 +69,41 @@ public class TestUtil {
       }
     }
     //standard exception handler
-    request.exceptionHandler(e -> { future.fail(e); });
+    request.exceptionHandler(e -> { 
+      System.out.println(String.format("Request for url %s failed: %s", url, 
+              e.getLocalizedMessage()));
+      future.fail(e);
+    });
     request.handler( req -> {
+      //System.out.println("Entering doRequest request handler");
       req.bodyHandler(buf -> {
-        WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
-        future.complete(wr);
+        //System.out.println("Entering doRequest body handler");
+        try {
+          //System.out.println(String.format(
+          //        "Building a new WrappedResponse object with arguments code: %s, body %s, response %s",
+          //        req.statusCode(), buf.toString(), req));
+          WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
+          System.out.println(String.format(
+                  "Got new WrappedResponse object with values code %s, body %s",
+                  wr.getCode(), wr.getBody()));
+          if(!future.isComplete() && !future.failed()) { 
+            //System.out.println("Future is not yet completed");
+            if(!future.tryComplete(wr)) {
+              System.out.println("Failed to complete future");
+            };
+          } else {
+            //System.out.println("Future is already completed");
+          }
+          //System.out.println(String.format(
+          //        "WrappedResponse Future for request at url %s is completed", url));
+        } catch(Exception e) {
+          if(!future.tryFail(e)) {
+            System.out.println(String.format(
+                    "Got exception %s, but future already complete: %s",
+                    e, e.getLocalizedMessage()));
+            e.printStackTrace();
+          }
+        }
       });
     });
     if(method == HttpMethod.PUT || method == HttpMethod.POST) {
