@@ -529,13 +529,6 @@ public class BLUsersAPI implements BlUsersResource {
     return username;
   }
   
-  private String getUserId(String token) {
-    JsonObject payload = parseTokenPayload(token);
-    if(payload == null) { return null; }
-    String id = payload.getString("user_id");
-    return id;
-  }
-
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if(tokenParts.length == 3) {
