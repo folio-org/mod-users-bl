@@ -75,27 +75,27 @@ public class TestUtil {
       future.fail(e);
     });
     request.handler( req -> {
-      System.out.println("Entering doRequest request handler");
+      //System.out.println("Entering doRequest request handler");
       req.bodyHandler(buf -> {
-        System.out.println("Entering doRequest body handler");
+        //System.out.println("Entering doRequest body handler");
         try {
-          System.out.println(String.format(
-                  "Building a new WrappedResponse object with arguments code: %s, body %s, response %s",
-                  req.statusCode(), buf.toString(), req));
+          //System.out.println(String.format(
+          //        "Building a new WrappedResponse object with arguments code: %s, body %s, response %s",
+          //        req.statusCode(), buf.toString(), req));
           WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
           System.out.println(String.format(
                   "Got new WrappedResponse object with values code %s, body %s",
                   wr.getCode(), wr.getBody()));
           if(!future.isComplete() && !future.failed()) { 
-            System.out.println("Future is not yet completed");
+            //System.out.println("Future is not yet completed");
             if(!future.tryComplete(wr)) {
               System.out.println("Failed to complete future");
             };
           } else {
-            System.out.println("Future is already completed");
+            //System.out.println("Future is already completed");
           }
-          System.out.println(String.format(
-                  "WrappedResponse Future for request at url %s is completed", url));
+          //System.out.println(String.format(
+          //        "WrappedResponse Future for request at url %s is completed", url));
         } catch(Exception e) {
           if(!future.tryFail(e)) {
             System.out.println(String.format(

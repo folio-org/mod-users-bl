@@ -250,6 +250,12 @@ public class MockOkapiTest {
       return getBLUserList(context);
     }).compose(w -> {
       return getSingleBLUser(context, mphillipsId);
+    }).compose(w -> {
+      List<String> expectedPerms = new ArrayList<>();
+      expectedPerms.add("gamma.a");
+      expectedPerms.add("beta.b");
+      return getSingleBLUserExpandedPerms(context, mphillipsId, 
+              expectedPerms);
     });
     startFuture.setHandler(res -> {
       if(res.succeeded()) {
@@ -429,7 +435,8 @@ public class MockOkapiTest {
     return future;
   }
   
-  private Future<WrappedResponse> getSingleBLUser(TestContext context, String userId) {
+  private Future<WrappedResponse> getSingleBLUser(TestContext context,
+          String userId) {
     Future<WrappedResponse> future = Future.future();
      String url = String.format("http://localhost:%s/bl-users/by-id/%s",
              mockUsersBLPort, userId);
@@ -443,6 +450,49 @@ public class MockOkapiTest {
            future.fail("Expected 200, got code " + res.result().getCode());
          } else {
            future.complete(res.result());
+         }
+       }
+     });
+     return future;
+  }
+  
+  private Future<WrappedResponse> getSingleBLUserExpandedPerms(TestContext context,
+          String userId, List<String> expectedPerms) {
+    Future<WrappedResponse> future = Future.future();
+     String url = String.format(
+             "http://localhost:%s/bl-users/by-id/%s?include=perms&expandPermissions=true",
+             mockUsersBLPort, userId);
+     CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+     headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
+     testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+       if(res.failed()) {
+         future.fail(res.cause());
+       } else {
+         if(res.result().getCode() != 200) {
+           future.fail("Expected 200, got code " + res.result().getCode());
+         } else {
+           String missingPerm = null;
+           for(String perm : expectedPerms) {
+             boolean foundPerm = false;
+             JsonArray permissions = res.result().getJson()
+                     .getJsonObject("permissions").getJsonArray("permissions");
+             for(Object permOb : permissions) {
+               if(((JsonObject)permOb).getString("permissionName").equals(perm)) {
+                foundPerm = true;
+                break;
+               }
+             }  
+             if(!foundPerm) {
+               missingPerm = perm;
+               break;
+             }
+           }
+           if(missingPerm != null) {
+             future.fail(String.format("Could not find expected permission '%s'",
+                     missingPerm));
+           } else {
+            future.complete(res.result());
+           }
          }
        }
      });
