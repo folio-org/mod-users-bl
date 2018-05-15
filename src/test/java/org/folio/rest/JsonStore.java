@@ -53,7 +53,7 @@ public class JsonStore {
     return returnList;
   }
   */
-  
+
   public List<JsonObject> getCollection(Integer offset, Integer limit,
           QuerySet qs) {
     if(offset == null) { offset = 0; }
@@ -76,13 +76,13 @@ public class JsonStore {
     for(int i=0;i < offset && rawMatchIterator.hasNext(); i++) {
       rawMatchIterator.next();
     }
-    
+
     while(returnList.size() < limit && rawMatchIterator.hasNext()) {
       returnList.add(rawMatchIterator.next());
     }
-    
-    return returnList; 
-        
+
+    return returnList;
+
   }
 
   public JsonObject getItem(String id) {

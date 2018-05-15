@@ -34,7 +34,7 @@ public class JsonStoreTest {
     jsonStore.addItem(null, new JsonObject().put("id", "831460ab-3b1e-4c07-a561-78134f38e587").put("name", "thing8"));
     jsonStore.addItem(null, new JsonObject().put("id", "d0f277d1-9be7-4627-b364-f1a9e9d1a5d7").put("name", "thing9"));
     jsonStore.addItem(null, new JsonObject().put("id", "01f3c7d3-05e0-4b5c-b3b7-2534bdff60ec").put("name", "thing10"));
-    
+
     thingList = new JsonArray()
             .add(new JsonObject()
               .put("color","red")
@@ -67,7 +67,7 @@ public class JsonStoreTest {
               .put("name", "max")
             );
   }
-  
+
   @Test
   public void test1() {
     assertNotNull(jsonStore.getCollection(null, null, null));
@@ -121,10 +121,10 @@ public class JsonStoreTest {
     assertNotNull(ob.getString("name"));
     assertTrue(ob.getString("name").equals("thing6"));
   }
-  
+
   @Test
   public void testQueryset() {
-    
+
     Query sizeQuery = new Query().setField("size").setOperator(Operator.EQUALS)
             .setValue("small");
     Query speciesQuery = new Query().setField("species")
@@ -137,23 +137,23 @@ public class JsonStoreTest {
                     .setOperator(BooleanOperator.AND).setRight(colorQuery));
     System.out.println("Queryset dump: " + smallBlackCatQS.toString() + "\n");
     JsonArray resultList = filterList(thingList, smallBlackCatQS);
-          
+
     assertTrue(resultList.size() == 1);
-    assertTrue(resultList.getJsonObject(0).getString("name").equals("hector"));    
-            
+    assertTrue(resultList.getJsonObject(0).getString("name").equals("hector"));
+
   }
-  
+
   @Test
   public void testQuerySetCQL() throws CQLParseException {
     String query = "size == small and species == cat and color == black";
     QuerySet qs = QuerySet.fromCQL(query);
-    JsonArray resultList = filterList(thingList, qs); 
+    JsonArray resultList = filterList(thingList, qs);
     System.out.println("Queryset dump: " + qs.toString() + "\n");
     assertNotNull(resultList);
     assertTrue(resultList.size() == 1);
-    assertTrue(resultList.getJsonObject(0).getString("name").equals("hector")); 
+    assertTrue(resultList.getJsonObject(0).getString("name").equals("hector"));
   }
-  
+
   private JsonArray filterList(JsonArray list, QuerySet qs) {
     JsonArray resultList = new JsonArray();
     for(Object ob : list) {

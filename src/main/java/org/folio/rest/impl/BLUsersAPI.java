@@ -170,7 +170,7 @@ public class BLUsersAPI implements BlUsersResource {
   }
 
   private void run(String userid, String username, Boolean expandPerms,
-          List<String> include, Map<String, String> okapiHeaders, 
+          List<String> include, Map<String, String> okapiHeaders,
           Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
           Context vertxContext) throws Exception {
 
@@ -528,7 +528,7 @@ public class BLUsersAPI implements BlUsersResource {
     String username = payload.getString("sub");
     return username;
   }
-  
+
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if(tokenParts.length == 3) {
@@ -543,8 +543,8 @@ public class BLUsersAPI implements BlUsersResource {
 
   @Override
   public void getBlUsersSelf(List<String> include, Boolean expandPerms,
-          Map<String, String> okapiHeaders, 
-          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, 
+          Map<String, String> okapiHeaders,
+          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
           Context vertxContext)
       throws Exception {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
