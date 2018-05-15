@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.folio.rest;
 
 import io.vertx.core.json.JsonObject;
@@ -45,7 +40,7 @@ public class QuerySet {
     return String.format("(%s) %s (%s)", this.left.toString(),
             this.operator.toString(), this.right.toString());
   }
-  
+
   private static QuerySet populateQuerySet(QuerySet querySet, CQLNode node) {
     System.out.println("populating queryset");
     if(node instanceof CQLTermNode) {
@@ -58,7 +53,7 @@ public class QuerySet {
       } else if("<>".equals(termNode.getRelation().getBase())) {
         query.setOperator(Operator.NOTEQUALS);
       } else {
-        throw new UnsupportedOperationException("Relation '" 
+        throw new UnsupportedOperationException("Relation '"
                 + termNode.getRelation().getBase() + "' is not supported");
       }
       query.setField(termNode.getIndex());
@@ -87,17 +82,17 @@ public class QuerySet {
     this.left = ob;
     return this;
   }
-  
+
   public QuerySet setRight(Object ob) {
     this.right = ob;
     return this;
   }
-  
+
   public QuerySet setOperator(BooleanOperator op) {
     this.operator = op;
     return this;
   }
-  
+
   public Boolean match(JsonObject json) {
     Boolean leftEval;
     Boolean rightEval;
@@ -110,10 +105,10 @@ public class QuerySet {
     }
     return false;
   }
-  
+
   private static Boolean evalQueryObject(Object ob, JsonObject json) {
     if(ob instanceof Boolean) {
-      return (Boolean)ob;   
+      return (Boolean)ob;
     } else if(ob instanceof Query) {
       return ((Query) ob).match(json);
     } else if(ob instanceof QuerySet) {

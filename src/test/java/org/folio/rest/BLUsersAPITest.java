@@ -93,7 +93,7 @@ public class BLUsersAPITest {
     given().body(permsUsersPost.encode()).
     when().post("http://localhost:" + okapiPort + "/perms/users").
     then().statusCode(201);
-    
+
 
   }
 

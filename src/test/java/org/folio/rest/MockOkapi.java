@@ -31,7 +31,7 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore permsPermissionsStore;
   private JsonStore groupsStore;
   private JsonStore proxiesStore;
-  
+
   static final String USERS_ENDPOINT = "/users";
   static final String PERMS_USERS_ENDPOINT = "/perms/users";
   static final String PERMS_PERMISSIONS_ENDPOINT = "/perms/permissions";
@@ -69,8 +69,8 @@ public class MockOkapi extends AbstractVerticle {
 
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
-    
-    String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT, 
+
+    String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT,
       PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT};
     String uri = context.request().path();
     Matcher matcher;
@@ -123,18 +123,18 @@ public class MockOkapi extends AbstractVerticle {
                   context.getBodyAsString(), context);
           break;
         default:
-          break;      
+          break;
       }
     } catch(Exception e) {
       context.fail(e);
       return;
     }
 
-    
+
     if(mockResponse != null) {
       System.out.println(String.format("Got mockResponse, code: %s, content: %s",
             mockResponse.getCode(), mockResponse.getContent()));
-      
+
       context.response()
               .setStatusCode(mockResponse.getCode())
               .end(mockResponse.getContent());
@@ -181,7 +181,7 @@ public class MockOkapi extends AbstractVerticle {
       } catch(Exception e) {
         code = 422;
         response = "Unable to add object: " + e.getLocalizedMessage();
-      } 
+      }
       if(ob != null) {
         code = 201;
         response = ob.encode();
@@ -198,25 +198,25 @@ public class MockOkapi extends AbstractVerticle {
     }
     return new MockResponse(code, response);
   }
-  
+
   private MockResponse handleGroups(HttpMethod method, String id, String url,
           String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(groupsStore, "usergroups", method, id, url, payload,
             context);
   }
-  
+
   private MockResponse handleProxies(HttpMethod method, String id, String url,
           String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(proxiesStore, "proxiesFor", method, id, url, payload,
             context);
   }
-  
+
   private MockResponse handlePermsPermissions(HttpMethod method, String id, String url,
           String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(permsPermissionsStore, "permissions", method, id, url,
             payload, context);
   }
-  
+
   private MockResponse handleBasicCrud(JsonStore store, String collectionName,
           HttpMethod method, String id, String url, String payload,
           RoutingContext context) throws CQLParseException {
@@ -268,7 +268,7 @@ public class MockOkapi extends AbstractVerticle {
         code = 404;
         response = "Not found";
       }
-    } 
+    }
     return new MockResponse(code, response);
   }
 
@@ -281,7 +281,7 @@ public class MockOkapi extends AbstractVerticle {
     if(method == GET) {
       if(id == null) {
         System.out.println("Getting a list of permissions users\n");
-        //Get list of perm users        
+        //Get list of perm users
         List<JsonObject> userList = getCollectionWithContextParams(
                 permsUsersStore, context);
         JsonObject responseObject = wrapCollection(userList, "permissionUsers");
@@ -413,7 +413,7 @@ public class MockOkapi extends AbstractVerticle {
     }
     return jsonStore.getCollection(offset, limit, qs);
   }
-  
+
   private String getParamDefault(RoutingContext context, String param, String defaultValue) {
     String result = null;
     try {
@@ -442,7 +442,7 @@ public class MockOkapi extends AbstractVerticle {
     }
     return obList.get(0);
   }
-  
+
   protected static Matcher parseMockUri(String uri, String endpoint) {
     Pattern pattern = Pattern.compile(
             //"([a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+(\\/.+)?)?");

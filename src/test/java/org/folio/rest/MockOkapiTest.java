@@ -44,7 +44,7 @@ public class MockOkapiTest {
   private static int mockUsersBLPort;
   private static Vertx vertx;
   private static TestUtil testUtil;
-  
+
   private final String bfrederiId = "a53ae072-45b5-4cc5-9437-2e47b38b50b7";
   private final String lkoId = "5e5df008-62f8-4820-bdb7-c32b1181ab10";
   private final String mphillipsId = "e6c8eb71-9e9a-499b-bb3c-82e49d198dbf";
@@ -52,27 +52,27 @@ public class MockOkapiTest {
   private String bfrederiPermId = UUID.randomUUID().toString();
   private String lkoPermId = UUID.randomUUID().toString();
   private String mphillipsPermId = UUID.randomUUID().toString();
-  
+
   JsonArray userList = new JsonArray()
           .add(new JsonObject()
             .put("username", "bfrederi")
             .put("id", bfrederiId)
             .put("active", true)
-            .put("patronGroup", testGroupId)              
+            .put("patronGroup", testGroupId)
           )
           .add(new JsonObject()
             .put("username", "lko")
             .put("id", lkoId)
             .put("active", true)
-            .put("patronGroup", testGroupId)              
+            .put("patronGroup", testGroupId)
           )
           .add(new JsonObject()
             .put("username", "mphillips")
             .put("id", mphillipsId)
             .put("active", true)
-            .put("patronGroup", testGroupId)              
+            .put("patronGroup", testGroupId)
           );
-  
+
   JsonArray groupList = new JsonArray()
           .add(new JsonObject()
             .put("group", "test")
@@ -102,7 +102,7 @@ public class MockOkapiTest {
               .add("alpha.all")
             )
           );
-  
+
   JsonArray permissionList = new JsonArray()
           .add(new JsonObject()
             .put("permissionName", "alpha.all")
@@ -177,7 +177,7 @@ public class MockOkapiTest {
                         .put("http.port", mockUsersBLPort)
                         .putNull(HttpClientMock2.MOCK_MODE)
                 );
-        vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions, 
+        vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions,
                 res2 -> {
           if(res2.failed()) {
             context.fail(res2.cause());
@@ -203,7 +203,7 @@ public class MockOkapiTest {
   public void afterTest(TestContext context) {
     context.async().complete();
   }
-  
+
   @Test
   public void testMatcher(TestContext context) {
     String uri = "/perms/users/223d60af-a137-41e8-90d8-20c8a5991639/permissions";
@@ -254,7 +254,7 @@ public class MockOkapiTest {
       List<String> expectedPerms = new ArrayList<>();
       expectedPerms.add("gamma.a");
       expectedPerms.add("beta.b");
-      return getSingleBLUserExpandedPerms(context, mphillipsId, 
+      return getSingleBLUserExpandedPerms(context, mphillipsId,
               expectedPerms);
     });
     startFuture.setHandler(res -> {
@@ -310,7 +310,7 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
   private Future<WrappedResponse> getNewUser(TestContext context, String id) {
     Future<WrappedResponse> future = Future.future();
     String url = "http://localhost:" + mockOkapiPort + "/users/" + id;
@@ -341,7 +341,7 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
   private Future<WrappedResponse> loadDataArray(TestContext context, String url,
           JsonArray dataList) {
     System.out.println("Adding data to endpoint " + url + "\n");
@@ -364,7 +364,7 @@ public class MockOkapiTest {
             break;
           } else if( ((WrappedResponse)fut.result()).getCode() != 201 ) {
             future.fail(String.format("Expected 201, got '%s': %s",
-                    ((WrappedResponse)fut.result()).getCode(), 
+                    ((WrappedResponse)fut.result()).getCode(),
                     ((WrappedResponse)fut.result()).getBody()));
             failed = true;
             break;
@@ -377,7 +377,7 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
   private Future<WrappedResponse> getUserPerms(TestContext context,
           String permUserId, JsonArray expectedPerms) {
     System.out.println("Retrieving perms for perm user id " + permUserId + "\n");
@@ -417,7 +417,7 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
   private Future<WrappedResponse> getBLUserList(TestContext context) {
     Future<WrappedResponse> future = Future.future();
     String url = String.format("http://localhost:%s/bl-users", mockUsersBLPort);
@@ -434,7 +434,7 @@ public class MockOkapiTest {
     });
     return future;
   }
-  
+
   private Future<WrappedResponse> getSingleBLUser(TestContext context,
           String userId) {
     Future<WrappedResponse> future = Future.future();
@@ -455,7 +455,7 @@ public class MockOkapiTest {
      });
      return future;
   }
-  
+
   private Future<WrappedResponse> getSingleBLUserExpandedPerms(TestContext context,
           String userId, List<String> expectedPerms) {
     Future<WrappedResponse> future = Future.future();
@@ -481,7 +481,7 @@ public class MockOkapiTest {
                 foundPerm = true;
                 break;
                }
-             }  
+             }
              if(!foundPerm) {
                missingPerm = perm;
                break;
@@ -498,17 +498,17 @@ public class MockOkapiTest {
      });
      return future;
   }
-  
+
   private Future<WrappedResponse> getUserByQuery(TestContext context, String username) {
     Future<WrappedResponse> future = Future.future();
     String url = String.format("http://localhost:%s/users?query=username==%s",
             mockOkapiPort, username);
     testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
       if(res.failed()) {
-        future.fail(res.cause()); 
+        future.fail(res.cause());
       } else {
         if(res.result().getCode() != 200) {
-          future.fail(String.format("Expected code 200, got %s: %s", 
+          future.fail(String.format("Expected code 200, got %s: %s",
                   res.result().getCode(), res.result().getBody()));
         } else {
           if(res.result().getJson() == null) {
@@ -526,7 +526,7 @@ public class MockOkapiTest {
       }
     });
     return future;
-  }  
+  }
 }
 
 

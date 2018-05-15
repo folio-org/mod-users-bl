@@ -69,8 +69,8 @@ public class TestUtil {
       }
     }
     //standard exception handler
-    request.exceptionHandler(e -> { 
-      System.out.println(String.format("Request for url %s failed: %s", url, 
+    request.exceptionHandler(e -> {
+      System.out.println(String.format("Request for url %s failed: %s", url,
               e.getLocalizedMessage()));
       future.fail(e);
     });
@@ -86,7 +86,7 @@ public class TestUtil {
           System.out.println(String.format(
                   "Got new WrappedResponse object with values code %s, body %s",
                   wr.getCode(), wr.getBody()));
-          if(!future.isComplete() && !future.failed()) { 
+          if(!future.isComplete() && !future.failed()) {
             //System.out.println("Future is not yet completed");
             if(!future.tryComplete(wr)) {
               System.out.println("Failed to complete future");
