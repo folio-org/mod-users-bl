@@ -1,4 +1,5 @@
-## 2.3.0 2018-05-31
+## 3.0.0 2018-05-31
+ * Update RAML definitions (meta removed from proxyFor)
  * Modify module descriptor to allow modusers v15.0
 
 ## 2.2.2 2018-05-11
