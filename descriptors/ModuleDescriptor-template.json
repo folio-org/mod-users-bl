@@ -65,7 +65,7 @@
   "requires" : [
     {
       "id" : "users",
-      "version" : "14.3"
+      "version" : "14.3 15.0"
     },
     {
       "id" : "permissions",

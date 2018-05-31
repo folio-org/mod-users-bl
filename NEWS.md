@@ -1,3 +1,6 @@
+## 2.2.3 2018-05-31
+ * Modify module descriptor to allow modusers v15.0
+
 ## 2.2.2 2018-05-11
  * Upgrade to raml-module-builder 19.1.0
  * Expand testing infrastructure to allow for more comprehensive unit tests to be written
