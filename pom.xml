@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>4.0.0-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -424,7 +424,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <raml-module-builder.version>19.1.0</raml-module-builder.version>
+    <raml-module-builder.version>19.1.5</raml-module-builder.version>
     <ramlfiles_path>${basedir}/raml/ramls/mod-users-bl</ramlfiles_path>
     <ramlfiles_util_path>${basedir}/raml</ramlfiles_util_path>
     <postgresrunner.port>5434</postgresrunner.port>

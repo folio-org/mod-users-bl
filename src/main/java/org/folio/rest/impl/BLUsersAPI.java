@@ -23,6 +23,7 @@ import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 
+import io.vertx.core.Future;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
@@ -42,6 +43,7 @@ public class BLUsersAPI implements BlUsersResource {
   private static final String GROUPS_INCLUDE = "groups";
   private static final String PERMISSIONS_INCLUDE = "perms";
   private static final String PROXIESFOR_INCLUDE = "proxiesfor";
+  private static final String SERVICEPOINTS_INCLUDE = "servicepoints";
 
   private static String OKAPI_URL_HEADER = "X-Okapi-URL";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
@@ -59,24 +61,27 @@ public class BLUsersAPI implements BlUsersResource {
   @Override
   public void getBlUsersByUsernameByUsername(String username, List<String> include,
       Boolean expandPerms, Map<String, String> okapiHeaders,
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext)
-      throws Exception {
-
-    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler, vertxContext);
+      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      Context vertxContext) throws Exception {
+    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler,
+        vertxContext);
 
   }
 
-  Consumer<Response> handlePreviousResponse(boolean requireOneResult, boolean requireOneOrMoreResults, boolean stopChainOnNoResults,
-      boolean previousFailure[], Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler){
+  Consumer<Response> handlePreviousResponse(boolean requireOneResult,
+      boolean requireOneOrMoreResults, boolean stopChainOnNoResults,
+      boolean previousFailure[], Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
     return (response) -> {
       if(!previousFailure[0]){
-        handleError(response, requireOneResult, requireOneOrMoreResults, stopChainOnNoResults, previousFailure, asyncResultHandler);
+        handleError(response, requireOneResult, requireOneOrMoreResults,
+            stopChainOnNoResults, previousFailure, asyncResultHandler);
       }
     };
   }
 
-  private void handleError(Response response, boolean requireOneResult, boolean requireOneOrMoreResults, boolean stopOnError,
-      boolean previousFailure[], Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler){
+  private void handleError(Response response, boolean requireOneResult,
+      boolean requireOneOrMoreResults, boolean stopOnError, boolean previousFailure[],
+      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
 
     if(previousFailure[0]){
       return;
@@ -86,7 +91,8 @@ public class BLUsersAPI implements BlUsersResource {
       //set previousFailure flag to true so that we don't send another error response to the client
       if(!previousFailure[0]){
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-          GetBlUsersByIdByIdResponse.withPlainInternalServerError("response is null from one of the services requested")));
+          GetBlUsersByIdByIdResponse.withPlainInternalServerError(
+              "response is null from one of the services requested")));
       }
       previousFailure[0] = true;
     }
@@ -101,7 +107,8 @@ public class BLUsersAPI implements BlUsersResource {
         if(totalRecords == null){
           totalRecords = response.getBody().getInteger("total_records");
         }
-        if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty()) && (requireOneResult || requireOneOrMoreResults)) {
+        if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
+            && (requireOneResult || requireOneOrMoreResults)) {
           previousFailure[0] = true;
           if(stopOnError){
             //the chained requests will not fire the next request if the response's error object of the previous request is not null
@@ -111,12 +118,14 @@ public class BLUsersAPI implements BlUsersResource {
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainNotFound("No record found for query '" + response.getEndpoint() + "'")));
+            GetBlUsersByIdByIdResponse.withPlainNotFound("No record found for query '" 
+                + response.getEndpoint() + "'")));
         } else if(totalRecords != null && totalRecords > 1 && requireOneResult) {
           logger.error("'" + response.getEndpoint() + "' returns multiple results");
           previousFailure[0] = true;
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainBadRequest(("'" + response.getEndpoint() + "' returns multiple results"))));
+            GetBlUsersByIdByIdResponse.withPlainBadRequest(("'" + response.getEndpoint()
+                + "' returns multiple results"))));
         }
       }
       else if(!ok){
@@ -137,25 +146,25 @@ public class BLUsersAPI implements BlUsersResource {
         if(statusCode == 404){
           logger.error(message);
           previousFailure[0] = true;
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.withPlainNotFound(message)));
         }
         else if(statusCode == 400){
           logger.error(message);
           previousFailure[0] = true;
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.withPlainBadRequest(message)));
         }
         else if(statusCode == 403){
           logger.error(message);
           previousFailure[0] = true;
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.withPlainForbidden(message)));
         }
         else{
           logger.error(message);
           previousFailure[0] = true;
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.withPlainInternalServerError(message)));
         }
       }
@@ -163,10 +172,12 @@ public class BLUsersAPI implements BlUsersResource {
   }
 
   @Override
-  public void getBlUsersByIdById(String userid, List<String> include, Boolean expandPerms,
-      Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+  public void getBlUsersByIdById(String userid, List<String> include,
+      Boolean expandPerms, Map<String, String> okapiHeaders,
+      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) throws Exception {
-    run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler, vertxContext);
+    run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler,
+        vertxContext);
   }
 
   private void run(String userid, String username, Boolean expandPerms,
@@ -219,8 +230,9 @@ public class BLUsersAPI implements BlUsersResource {
       if(include.get(i).equals(CREDENTIALS_INCLUDE)){
         //call credentials once the /users?query=username={username} completes
         CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/authn/credentials?query=userId=="+userTemplate, okapiHeaders, null,
-                handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
+            client.chainedRequest("/authn/credentials?query=userId=="+userTemplate,
+            okapiHeaders, null, handlePreviousResponse(true, false, true,
+            aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(credResponse);
         completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
       }
@@ -251,7 +263,8 @@ public class BLUsersAPI implements BlUsersResource {
     }
     if(expandPerms != null && expandPerms && completedLookup.containsKey(PERMISSIONS_INCLUDE)) {
       logger.info("Getting expanded permissions");
-      CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE).thenCompose(
+      CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE)
+          .thenCompose(
               client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true",
                       okapiHeaders, true, null,
                       handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
