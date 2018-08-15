@@ -16,11 +16,13 @@ schemas:
   - credentials.json: !include credentials.json
   - proxyfor.json: !include proxyfor.json
   - servicepoint.json: !include servicepoint.json
+  - servicepointsuser.json: !include servicepointsuser.json
+  - servicepointsexpandeduser.json: !include servicepointsexpandeduser.json
   - errors: !include raml/schemas/errors.schema
   - error.schema: !include raml/schemas/error.schema
   - parameters.schema: !include raml/schemas/parameters.schema
-  - metadata.schema: !include raml/schemas/metadata.schema
-  - tags.schema: !include raml/schemas/tags.schema
+  - raml/schemas/metadata.schema: !include raml/schemas/metadata.schema
+  - raml/schemas/tags.schema: !include raml/schemas/tags.schema
 
 traits:
   - secured: !include raml/traits/auth.raml

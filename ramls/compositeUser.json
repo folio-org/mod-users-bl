@@ -25,6 +25,10 @@
         "type": "object",
         "$ref": "proxyfor.json"
       }
+    },
+    "servicePointsUser": {
+      "type": "object",
+      "$ref": "servicepointsexpandeduser.json"
     }
   }
 }

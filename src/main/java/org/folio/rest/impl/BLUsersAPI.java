@@ -16,6 +16,8 @@ import org.folio.rest.jaxrs.model.PatronGroup;
 import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.jaxrs.model.ProxiesFor;
+import org.folio.rest.jaxrs.model.ServicePoint;
+import org.folio.rest.jaxrs.model.ServicePointsUser;
 import org.folio.rest.jaxrs.resource.BlUsersResource;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
@@ -32,6 +34,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author shale
@@ -44,6 +47,9 @@ public class BLUsersAPI implements BlUsersResource {
   private static final String PERMISSIONS_INCLUDE = "perms";
   private static final String PROXIESFOR_INCLUDE = "proxiesfor";
   private static final String SERVICEPOINTS_INCLUDE = "servicepoints";
+  
+  private static final String EXPANDED_PERMISSIONS_INCLUDE = "expanded_perms";
+  private static final String EXPANDED_SERVICEPOINTS_INCLUDE = "expanded_servicepoints";
 
   private static String OKAPI_URL_HEADER = "X-Okapi-URL";
   private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
@@ -55,6 +61,7 @@ public class BLUsersAPI implements BlUsersResource {
     List<String> defaultIncludes = new ArrayList<>();
     defaultIncludes.add(GROUPS_INCLUDE);
     defaultIncludes.add(PERMISSIONS_INCLUDE);
+    defaultIncludes.add(SERVICEPOINTS_INCLUDE);
     return defaultIncludes;
   }
 
@@ -192,7 +199,7 @@ public class BLUsersAPI implements BlUsersResource {
       include = getDefaultIncludes();
     }
 
-    boolean []aRequestHasFailed = new boolean[]{false};
+    boolean[] aRequestHasFailed = new boolean[]{false};
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
     okapiHeaders.remove(OKAPI_URL_HEADER);
@@ -200,7 +207,7 @@ public class BLUsersAPI implements BlUsersResource {
     //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
     HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
 
-    CompletableFuture<Response> []userIdResponse = new CompletableFuture[1];
+    CompletableFuture<Response>[] userIdResponse = new CompletableFuture[1];
     String userTemplate = "";
     String groupTemplate = "";
     StringBuffer userUrl = new StringBuffer("/users");
@@ -260,17 +267,35 @@ public class BLUsersAPI implements BlUsersResource {
         requestedIncludes.add(proxiesforResponse);
         completedLookup.put(PROXIESFOR_INCLUDE, proxiesforResponse);
       }
+      else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
+        CompletableFuture<Response> servicePointsResponse = userIdResponse[0].thenCompose(
+          client.chainedRequest("/service-points-users?query=userId==" + userTemplate,
+              okapiHeaders, null, handlePreviousResponse(true, false, true, 
+              aRequestHasFailed, asyncResultHandler))
+        );
+        requestedIncludes.add(servicePointsResponse);
+        completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
+      }
     }
     if(expandPerms != null && expandPerms && completedLookup.containsKey(PERMISSIONS_INCLUDE)) {
       logger.info("Getting expanded permissions");
       CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE)
           .thenCompose(
               client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true",
-                      okapiHeaders, true, null,
-                      handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
+              okapiHeaders, true, null, handlePreviousResponse(true, false, true,
+              aRequestHasFailed, asyncResultHandler)));
       requestedIncludes.add(expandPermsResponse);
-      completedLookup.put("expanded", expandPermsResponse);
+      completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
     }
+    /*
+    if(completedLookup.containsKey(SERVICEPOINTS_INCLUDE)) {
+      CompletableFuture<Response> expandSPUResponse = expandServicePoints(
+          completedLookup.get(SERVICEPOINTS_INCLUDE), client, aRequestHasFailed,
+          okapiHeaders, asyncResultHandler);
+      completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);  
+    
+    }
+    */
     requestedIncludes.add(userIdResponse[0]);
     CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
     .thenAccept((response) -> {
@@ -315,7 +340,7 @@ public class BLUsersAPI implements BlUsersResource {
           permissionsJson.put("permissions", cf.get().getBody().getJsonArray("permissionUsers").getJsonObject(0).getJsonArray("permissions"));
           cu.setPermissions((Permissions)Response.convertToPojo(permissionsJson, Permissions.class));
         }
-        cf = completedLookup.get("expanded");
+        cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
         if(cf != null && cf.get().getBody() != null){
           //data coming in from the service isnt returned as required by the composite user schema
           JsonObject j = new JsonObject();
@@ -346,6 +371,32 @@ public class BLUsersAPI implements BlUsersResource {
             cu.setProxiesFor(proxyForList);
           }
         }
+        
+        cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
+        CompletableFuture<Response> ecf = expandServicePoints(cf, client, aRequestHasFailed,
+            okapiHeaders, asyncResultHandler);
+        //CompletableFuture<Response> ecf = completedLookup.get(EXPANDED_SERVICEPOINTS_INCLUDE);
+        if(ecf != null && cf != null && cf.get().getBody() != null) {
+          JsonArray array = cf.get().getBody().getJsonArray("servicePointsUsers");
+          JsonObject spuJson = array.getJsonObject(0);
+          ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson, 
+              ServicePointsUser.class);
+          List<ServicePoint> spList = new ArrayList<>();
+          JsonObject spCollectionJson = ecf.get().getBody();
+          if(spCollectionJson != null) {
+            JsonArray spArray = spCollectionJson.getJsonArray("servicePointsUsers");
+            if(spArray != null) {
+              for(Object ob: spArray) {
+                JsonObject json = (JsonObject)ob;
+                ServicePoint sp = (ServicePoint)Response.convertToPojo(json, ServicePoint.class);
+                spList.add(sp);
+              }
+              spu.setServicePoints(spList);
+            }
+          }
+          cu.setServicePointsUser(spu);
+        }
+        
         client.closeClient();
         if(mode[0].equals("id")){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
@@ -466,6 +517,7 @@ public class BLUsersAPI implements BlUsersResource {
         Response credsResponse = null;
         Response permsResponse = null;
         Response proxiesforResponse = null;
+        Response servicePointsUserResponse = null;
         CompletableFuture<Response> cf = completedLookup.get(GROUPS_INCLUDE);
         if(cf != null){
           groupResponse = cf.get();
@@ -647,7 +699,7 @@ public class BLUsersAPI implements BlUsersResource {
           client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(expandPermsResponse);
-        completedLookup.put("expanded", expandPermsResponse);
+        completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
       }
       requestedIncludes.add(userResponse[0]);
 
@@ -687,7 +739,7 @@ public class BLUsersAPI implements BlUsersResource {
                 credsResponse.getBody().getJsonArray("credentials").getJsonObject(0), Credentials.class));
             }
           }
-          cf = completedLookup.get("expanded");
+          cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
           if(cf != null){
             Response permsResponse = cf.get();
             handleError(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
@@ -730,6 +782,56 @@ public class BLUsersAPI implements BlUsersResource {
         }
       });
     }
+  }
+  
+  private CompletableFuture<Response> expandServicePoints(
+      CompletableFuture<Response> spuResponseFuture, HttpClientInterface client,
+      boolean[] aRequestHasFailed, Map<String, String> okapiHeaders, 
+      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) 
+      throws InterruptedException, ExecutionException {
+    if(spuResponseFuture == null) {
+      return null;
+    }
+    List<String> servicePointIdQueryList = new ArrayList<>();
+    Response r = spuResponseFuture.get();
+    if(r == null) {
+      return null;
+    }
+    JsonObject servicePointsUserListObjectJson = r.getBody();
+    if(servicePointsUserListObjectJson == null ) {
+      return null;
+    }
+    JsonObject servicePointsUserJson = null;
+    try {
+      servicePointsUserJson = servicePointsUserListObjectJson
+          .getJsonArray("servicePointsUsers").getJsonObject(0);
+    } catch(Exception e) {
+      //meh
+    }
+    if(servicePointsUserJson == null) {
+      return null;
+    }
+    if(servicePointsUserJson.containsKey("defaultServicePointId")) {
+      String defaultSPId = servicePointsUserJson.getString("defaultServicePointId");
+      if(defaultSPId != null) {
+        servicePointIdQueryList.add(String.format("id==\"%s\"", defaultSPId));
+      }
+    }
+    if(servicePointsUserJson.containsKey("servicePointsIds")) {
+      JsonArray SPIdArray = servicePointsUserJson.getJsonArray("servicePointsIds");
+      if(SPIdArray != null) {
+        for(Object ob : SPIdArray) {
+          servicePointIdQueryList.add(String.format("id==\"%s\"", (String)ob));
+        }
+      }
+    }
+    String idQuery = String.join(" OR ", servicePointIdQueryList);
+    CompletableFuture<Response> expandSPUResponse = spuResponseFuture
+        .thenCompose(client.chainedRequest("/service-points?query="+ idQuery,
+        okapiHeaders, true, null, handlePreviousResponse(true, false, true,
+        aRequestHasFailed, asyncResultHandler)));
+
+    return expandSPUResponse;
   }
 
 }
