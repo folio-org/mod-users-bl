@@ -183,7 +183,7 @@ public class MockOkapiTest {
         .put("id", bfrederiSPId)
         .put("userId", bfrederiId)
         .put("defaultServicePointId", sp3Id)
-        .put("servicePointIds", new JsonArray()
+        .put("servicePointsIds", new JsonArray()
           .add(sp1Id)
           .add(sp2Id)
           .add(sp3Id)

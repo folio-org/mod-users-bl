@@ -8,12 +8,21 @@
     "userId": {
       "type": "string"
     },
+    "servicePointsIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "servicePoints": {
       "type": "array",
       "items": {
         "type": "object",
         "$ref": "servicepoint.json"
       }
+    },
+    "defaultServicePointId": {
+      "type": "string"
     },
     "defaultServicePoint": {
       "type": "object",

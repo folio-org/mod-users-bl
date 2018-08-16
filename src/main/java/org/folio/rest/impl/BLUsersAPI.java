@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.folio.rest.jaxrs.model.CompositeUser;
@@ -382,7 +383,7 @@ public class BLUsersAPI implements BlUsersResource {
           ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson, 
               ServicePointsUser.class);
           List<ServicePoint> spList = new ArrayList<>();
-          JsonObject spCollectionJson = ecf.get().getBody();
+          JsonObject spCollectionJson = ecf.get(5, TimeUnit.SECONDS).getBody();
           if(spCollectionJson != null) {
             JsonArray spArray = spCollectionJson.getJsonArray("servicePointsUsers");
             if(spArray != null) {
