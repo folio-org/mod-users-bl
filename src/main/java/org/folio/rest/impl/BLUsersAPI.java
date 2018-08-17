@@ -35,7 +35,10 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 
 /**
  * @author shale
@@ -81,13 +84,13 @@ public class BLUsersAPI implements BlUsersResource {
       boolean previousFailure[], Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
     return (response) -> {
       if(!previousFailure[0]){
-        handleError(response, requireOneResult, requireOneOrMoreResults,
+        handleResponse(response, requireOneResult, requireOneOrMoreResults,
             stopChainOnNoResults, previousFailure, asyncResultHandler);
       }
     };
   }
 
-  private void handleError(Response response, boolean requireOneResult,
+  private void handleResponse(Response response, boolean requireOneResult,
       boolean requireOneOrMoreResults, boolean stopOnError, boolean previousFailure[],
       Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
 
@@ -271,16 +274,18 @@ public class BLUsersAPI implements BlUsersResource {
       else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
         CompletableFuture<Response> servicePointsResponse = userIdResponse[0].thenCompose(
           client.chainedRequest("/service-points-users?query=userId==" + userTemplate,
-              okapiHeaders, null, handlePreviousResponse(true, false, true, 
+              okapiHeaders, null, handlePreviousResponse(false, false, false, 
               aRequestHasFailed, asyncResultHandler))
         );
         requestedIncludes.add(servicePointsResponse);
         completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
       }
     }
-    if(expandPerms != null && expandPerms && completedLookup.containsKey(PERMISSIONS_INCLUDE)) {
+    if(expandPerms != null && expandPerms && completedLookup.containsKey(
+        PERMISSIONS_INCLUDE)) {
       logger.info("Getting expanded permissions");
-      CompletableFuture<Response> expandPermsResponse = completedLookup.get(PERMISSIONS_INCLUDE)
+      CompletableFuture<Response> expandPermsResponse = completedLookup.get(
+          PERMISSIONS_INCLUDE)
           .thenCompose(
               client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true",
               okapiHeaders, true, null, handlePreviousResponse(true, false, true,
@@ -288,17 +293,19 @@ public class BLUsersAPI implements BlUsersResource {
       requestedIncludes.add(expandPermsResponse);
       completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
     }
-    /*
+    
     if(completedLookup.containsKey(SERVICEPOINTS_INCLUDE)) {
       CompletableFuture<Response> expandSPUResponse = expandServicePoints(
           completedLookup.get(SERVICEPOINTS_INCLUDE), client, aRequestHasFailed,
           okapiHeaders, asyncResultHandler);
-      completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);  
+      completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse); 
+      requestedIncludes.add(expandSPUResponse);
     
     }
-    */
+    
     requestedIncludes.add(userIdResponse[0]);
-    CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
+    CompletableFuture.allOf(requestedIncludes.toArray(
+        new CompletableFuture[requestedIncludes.size()]))
     .thenAccept((response) -> {
       try {
         Response userResponse = userIdResponse[0].get();
@@ -313,7 +320,7 @@ public class BLUsersAPI implements BlUsersResource {
             requireOneResult= true;
             requireOneOrMoreResults = true;
           }
-          handleError(userResponse, requireOneResult, requireOneOrMoreResults, true, aRequestHasFailed, asyncResultHandler);
+          handleResponse(userResponse, requireOneResult, requireOneOrMoreResults, true, aRequestHasFailed, asyncResultHandler);
         }
         if(aRequestHasFailed[0]){
           return;
@@ -374,28 +381,32 @@ public class BLUsersAPI implements BlUsersResource {
         }
         
         cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
-        CompletableFuture<Response> ecf = expandServicePoints(cf, client, aRequestHasFailed,
-            okapiHeaders, asyncResultHandler);
-        //CompletableFuture<Response> ecf = completedLookup.get(EXPANDED_SERVICEPOINTS_INCLUDE);
+        //CompletableFuture<Response> ecf = expandServicePoints(cf, client, aRequestHasFailed,
+        //    okapiHeaders, asyncResultHandler);
+        CompletableFuture<Response> ecf = completedLookup.get(
+            EXPANDED_SERVICEPOINTS_INCLUDE);
         if(ecf != null && cf != null && cf.get().getBody() != null) {
           JsonArray array = cf.get().getBody().getJsonArray("servicePointsUsers");
-          JsonObject spuJson = array.getJsonObject(0);
-          ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson, 
-              ServicePointsUser.class);
-          List<ServicePoint> spList = new ArrayList<>();
-          JsonObject spCollectionJson = ecf.get(5, TimeUnit.SECONDS).getBody();
-          if(spCollectionJson != null) {
-            JsonArray spArray = spCollectionJson.getJsonArray("servicePointsUsers");
-            if(spArray != null) {
-              for(Object ob: spArray) {
-                JsonObject json = (JsonObject)ob;
-                ServicePoint sp = (ServicePoint)Response.convertToPojo(json, ServicePoint.class);
-                spList.add(sp);
+          if(!array.isEmpty()) {
+            JsonObject spuJson = array.getJsonObject(0);
+            ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson, 
+                ServicePointsUser.class);
+            List<ServicePoint> spList = new ArrayList<>();
+            JsonObject spCollectionJson = ecf.get().getBody();
+            if(spCollectionJson != null) {
+              JsonArray spArray = spCollectionJson.getJsonArray("servicepoints");
+              if(spArray != null) {
+                for(Object ob: spArray) {
+                  JsonObject json = (JsonObject)ob;
+                  ServicePoint sp = (ServicePoint)Response.convertToPojo(json,
+                      ServicePoint.class);
+                  spList.add(sp);
+                }
+                spu.setServicePoints(spList);
               }
-              spu.setServicePoints(spList);
             }
+            cu.setServicePointsUser(spu);
           }
-          cu.setServicePointsUser(spu);
         }
         
         client.closeClient();
@@ -429,7 +440,7 @@ public class BLUsersAPI implements BlUsersResource {
 
     //works on multiple users, joins needed to aggregate
 
-    boolean []aRequestHasFailed = new boolean[]{false};
+    boolean[] aRequestHasFailed = new boolean[]{false};
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
     //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
@@ -461,8 +472,10 @@ public class BLUsersAPI implements BlUsersResource {
       if(include.get(i).equals(CREDENTIALS_INCLUDE)){
         //call credentials once the /users?query=username={username} completes
         CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-              client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
-                handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
+            client.chainedRequest("/authn/credentials", okapiHeaders, 
+            new BuildCQL(null, "users[*].id", "userId"),
+            handlePreviousResponse(false, true, true, aRequestHasFailed,
+            asyncResultHandler)));
         requestedIncludes.add(credResponse);
         completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
       }
@@ -496,7 +509,7 @@ public class BLUsersAPI implements BlUsersResource {
         Response userResponse = userIdResponse[0].get();
         if(requestedIncludes.size() == 1){
           //no includes requested, so users response was not validated, so validate
-          handleError(userResponse, false, true, true, aRequestHasFailed, asyncResultHandler);
+          handleResponse(userResponse, false, true, true, aRequestHasFailed, asyncResultHandler);
         }
         if(aRequestHasFailed[0]){
           return;
@@ -523,7 +536,7 @@ public class BLUsersAPI implements BlUsersResource {
         if(cf != null){
           groupResponse = cf.get();
           //check for errors
-          handleError(groupResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+          handleResponse(groupResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
             //join into the compositeUser array groups joining on id and patronGroup field values. assume only one group per user
             //hence the usergroup[0] field to push into ../../groups otherwise (if many) leave out the [0] and pass in "usergroups"
@@ -534,7 +547,7 @@ public class BLUsersAPI implements BlUsersResource {
         if(cf != null){
           credsResponse = cf.get();
           //check for errors
-          handleError(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+          handleResponse(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
             composite.joinOn("compositeUser[*].users.id", credsResponse, "credentials[*].userId", "../", "../../credentials", false);
           }
@@ -543,7 +556,7 @@ public class BLUsersAPI implements BlUsersResource {
         if(cf != null){
           permsResponse = cf.get();
           //check for errors
-          handleError(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+          handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]){
             composite.joinOn("compositeUser[*].users.id", permsResponse, "permissionUsers[*].userId", "../permissions", "../../permissions.permissions", false);
           }
@@ -551,7 +564,7 @@ public class BLUsersAPI implements BlUsersResource {
         cf = completedLookup.get(PROXIESFOR_INCLUDE);
         if(cf != null) {
           proxiesforResponse = cf.get();
-          handleError(proxiesforResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+          handleResponse(proxiesforResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
           if(!aRequestHasFailed[0]) {
             composite.joinOn("compositeUser[*].users.id", proxiesforResponse, "proxiesFor[*].userId", "../", "../../proxiesFor", false);
           }
@@ -619,10 +632,10 @@ public class BLUsersAPI implements BlUsersResource {
   }
 
   @Override
-  public void postBlUsersLogin(Boolean expandPerms, List<String> include, LoginCredentials entity,
-      Map<String, String> okapiHeaders,
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext)
-      throws Exception {
+  public void postBlUsersLogin(Boolean expandPerms, List<String> include,
+      LoginCredentials entity, Map<String, String> okapiHeaders,
+      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      Context vertxContext) throws Exception {
 
     //works on single user, no joins needed , just aggregate
 
@@ -653,24 +666,30 @@ public class BLUsersAPI implements BlUsersResource {
       //can only be one user with this username - so only one result expected
       String userUrl = "/users?query=username="+entity.getUsername();
       //run login
-      loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL, okapiHeaders);
+      loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL,
+          okapiHeaders);
       //then get user by username, inject okapi headers from the login response into the user request
       //see 'true' flag passed into the chainedRequest
-      userResponse[0] = loginResponse[0].thenCompose(client.chainedRequest(userUrl,
-        okapiHeaders, false, null, handlePreviousResponse(false, false, true, aRequestHasFailed, asyncResultHandler)));
+      userResponse[0] = loginResponse[0].thenCompose(client.chainedRequest(
+          userUrl, okapiHeaders, false, null, handlePreviousResponse(false,
+          false, true, aRequestHasFailed, asyncResultHandler)));
 
       //populate composite based on includes
       int includeCount = include.size();
-      ArrayList<CompletableFuture<Response>> requestedIncludes = new ArrayList<>();
-      Map<String, CompletableFuture<Response>> completedLookup = new HashMap<>();
+      ArrayList<CompletableFuture<Response>> requestedIncludes 
+          = new ArrayList<>();
+      Map<String, CompletableFuture<Response>> completedLookup 
+          = new HashMap<>();
 
       for (int i = 0; i < includeCount; i++) {
 
         if(include.get(i).equals(CREDENTIALS_INCLUDE)){
           //call credentials once the /users?query=username={username} completes
-          CompletableFuture<Response> credResponse = userResponse[0].thenCompose(
-                client.chainedRequest("/authn/credentials", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
-                  handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
+          CompletableFuture<Response> credResponse = userResponse[0]
+              .thenCompose(client.chainedRequest("/authn/credentials", 
+              okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
+              handlePreviousResponse(false, true, true, aRequestHasFailed,
+              asyncResultHandler)));
           requestedIncludes.add(credResponse);
           completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
         }
@@ -688,6 +707,20 @@ public class BLUsersAPI implements BlUsersResource {
               handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
           requestedIncludes.add(groupResponse);
           completedLookup.put(GROUPS_INCLUDE, groupResponse);
+        }
+        else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
+          CompletableFuture<Response> servicePointsResponse = userResponse[0].thenCompose(
+            client.chainedRequest("/service-points-users?query=userId=={users[0].id}",
+                okapiHeaders, null, handlePreviousResponse(false, false, false, 
+                aRequestHasFailed, asyncResultHandler))
+          );
+          requestedIncludes.add(servicePointsResponse);
+          completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
+          CompletableFuture<Response> expandSPUResponse = expandServicePoints(
+            servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
+            asyncResultHandler);
+          completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
+          requestedIncludes.add(expandSPUResponse);
         }
       }
 
@@ -709,7 +742,7 @@ public class BLUsersAPI implements BlUsersResource {
         try {
           if(requestedIncludes.size() == 1){
             //no includes requested, so users response was not validated, so validate
-            handleError(userResponse[0].get(), true, false, true, aRequestHasFailed, asyncResultHandler);
+            handleResponse(userResponse[0].get(), true, false, true, aRequestHasFailed, asyncResultHandler);
           }
           if(aRequestHasFailed[0]){
             return;
@@ -726,7 +759,7 @@ public class BLUsersAPI implements BlUsersResource {
           CompletableFuture<Response> cf = completedLookup.get(GROUPS_INCLUDE);
           if(cf != null){
             Response groupResponse = cf.get();
-            handleError(groupResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+            handleResponse(groupResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0] && groupResponse.getBody() != null){
               cu.setPatronGroup((PatronGroup)Response.convertToPojo(groupResponse.getBody(), PatronGroup.class));
             }
@@ -734,7 +767,7 @@ public class BLUsersAPI implements BlUsersResource {
           cf = completedLookup.get(CREDENTIALS_INCLUDE);
           if(cf != null){
             Response credsResponse = cf.get();
-            handleError(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+            handleResponse(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0] && credsResponse.getBody() != null){
               cu.setCredentials((Credentials)Response.convertToPojo(
                 credsResponse.getBody().getJsonArray("credentials").getJsonObject(0), Credentials.class));
@@ -743,7 +776,7 @@ public class BLUsersAPI implements BlUsersResource {
           cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
           if(cf != null){
             Response permsResponse = cf.get();
-            handleError(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+            handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
               //data coming in from the service isnt returned as required by the composite user schema
               JsonObject j = new JsonObject();
@@ -754,7 +787,7 @@ public class BLUsersAPI implements BlUsersResource {
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
           if(cf != null && cf.get().getBody() != null){
             Response permsResponse = cf.get();
-            handleError(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+            handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0]){
               Permissions p = cu.getPermissions();
               if(p != null){
@@ -766,6 +799,35 @@ public class BLUsersAPI implements BlUsersResource {
                 JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
                 cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
               }
+            }
+          }
+          
+          //TODO: Refactor so less copy/paste
+          
+          cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
+          CompletableFuture<Response> ecf = completedLookup.get(
+              EXPANDED_SERVICEPOINTS_INCLUDE);
+          if(ecf != null && cf != null && cf.get().getBody() != null) {
+            JsonArray array = cf.get().getBody().getJsonArray("servicePointsUsers");
+            if(!array.isEmpty()) {
+              JsonObject spuJson = array.getJsonObject(0);
+              ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson, 
+                  ServicePointsUser.class);
+              List<ServicePoint> spList = new ArrayList<>();
+              JsonObject spCollectionJson = ecf.get().getBody();
+              if(spCollectionJson != null) {
+                JsonArray spArray = spCollectionJson.getJsonArray("servicepoints");
+                if(spArray != null) {
+                  for(Object ob: spArray) {
+                    JsonObject json = (JsonObject)ob;
+                    ServicePoint sp = (ServicePoint)Response.convertToPojo(json,
+                        ServicePoint.class);
+                    spList.add(sp);
+                  }
+                  spu.setServicePoints(spList);
+                }
+              }
+              cu.setServicePointsUser(spu);
             }
           }
 
@@ -791,48 +853,55 @@ public class BLUsersAPI implements BlUsersResource {
       Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) 
       throws InterruptedException, ExecutionException {
     if(spuResponseFuture == null) {
-      return null;
+      return CompletableFuture.completedFuture(null);
     }
-    List<String> servicePointIdQueryList = new ArrayList<>();
-    Response r = spuResponseFuture.get();
-    if(r == null) {
-      return null;
-    }
-    JsonObject servicePointsUserListObjectJson = r.getBody();
-    if(servicePointsUserListObjectJson == null ) {
-      return null;
-    }
-    JsonObject servicePointsUserJson = null;
-    try {
-      servicePointsUserJson = servicePointsUserListObjectJson
-          .getJsonArray("servicePointsUsers").getJsonObject(0);
-    } catch(Exception e) {
-      //meh
-    }
-    if(servicePointsUserJson == null) {
-      return null;
-    }
-    if(servicePointsUserJson.containsKey("defaultServicePointId")) {
-      String defaultSPId = servicePointsUserJson.getString("defaultServicePointId");
-      if(defaultSPId != null) {
-        servicePointIdQueryList.add(String.format("id==\"%s\"", defaultSPId));
+    return spuResponseFuture.thenCompose( response -> {
+      List<String> servicePointIdQueryList = new ArrayList<>();
+    
+      JsonObject servicePointsUserListObjectJson = response.getBody();
+      if(servicePointsUserListObjectJson == null ) {
+        return CompletableFuture.completedFuture(null);
       }
-    }
-    if(servicePointsUserJson.containsKey("servicePointsIds")) {
-      JsonArray SPIdArray = servicePointsUserJson.getJsonArray("servicePointsIds");
-      if(SPIdArray != null) {
-        for(Object ob : SPIdArray) {
-          servicePointIdQueryList.add(String.format("id==\"%s\"", (String)ob));
+      JsonObject servicePointsUserJson = null;
+      try {
+        servicePointsUserJson = servicePointsUserListObjectJson
+            .getJsonArray("servicePointsUsers").getJsonObject(0);
+      } catch(Exception e) {
+        //meh
+      }
+      if(servicePointsUserJson == null) {
+        return CompletableFuture.completedFuture(null);
+      }
+      if(servicePointsUserJson.containsKey("defaultServicePointId")) {
+        String defaultSPId = servicePointsUserJson.getString("defaultServicePointId");
+        if(defaultSPId != null) {
+          servicePointIdQueryList.add(String.format("id==\"%s\"", defaultSPId));
         }
       }
-    }
-    String idQuery = String.join(" OR ", servicePointIdQueryList);
-    CompletableFuture<Response> expandSPUResponse = spuResponseFuture
-        .thenCompose(client.chainedRequest("/service-points?query="+ idQuery,
-        okapiHeaders, true, null, handlePreviousResponse(true, false, true,
-        aRequestHasFailed, asyncResultHandler)));
+      if(servicePointsUserJson.containsKey("servicePointsIds")) {
+        JsonArray SPIdArray = servicePointsUserJson.getJsonArray("servicePointsIds");
+        if(SPIdArray != null) {
+          for(Object ob : SPIdArray) {
+            servicePointIdQueryList.add(String.format("id==\"%s\"", (String)ob));
+          }
+        }
+      } 
+      if(servicePointIdQueryList.isEmpty()) {
+        return CompletableFuture.completedFuture(null);
+      }
+      String idQuery = null;
+      try {
+        idQuery = URLEncoder.encode(String.join(" or ", servicePointIdQueryList), "UTF-8");
+      } catch (UnsupportedEncodingException ex) {
+        java.util.logging.Logger.getLogger(BLUsersAPI.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      CompletableFuture<Response> expandSPUResponse = spuResponseFuture
+          .thenCompose(client.chainedRequest("/service-points?query="+ idQuery,
+          okapiHeaders, true, null, handlePreviousResponse(false, false, false,
+          aRequestHasFailed, asyncResultHandler)));
 
-    return expandSPUResponse;
+      return expandSPUResponse;
+    });
   }
 
 }

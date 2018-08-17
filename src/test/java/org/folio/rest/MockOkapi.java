@@ -99,7 +99,7 @@ public class MockOkapi extends AbstractVerticle {
           }
         } else {
           System.out.println(String.format(
-                  "No match found for uri %s and endpoint %s", uri, endpoint));
+             "No matching input found for uri %s and endpoint %s", uri, endpoint));
         }
         activeEndpoint = endpoint;
         break;

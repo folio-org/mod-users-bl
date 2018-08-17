@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -278,8 +279,13 @@ public class MockOkapiTest {
               .add("gamma.a")
               .add("beta.b")
               .add("alpha.a"));
-    })
-      .compose(w -> {
+    }).compose(w -> {
+      List<String> idList = new ArrayList<>();
+      idList.add(sp1Id);
+      idList.add(sp2Id);
+      idList.add(sp3Id);
+      return getServicePointsByQuery(context, idList);
+    }).compose(w -> {
       return getUserByQuery(context, "bfrederi");
     }).compose(w -> {
       return getServicePointUser(context, bfrederiId, sp3Id, new JsonArray());
@@ -558,7 +564,16 @@ public class MockOkapiTest {
            future.fail("Expected 200, got code " + res.result().getCode());
          } else {
            JsonObject cuJson = res.result().getJson();
-           JsonArray spArray = cuJson.getJsonArray("servicePoints");
+           JsonObject spUserJson = cuJson.getJsonObject("servicePointsUser");
+           if(spUserJson == null) {
+             future.fail("No service points user info found");
+             return;
+           }
+           JsonArray spArray = spUserJson.getJsonArray("servicePoints");
+           if(spArray == null) {
+             future.fail("No service points array found");
+             return;
+           }
            boolean foundAll = true;
            String error = null;
            for(String spId : expectedServicePointIds) {
@@ -640,6 +655,58 @@ public class MockOkapiTest {
             assertTrue(servicePointIds.contains(ob));
           }
           future.complete(res.result());
+        } catch(Exception e) {
+          future.fail("Unable to find expected results: " + e.getLocalizedMessage());
+        }
+      }
+    });
+    return future;
+  }
+  
+  private Future<WrappedResponse> getServicePointsByQuery(TestContext context,
+      List<String> idList) {
+    Future<WrappedResponse> future = Future.future();
+    List<String> queryList = new ArrayList<>();
+    for(String id: idList) {
+      queryList.add(String.format("id==\"%s\"", id));
+    }
+    String query = String.join(" or ", queryList);
+    String url = null;
+    try {
+      url =String.format("http://localhost:%s/service-points?query=%s",
+        mockOkapiPort, URLEncoder.encode(query, "UTF-8"));
+    } catch(Exception e) {
+      return Future.failedFuture(e);
+    }
+    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
+      if(res.failed()) { future.fail(res.cause()); }
+      else if(res.result().getCode() != 200) {
+        future.fail(String.format("Expected code 200, got %s: %s",
+            res.result().getCode(), res.result().getBody()));
+      } else {
+        try {
+          JsonArray resultArray = res.result().getJson().getJsonArray("servicepoints");
+          boolean foundAll = true;
+          String error = null;
+          for(String id : idList) {
+            boolean found = false;
+            for(Object ob : resultArray) {
+              if(((JsonObject)ob).getString("id").equals(id)) {
+                found = true;
+                break;
+              }              
+            }
+            if(!found) {
+                foundAll = false;
+                error = String.format("Did not find id '%s'", id);
+                break;
+            }
+          }
+          if(!foundAll) {
+            future.fail(error);
+          } else {
+            future.complete(res.result());
+          }
         } catch(Exception e) {
           future.fail("Unable to find expected results: " + e.getLocalizedMessage());
         }
