@@ -98,6 +98,11 @@
       <version>3.5.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.folio</groupId>
+      <artifactId>mod-configuration-client</artifactId>
+      <version>4.0.4-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <build>

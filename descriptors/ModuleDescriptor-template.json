@@ -50,11 +50,30 @@
           "modulePermissions": ["users.item.post",
             "perms.users.item.post",
             "login.item.post"]
-        }, {
+        },
+        {
           "methods": ["PUT"],
           "pathPattern": "/bl-users/{id}",
           "permissionsDesired": ["perms.users.item.put" ],
           "permissionsRequired": ["users-bl.item.put"],
+          "modulePermissions": ["users.edit", "users.item.put",
+            "perms.users.item.put",
+            "login.item.put"]
+        },
+        {
+          "methods": ["POST"],
+          "pathPattern": "/forgotten/password",
+          "permissionsDesired": [],
+          "permissionsRequired": [],
+          "modulePermissions": ["users.edit", "users.item.put",
+            "perms.users.item.put",
+            "login.item.put"]
+        },
+        {
+          "methods": ["POST"],
+          "pathPattern": "/forgotten/username",
+          "permissionsDesired": [],
+          "permissionsRequired": [],
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
             "login.item.put"]
