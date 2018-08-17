@@ -10,37 +10,77 @@
           "methods": ["GET"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.collection.get"],
-          "modulePermissions": ["users.collection.get"]
+          "modulePermissions": [
+            "users.collection.get",
+            "inventory-storage.service-points-users.collection.get",
+            "inventory-storage.service-points-users.item.get",
+            "inventory-storage.service-points.collection.get",
+            "inventory-storage.service-points.item.get"
+          ]
         },
         {
           "methods" : [ "GET" ],
           "pathPattern" : "/bl-users/_self",
           "permissionsRequired" : [],
-          "modulePermissions": ["users.item.get", "users.collection.get",
+          "modulePermissions": [
+            "users.item.get", 
+            "users.collection.get",
             "perms.users.get",
-            "usergroups.item.get"]
+            "usergroups.item.get",
+            "inventory-storage.service-points-users.collection.get",
+            "inventory-storage.service-points-users.item.get",
+            "inventory-storage.service-points.collection.get",
+            "inventory-storage.service-points.item.get"
+          ]
         },
         {
           "methods" : [ "POST" ],
           "pathPattern" : "/bl-users/login",
           "permissionsRequired" : [],
-          "modulePermissions" : [ "users.item.get", "users.collection.get",
-            "perms.users.item.get", "perms.users.get", "usergroups.item.get" ]
+          "modulePermissions" : [ 
+            "users.item.get", 
+            "users.collection.get",
+            "perms.users.item.get", 
+            "perms.users.get", 
+            "usergroups.item.get",
+            "inventory-storage.service-points-users.collection.get",
+            "inventory-storage.service-points-users.item.get",
+            "inventory-storage.service-points.collection.get",
+            "inventory-storage.service-points.item.get"
+          ]
         },
         {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-username/{id}",
-          "permissionsRequired": ["users-bl.item.get", "perms.users.get"],
-          "modulePermissions": ["users.item.get", "users.collection.get",
+          "permissionsRequired": [
+            "users-bl.item.get", 
+            "perms.users.get"
+          ],
+          "modulePermissions": [
+            "users.item.get", 
+            "users.collection.get",
             "perms.users.get",
-            "login.item.get"]
+            "login.item.get",
+            "inventory-storage.service-points-users.collection.get",
+            "inventory-storage.service-points-users.item.get",
+            "inventory-storage.service-points.collection.get",
+            "inventory-storage.service-points.item.get"
+          ]
         },
          {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-id/{id}",
           "permissionsRequired": ["users-bl.item.get", "perms.users.get"],
-          "modulePermissions": ["users.item.get", "users.collection.get",
-            "perms.users.get", "login.item.get"]
+          "modulePermissions": [
+            "users.item.get", 
+            "users.collection.get",
+            "perms.users.get", 
+            "login.item.get",
+            "inventory-storage.service-points-users.collection.get",
+            "inventory-storage.service-points-users.item.get",
+            "inventory-storage.service-points.collection.get",
+            "inventory-storage.service-points.item.get"
+          ]
         },
         {
           "methods": ["POST"],
@@ -74,6 +114,14 @@
     {
       "id" : "login",
       "version" : "4.0"
+    },
+    {
+      "id" : "service-points",
+      "version" : "2.1"
+    },
+    {
+      "id" : "service-points-users",
+      "version" : "1.0"
     }
   ],
   "permissionSets": [

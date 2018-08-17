@@ -3,12 +3,8 @@ package org.folio.rest;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.CaseInsensitiveHeaders;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import static io.vertx.core.http.HttpMethod.GET;
 import static io.vertx.core.http.HttpMethod.POST;
@@ -17,17 +13,18 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import org.folio.rest.TestUtil.WrappedResponse;
-import org.folio.rest.client.TenantClient;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -52,6 +49,10 @@ public class MockOkapiTest {
   private String bfrederiPermId = UUID.randomUUID().toString();
   private String lkoPermId = UUID.randomUUID().toString();
   private String mphillipsPermId = UUID.randomUUID().toString();
+  private String sp1Id = UUID.randomUUID().toString();
+  private String sp2Id = UUID.randomUUID().toString();
+  private String sp3Id = UUID.randomUUID().toString();
+  private String bfrederiSPId = UUID.randomUUID().toString();
 
   JsonArray userList = new JsonArray()
           .add(new JsonObject()
@@ -157,6 +158,38 @@ public class MockOkapiTest {
             .put("permissionName", "gamma.b")
             .put("subPermissions", new JsonArray())
           );
+  
+  JsonArray servicePointList = new JsonArray()
+      .add(new JsonObject()
+        .put("id", sp1Id)
+        .put("code", "sp1")
+        .put("name", "ServicePoint1")
+        .put("discoveryDisplayName", "service point one")
+      )
+      .add(new JsonObject()
+        .put("id", sp2Id)
+        .put("code", "sp2")
+        .put("name", "ServicePoint2")
+        .put("discoveryDisplayName", "service point two")
+      )
+      .add(new JsonObject()
+        .put("id", sp3Id)
+        .put("code", "sp3")
+        .put("name", "ServicePoint3")
+        .put("discoveryDisplayName", "service point three")
+      );
+  
+  JsonArray servicePointsUserList = new JsonArray()
+      .add(new JsonObject()
+        .put("id", bfrederiSPId)
+        .put("userId", bfrederiId)
+        .put("defaultServicePointId", sp3Id)
+        .put("servicePointsIds", new JsonArray()
+          .add(sp1Id)
+          .add(sp2Id)
+          .add(sp3Id)
+         )
+      );
 
   @BeforeClass
   public static void setupClass(TestContext context) {
@@ -236,17 +269,27 @@ public class MockOkapiTest {
     }).compose(w -> {
       return loadDataArray(context, "http://localhost:" + mockOkapiPort + "/perms/users", permUserList);
     }).compose(w -> {
+      return loadDataArray(context, "http://localhost:" + mockOkapiPort + "/service-points", servicePointList);
+    }).compose(w -> {
+      return loadDataArray(context, "http://localhost:" + mockOkapiPort + "/service-points-users", servicePointsUserList);
+    }).compose(w -> {
       return loadDataArray(context, "http://localhost:" + mockOkapiPort + "/perms/permissions", permissionList);
     }).compose( w -> {
       return getUserPerms(context, mphillipsPermId, new JsonArray()
               .add("gamma.a")
               .add("beta.b")
               .add("alpha.a"));
-    })
-      .compose(w -> {
+    }).compose(w -> {
+      List<String> idList = new ArrayList<>();
+      idList.add(sp1Id);
+      idList.add(sp2Id);
+      idList.add(sp3Id);
+      return getServicePointsByQuery(context, idList);
+    }).compose(w -> {
       return getUserByQuery(context, "bfrederi");
-    })
-      .compose(w -> {
+    }).compose(w -> {
+      return getServicePointUser(context, bfrederiId, sp3Id, new JsonArray());
+    }).compose(w -> {
       return getBLUserList(context);
     }).compose(w -> {
       return getSingleBLUser(context, mphillipsId);
@@ -256,6 +299,12 @@ public class MockOkapiTest {
       expectedPerms.add("beta.b");
       return getSingleBLUserExpandedPerms(context, mphillipsId,
               expectedPerms);
+    }).compose(w -> {
+      List<String> expectedSPIds = new ArrayList<>();
+      expectedSPIds.add(sp3Id);
+      expectedSPIds.add(sp2Id);
+      return getSingleBLUserWithServicePoints(context, bfrederiId,
+          expectedSPIds);
     });
     startFuture.setHandler(res -> {
       if(res.succeeded()) {
@@ -498,6 +547,60 @@ public class MockOkapiTest {
      });
      return future;
   }
+  
+  private Future<WrappedResponse> getSingleBLUserWithServicePoints(TestContext context,
+          String userId, List<String> expectedServicePointIds) {
+    Future<WrappedResponse> future = Future.future();
+     String url = String.format(
+             "http://localhost:%s/bl-users/by-id/%s?include=servicepoints",
+             mockUsersBLPort, userId);
+     CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+     headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
+     testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+       if(res.failed()) {
+         future.fail(res.cause());
+       } else {
+         if(res.result().getCode() != 200) {
+           future.fail("Expected 200, got code " + res.result().getCode());
+         } else {
+           JsonObject cuJson = res.result().getJson();
+           JsonObject spUserJson = cuJson.getJsonObject("servicePointsUser");
+           if(spUserJson == null) {
+             future.fail("No service points user info found");
+             return;
+           }
+           JsonArray spArray = spUserJson.getJsonArray("servicePoints");
+           if(spArray == null) {
+             future.fail("No service points array found");
+             return;
+           }
+           boolean foundAll = true;
+           String error = null;
+           for(String spId : expectedServicePointIds) {
+             boolean found = false;
+             for(Object ob : spArray) {
+               JsonObject spJson = (JsonObject)ob;
+               if(spJson.getString("id").equals(spId)) {
+                 found = true;
+                 break;
+               }
+             }
+             if(found == false) {
+               error = String.format("Unable to find %s in service points", spId);
+               foundAll = false;
+               break;
+             }
+           }
+           if(!foundAll) {
+             future.fail(error);
+           } else {
+             future.complete(res.result());
+           }
+         }
+       }
+     });
+     return future;
+  }
 
   private Future<WrappedResponse> getUserByQuery(TestContext context, String username) {
     Future<WrappedResponse> future = Future.future();
@@ -522,6 +625,90 @@ public class MockOkapiTest {
           } else {
             future.complete(res.result());
           }
+        }
+      }
+    });
+    return future;
+  }
+  
+  private Future<WrappedResponse> getServicePointUser(TestContext context,
+      String userId, String expectedDefaultSP, JsonArray expectedSPIds) {
+    Future<WrappedResponse> future = Future.future();
+    String url = String.format("http://localhost:%s/service-points-users?query=userId==%s",
+        mockOkapiPort, userId);
+    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
+      if(res.result().getCode() != 200) {
+        future.fail(String.format("Expected code 200, got %s: %s",
+            res.result().getCode(), res.result().getBody()));
+      } else if(res.result().getJson() == null) {
+          future.fail(String.format("%s returned null json", res.result().getBody()));
+      } else if(res.result().getJson().getInteger("totalRecords") != 1) {
+        future.fail(String.format("Expected 1 result, got %s",
+           res.result().getJson().getInteger("totalRecords")));
+      } else {
+        JsonObject spuJson = res.result().getJson().getJsonArray("servicePointsUsers")
+            .getJsonObject(0);
+        try {
+          assertEquals(expectedDefaultSP, spuJson.getString("defaultServicePointId"));
+          JsonArray servicePointIds = spuJson.getJsonArray("servicePointIds");
+          for(Object ob : expectedSPIds) {
+            assertTrue(servicePointIds.contains(ob));
+          }
+          future.complete(res.result());
+        } catch(Exception e) {
+          future.fail("Unable to find expected results: " + e.getLocalizedMessage());
+        }
+      }
+    });
+    return future;
+  }
+  
+  private Future<WrappedResponse> getServicePointsByQuery(TestContext context,
+      List<String> idList) {
+    Future<WrappedResponse> future = Future.future();
+    List<String> queryList = new ArrayList<>();
+    for(String id: idList) {
+      queryList.add(String.format("id==\"%s\"", id));
+    }
+    String query = String.join(" or ", queryList);
+    String url = null;
+    try {
+      url =String.format("http://localhost:%s/service-points?query=%s",
+        mockOkapiPort, URLEncoder.encode(query, "UTF-8"));
+    } catch(Exception e) {
+      return Future.failedFuture(e);
+    }
+    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
+      if(res.failed()) { future.fail(res.cause()); }
+      else if(res.result().getCode() != 200) {
+        future.fail(String.format("Expected code 200, got %s: %s",
+            res.result().getCode(), res.result().getBody()));
+      } else {
+        try {
+          JsonArray resultArray = res.result().getJson().getJsonArray("servicepoints");
+          boolean foundAll = true;
+          String error = null;
+          for(String id : idList) {
+            boolean found = false;
+            for(Object ob : resultArray) {
+              if(((JsonObject)ob).getString("id").equals(id)) {
+                found = true;
+                break;
+              }              
+            }
+            if(!found) {
+                foundAll = false;
+                error = String.format("Did not find id '%s'", id);
+                break;
+            }
+          }
+          if(!foundAll) {
+            future.fail(error);
+          } else {
+            future.complete(res.result());
+          }
+        } catch(Exception e) {
+          future.fail("Unable to find expected results: " + e.getLocalizedMessage());
         }
       }
     });

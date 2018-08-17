@@ -1,0 +1,138 @@
+#%RAML 0.8
+title: Mod-Users BL
+baseUri: http://github.com/org/folio/mod-users-bl
+
+documentation:
+  - title: Business Logic Users API
+    content: A front end for mod-users and mod-permissions
+
+schemas:
+  - compositeUser.json: !include compositeUser.json
+  - compositeUserListObject: !include compositeUserListObject.json
+  - loginCredentials: !include loginCredentials.json
+  - userdata.json: !include userdata.json
+  - usergroup.json: !include usergroup.json
+  - permissionUser.json: !include permissionUser.json
+  - credentials.json: !include credentials.json
+  - proxyfor.json: !include proxyfor.json
+  - servicepoint.json: !include servicepoint.json
+  - servicepointsuser.json: !include servicepointsuser.json
+  - servicepointsexpandeduser.json: !include servicepointsexpandeduser.json
+  - errors: !include raml/schemas/errors.schema
+  - error.schema: !include raml/schemas/error.schema
+  - parameters.schema: !include raml/schemas/parameters.schema
+  - raml/schemas/metadata.schema: !include raml/schemas/metadata.schema
+  - raml/schemas/tags.schema: !include raml/schemas/tags.schema
+
+traits:
+  - secured: !include raml/traits/auth.raml
+  - orderable: !include raml/traits/orderable.raml
+  - pageable: !include raml/traits/pageable.raml
+  - searchable: !include raml/traits/searchable.raml
+  - language: !include raml/traits/language.raml
+  - validate: !include raml/traits/validation.raml
+  - includeable: !include raml/traits/includes.raml
+  - permissionsExpandable:
+      queryParameters:
+        expandPermissions:
+          description:
+            Whether or not to expand permissions listings
+          type: boolean
+          required: false
+resourceTypes:
+  - compositeUserResource:
+     get:
+      description: "Get a user by <<typeName>>"
+      is: [
+        includeable,
+        permissionsExpandable
+      ]
+      responses:
+        200:
+          body:
+            application/json:
+              schema: compositeUser.json
+        400:
+          description: "Bad request"
+          body:
+            text/plain:
+              example: "Bad request"
+        403:
+          description: "Access denied"
+          body:
+            text/plain:
+              example: "Access denied"
+        404:
+          description: "User not found"
+          body:
+            text/plain:
+              example: "User not found"
+        500:
+          description: "Internal server error"
+          body:
+            text/plain:
+              example: "Internal server error"
+
+/bl-users:
+  get:
+    description: Get a number of user (and possibly related) records based on criteria in the user and related modules
+    is: [
+      searchable: {description: "", example: "active=true"},
+      pageable,
+      includeable
+    ]
+    responses:
+      200:
+        body:
+          application/json:
+            schema: compositeUserListObject
+      400:
+        description: "Bad request"
+        body:
+          text/plain:
+            example: "Bad request"
+      403:
+        description: "Access denied"
+        body:
+          text/plain:
+            example: "Access denied"
+      500:
+        description: "Internal server error"
+        body:
+          text/plain:
+            example: "Internal server error"
+  /by-id:
+    /{id}:
+      type: { compositeUserResource: { "typeName" : "id" } }
+      is: [includeable]
+  /by-username:
+    /{username}:
+      type: { compositeUserResource: { "typeName" : "username"} }
+      is: [includeable]
+  /_self:
+    type: { compositeUserResource: { "typeName" : "self reference" } }
+  /login:
+    post:
+      description: Allow a new user to login and return an authtoken, along with a composite user record
+      is: [permissionsExpandable, includeable]
+      body:
+        application/json:
+          schema: loginCredentials
+      responses:
+        201:
+          body:
+            application/json:
+              schema: compositeUser.json
+          headers:
+            x-okapi-token:
+        400:
+          description: "Bad request"
+          body:
+            text/plain:
+              example: "Bad request"
+        500:
+          description: "Internal server error"
+          body:
+            text/plain:
+              example: "Internal server error"
+

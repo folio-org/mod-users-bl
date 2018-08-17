@@ -1,3 +1,6 @@
+## 4.0.0 2018-08-18
+ * Add support for associated service points with user record
+
 ## 3.0.0 2018-05-31
  * Update RAML definitions (meta removed from proxyFor)
  * Modify module descriptor to allow modusers v15.0

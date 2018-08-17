@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "userId": {
+      "type": "string"
+    },
+    "servicePointsIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "servicePoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "servicepoint.json"
+      }
+    },
+    "defaultServicePointId": {
+      "type": "string"
+    },
+    "defaultServicePoint": {
+      "type": "object",
+      "$ref": "servicepoint.json"
+    },
+    "metadata": {
+      "type": "object",
+      "$ref": "raml/schemas/metadata.schema",
+      "readonly": true
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "userId"
+  ]
+}

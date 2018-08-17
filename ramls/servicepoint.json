@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    },
+    "discoveryDisplayName": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "shelvingLagTime": {
+      "type": "integer"
+    },
+    "pickupLocation": {
+      "type": "boolean"
+    },
+    "locationIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "$ref": "raml/schemas/metadata.schema",
+      "readonly": true
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "code",
+    "discoveryDisplayName"
+  ]
+}
