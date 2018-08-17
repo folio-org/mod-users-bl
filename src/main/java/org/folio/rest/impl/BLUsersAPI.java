@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.folio.rest.jaxrs.model.CompositeUser;
@@ -81,7 +80,7 @@ public class BLUsersAPI implements BlUsersResource {
 
   Consumer<Response> handlePreviousResponse(boolean requireOneResult,
       boolean requireOneOrMoreResults, boolean stopChainOnNoResults,
-      boolean previousFailure[], Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
+      boolean[] previousFailure, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
     return (response) -> {
       if(!previousFailure[0]){
         handleResponse(response, requireOneResult, requireOneOrMoreResults,
@@ -381,8 +380,6 @@ public class BLUsersAPI implements BlUsersResource {
         }
         
         cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
-        //CompletableFuture<Response> ecf = expandServicePoints(cf, client, aRequestHasFailed,
-        //    okapiHeaders, asyncResultHandler);
         CompletableFuture<Response> ecf = completedLookup.get(
             EXPANDED_SERVICEPOINTS_INCLUDE);
         if(ecf != null && cf != null && cf.get().getBody() != null) {
