@@ -234,13 +234,13 @@ public class MockOkapi extends AbstractVerticle {
     return handleBasicCrud(permsPermissionsStore, "permissions", method, id, url,
             payload, context);
   }
-  
+
   private MockResponse handleServicePoints(HttpMethod method, String id, String url,
       String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(servicePointsStore, "servicepoints", method, id, url,
         payload, context);
   }
-  
+
   private MockResponse handleServicePointsUsers (HttpMethod method, String id, String url,
       String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(servicePointsUsersStore, "servicePointsUsers", method,

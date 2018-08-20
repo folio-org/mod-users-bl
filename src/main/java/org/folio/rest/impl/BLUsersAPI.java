@@ -50,7 +50,7 @@ public class BLUsersAPI implements BlUsersResource {
   private static final String PERMISSIONS_INCLUDE = "perms";
   private static final String PROXIESFOR_INCLUDE = "proxiesfor";
   private static final String SERVICEPOINTS_INCLUDE = "servicepoints";
-  
+
   private static final String EXPANDED_PERMISSIONS_INCLUDE = "expanded_perms";
   private static final String EXPANDED_SERVICEPOINTS_INCLUDE = "expanded_servicepoints";
 
@@ -128,7 +128,7 @@ public class BLUsersAPI implements BlUsersResource {
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainNotFound("No record found for query '" 
+            GetBlUsersByIdByIdResponse.withPlainNotFound("No record found for query '"
                 + response.getEndpoint() + "'")));
         } else if(totalRecords != null && totalRecords > 1 && requireOneResult) {
           logger.error("'" + response.getEndpoint() + "' returns multiple results");
@@ -273,7 +273,7 @@ public class BLUsersAPI implements BlUsersResource {
       else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
         CompletableFuture<Response> servicePointsResponse = userIdResponse[0].thenCompose(
           client.chainedRequest("/service-points-users?query=userId==" + userTemplate,
-              okapiHeaders, null, handlePreviousResponse(false, false, false, 
+              okapiHeaders, null, handlePreviousResponse(false, false, false,
               aRequestHasFailed, asyncResultHandler))
         );
         requestedIncludes.add(servicePointsResponse);
@@ -292,16 +292,16 @@ public class BLUsersAPI implements BlUsersResource {
       requestedIncludes.add(expandPermsResponse);
       completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
     }
-    
+
     if(completedLookup.containsKey(SERVICEPOINTS_INCLUDE)) {
       CompletableFuture<Response> expandSPUResponse = expandServicePoints(
           completedLookup.get(SERVICEPOINTS_INCLUDE), client, aRequestHasFailed,
           okapiHeaders, asyncResultHandler);
-      completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse); 
+      completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
       requestedIncludes.add(expandSPUResponse);
-    
+
     }
-    
+
     requestedIncludes.add(userIdResponse[0]);
     CompletableFuture.allOf(requestedIncludes.toArray(
         new CompletableFuture[requestedIncludes.size()]))
@@ -378,7 +378,7 @@ public class BLUsersAPI implements BlUsersResource {
             cu.setProxiesFor(proxyForList);
           }
         }
-        
+
         cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
         CompletableFuture<Response> ecf = completedLookup.get(
             EXPANDED_SERVICEPOINTS_INCLUDE);
@@ -386,7 +386,7 @@ public class BLUsersAPI implements BlUsersResource {
           JsonArray array = cf.get().getBody().getJsonArray("servicePointsUsers");
           if(!array.isEmpty()) {
             JsonObject spuJson = array.getJsonObject(0);
-            ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson, 
+            ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson,
                 ServicePointsUser.class);
             List<ServicePoint> spList = new ArrayList<>();
             JsonObject spCollectionJson = ecf.get().getBody();
@@ -405,7 +405,7 @@ public class BLUsersAPI implements BlUsersResource {
             cu.setServicePointsUser(spu);
           }
         }
-        
+
         client.closeClient();
         if(mode[0].equals("id")){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
@@ -469,7 +469,7 @@ public class BLUsersAPI implements BlUsersResource {
       if(include.get(i).equals(CREDENTIALS_INCLUDE)){
         //call credentials once the /users?query=username={username} completes
         CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-            client.chainedRequest("/authn/credentials", okapiHeaders, 
+            client.chainedRequest("/authn/credentials", okapiHeaders,
             new BuildCQL(null, "users[*].id", "userId"),
             handlePreviousResponse(false, true, true, aRequestHasFailed,
             asyncResultHandler)));
@@ -673,9 +673,9 @@ public class BLUsersAPI implements BlUsersResource {
 
       //populate composite based on includes
       int includeCount = include.size();
-      ArrayList<CompletableFuture<Response>> requestedIncludes 
+      ArrayList<CompletableFuture<Response>> requestedIncludes
           = new ArrayList<>();
-      Map<String, CompletableFuture<Response>> completedLookup 
+      Map<String, CompletableFuture<Response>> completedLookup
           = new HashMap<>();
 
       for (int i = 0; i < includeCount; i++) {
@@ -683,7 +683,7 @@ public class BLUsersAPI implements BlUsersResource {
         if(include.get(i).equals(CREDENTIALS_INCLUDE)){
           //call credentials once the /users?query=username={username} completes
           CompletableFuture<Response> credResponse = userResponse[0]
-              .thenCompose(client.chainedRequest("/authn/credentials", 
+              .thenCompose(client.chainedRequest("/authn/credentials",
               okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
               handlePreviousResponse(false, true, true, aRequestHasFailed,
               asyncResultHandler)));
@@ -708,7 +708,7 @@ public class BLUsersAPI implements BlUsersResource {
         else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
           CompletableFuture<Response> servicePointsResponse = userResponse[0].thenCompose(
             client.chainedRequest("/service-points-users?query=userId=={users[0].id}",
-                okapiHeaders, null, handlePreviousResponse(false, false, false, 
+                okapiHeaders, null, handlePreviousResponse(false, false, false,
                 aRequestHasFailed, asyncResultHandler))
           );
           requestedIncludes.add(servicePointsResponse);
@@ -798,9 +798,9 @@ public class BLUsersAPI implements BlUsersResource {
               }
             }
           }
-          
+
           //TODO: Refactor so less copy/paste
-          
+
           cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
           CompletableFuture<Response> ecf = completedLookup.get(
               EXPANDED_SERVICEPOINTS_INCLUDE);
@@ -808,7 +808,7 @@ public class BLUsersAPI implements BlUsersResource {
             JsonArray array = cf.get().getBody().getJsonArray("servicePointsUsers");
             if(!array.isEmpty()) {
               JsonObject spuJson = array.getJsonObject(0);
-              ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson, 
+              ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson,
                   ServicePointsUser.class);
               List<ServicePoint> spList = new ArrayList<>();
               JsonObject spCollectionJson = ecf.get().getBody();
@@ -843,18 +843,18 @@ public class BLUsersAPI implements BlUsersResource {
       });
     }
   }
-  
+
   private CompletableFuture<Response> expandServicePoints(
       CompletableFuture<Response> spuResponseFuture, HttpClientInterface client,
-      boolean[] aRequestHasFailed, Map<String, String> okapiHeaders, 
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) 
+      boolean[] aRequestHasFailed, Map<String, String> okapiHeaders,
+      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler)
       throws InterruptedException, ExecutionException {
     if(spuResponseFuture == null) {
       return CompletableFuture.completedFuture(null);
     }
     return spuResponseFuture.thenCompose( response -> {
       List<String> servicePointIdQueryList = new ArrayList<>();
-    
+
       JsonObject servicePointsUserListObjectJson = response.getBody();
       if(servicePointsUserListObjectJson == null ) {
         return CompletableFuture.completedFuture(null);
@@ -882,7 +882,7 @@ public class BLUsersAPI implements BlUsersResource {
             servicePointIdQueryList.add(String.format("id==\"%s\"", (String)ob));
           }
         }
-      } 
+      }
       if(servicePointIdQueryList.isEmpty()) {
         return CompletableFuture.completedFuture(null);
       }
