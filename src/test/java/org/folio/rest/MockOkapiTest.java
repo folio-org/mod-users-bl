@@ -188,7 +188,11 @@ public class MockOkapiTest {
           .add(sp1Id)
           .add(sp2Id)
           .add(sp3Id)
-         )
+        )
+      )
+      .add(new JsonObject()
+        .put("userId", lkoId)
+        .put("servicePointsIds", new JsonArray())
       );
 
   @BeforeClass
@@ -305,6 +309,8 @@ public class MockOkapiTest {
       expectedSPIds.add(sp2Id);
       return getSingleBLUserWithServicePoints(context, bfrederiId,
           expectedSPIds);
+    }).compose(w -> {
+      return getSingleBLUserWithServicePoints(context, lkoId, new ArrayList<>());
     });
     startFuture.setHandler(res -> {
       if(res.succeeded()) {
