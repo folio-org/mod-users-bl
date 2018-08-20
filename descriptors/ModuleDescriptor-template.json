@@ -23,7 +23,7 @@
           "pathPattern" : "/bl-users/_self",
           "permissionsRequired" : [],
           "modulePermissions": [
-            "users.item.get", 
+            "users.item.get",
             "users.collection.get",
             "perms.users.get",
             "usergroups.item.get",
@@ -37,11 +37,11 @@
           "methods" : [ "POST" ],
           "pathPattern" : "/bl-users/login",
           "permissionsRequired" : [],
-          "modulePermissions" : [ 
-            "users.item.get", 
+          "modulePermissions" : [
+            "users.item.get",
             "users.collection.get",
-            "perms.users.item.get", 
-            "perms.users.get", 
+            "perms.users.item.get",
+            "perms.users.get",
             "usergroups.item.get",
             "inventory-storage.service-points-users.collection.get",
             "inventory-storage.service-points-users.item.get",
@@ -53,11 +53,11 @@
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-username/{id}",
           "permissionsRequired": [
-            "users-bl.item.get", 
+            "users-bl.item.get",
             "perms.users.get"
           ],
           "modulePermissions": [
-            "users.item.get", 
+            "users.item.get",
             "users.collection.get",
             "perms.users.get",
             "login.item.get",
@@ -72,9 +72,9 @@
           "pathPattern": "/bl-users/by-id/{id}",
           "permissionsRequired": ["users-bl.item.get", "perms.users.get"],
           "modulePermissions": [
-            "users.item.get", 
+            "users.item.get",
             "users.collection.get",
-            "perms.users.get", 
+            "perms.users.get",
             "login.item.get",
             "inventory-storage.service-points-users.collection.get",
             "inventory-storage.service-points-users.item.get",
