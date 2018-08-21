@@ -1,3 +1,6 @@
+## 4.0.2 2018-08-20
+ * Apply service point user bugfix to login logic
+
 ## 4.0.1 2018-08-20
  * Fix bug involving service points users with no service points
 

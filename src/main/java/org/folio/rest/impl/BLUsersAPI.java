@@ -821,17 +821,20 @@ public class BLUsersAPI implements BlUsersResource {
               ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson,
                   ServicePointsUser.class);
               List<ServicePoint> spList = new ArrayList<>();
-              JsonObject spCollectionJson = ecf.get().getBody();
-              if(spCollectionJson != null) {
-                JsonArray spArray = spCollectionJson.getJsonArray("servicepoints");
-                if(spArray != null) {
-                  for(Object ob: spArray) {
-                    JsonObject json = (JsonObject)ob;
-                    ServicePoint sp = (ServicePoint)Response.convertToPojo(json,
-                        ServicePoint.class);
-                    spList.add(sp);
+              Response resp = ecf.get();
+              if(resp != null) {
+                JsonObject spCollectionJson = resp.getBody();
+                if(spCollectionJson != null) {
+                  JsonArray spArray = spCollectionJson.getJsonArray("servicepoints");
+                  if(spArray != null) {
+                    for(Object ob: spArray) {
+                      JsonObject json = (JsonObject)ob;
+                      ServicePoint sp = (ServicePoint)Response.convertToPojo(json,
+                          ServicePoint.class);
+                      spList.add(sp);
+                    }
+                    spu.setServicePoints(spList);
                   }
-                  spu.setServicePoints(spList);
                 }
               }
               cu.setServicePointsUser(spu);
