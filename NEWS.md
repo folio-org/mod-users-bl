@@ -1,3 +1,12 @@
+## 4.0.2 2018-08-20
+ * Apply service point user bugfix to login logic
+
+## 4.0.1 2018-08-20
+ * Fix bug involving service points users with no service points
+
+## 4.0.0 2018-08-18
+ * Add support for associated service points with user record
+
 ## 3.0.0 2018-05-31
  * Update RAML definitions (meta removed from proxyFor)
  * Modify module descriptor to allow modusers v15.0

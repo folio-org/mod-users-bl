@@ -31,12 +31,16 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore permsPermissionsStore;
   private JsonStore groupsStore;
   private JsonStore proxiesStore;
+  private JsonStore servicePointsStore;
+  private JsonStore servicePointsUsersStore;
 
   static final String USERS_ENDPOINT = "/users";
   static final String PERMS_USERS_ENDPOINT = "/perms/users";
   static final String PERMS_PERMISSIONS_ENDPOINT = "/perms/permissions";
   static final String GROUPS_ENDPOINT = "/groups";
   static final String PROXIES_ENDPOINT = "/proxiesfor";
+  static final String SERVICE_POINTS_ENDPOINT = "/service-points";
+  static final String SERVICE_POINTS_USERS_ENDPOINT = "/service-points-users";
 
 
   @Override
@@ -65,13 +69,16 @@ public class MockOkapi extends AbstractVerticle {
     permsPermissionsStore = new JsonStore();
     groupsStore = new JsonStore();
     proxiesStore = new JsonStore();
+    servicePointsStore = new JsonStore();
+    servicePointsUsersStore = new JsonStore();
   }
 
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
 
     String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT,
-      PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT};
+      PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT,
+      SERVICE_POINTS_USERS_ENDPOINT, SERVICE_POINTS_ENDPOINT};
     String uri = context.request().path();
     Matcher matcher;
     String id = null;
@@ -92,13 +99,16 @@ public class MockOkapi extends AbstractVerticle {
           }
         } else {
           System.out.println(String.format(
-                  "No match found for uri %s and endpoint %s", uri, endpoint));
+             "No matching input found for uri %s and endpoint %s", uri, endpoint));
         }
         activeEndpoint = endpoint;
         break;
       } else {
         continue;
       }
+    }
+    if(activeEndpoint == null) {
+      context.fail(new Error(String.format("Unable to find a matching endpoint for uri %s", uri)));
     }
     try {
       switch(activeEndpoint) {
@@ -121,6 +131,14 @@ public class MockOkapi extends AbstractVerticle {
         case PROXIES_ENDPOINT:
           mockResponse = handleProxies(method, id, remainder,
                   context.getBodyAsString(), context);
+          break;
+        case SERVICE_POINTS_ENDPOINT:
+          mockResponse = handleServicePoints(method, id, remainder,
+              context.getBodyAsString(), context);
+          break;
+        case SERVICE_POINTS_USERS_ENDPOINT:
+          mockResponse = handleServicePointsUsers(method, id, remainder,
+              context.getBodyAsString(), context);
           break;
         default:
           break;
@@ -215,6 +233,18 @@ public class MockOkapi extends AbstractVerticle {
           String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(permsPermissionsStore, "permissions", method, id, url,
             payload, context);
+  }
+
+  private MockResponse handleServicePoints(HttpMethod method, String id, String url,
+      String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(servicePointsStore, "servicepoints", method, id, url,
+        payload, context);
+  }
+
+  private MockResponse handleServicePointsUsers (HttpMethod method, String id, String url,
+      String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(servicePointsUsersStore, "servicePointsUsers", method,
+        id, url, payload, context);
   }
 
   private MockResponse handleBasicCrud(JsonStore store, String collectionName,
