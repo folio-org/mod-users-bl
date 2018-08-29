@@ -29,23 +29,18 @@ public class Query {
   }
 
   public Boolean match(JsonObject ob) {
-    if(!ob.containsKey(field)) {
-      return false;
+    Object checkObject = ob;
+    String[] fields = field.split("\\.");
+
+    for (String fld: fields) {
+      checkObject = ((JsonObject)checkObject).getValue(fld);
     }
-    if(operator == Operator.EQUALS) {
-      if(value.equals(ob.getValue(field))) {
-        return true;
-      } else {
-        return false;
-      }
-    } else if(operator == Operator.NOTEQUALS) {
-      if(value.equals(ob.getValue(field))) {
-        return false;
-      } else {
-        return true;
-      }
+
+    switch (operator) {
+      case EQUALS: return value.equals(checkObject);
+      case NOTEQUALS: return !value.equals(checkObject);
+      default: throw new IllegalStateException("Operator can't be null");
     }
-    return false;
   }
 
   public String toString() {

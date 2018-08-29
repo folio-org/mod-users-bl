@@ -1,17 +1,5 @@
 package org.folio.rest;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
-import org.folio.rest.tools.utils.NetworkUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
@@ -22,6 +10,17 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.folio.rest.tools.client.test.HttpClientMock2;
+import org.folio.rest.tools.utils.NetworkUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 @RunWith(VertxUnitRunner.class)
 public class BLUsersAPITest {
@@ -71,7 +70,8 @@ public class BLUsersAPITest {
         .put("username", "maxi")
         .put("id", userId)
         .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
-        .put("active", true);
+        .put("active", true)
+        .put("personal", new JsonObject().put("email", "maxi@maxi.com"));
     given().body(userPost.encode()).
     when().post("http://localhost:" + okapiPort + "/users").
     then().statusCode(201);
@@ -94,6 +94,38 @@ public class BLUsersAPITest {
     when().post("http://localhost:" + okapiPort + "/perms/users").
     then().statusCode(201);
 
+    given().body(new JsonObject()
+      .put("module", "USERSBL")
+      .put("configName", "fogottenData")
+      .put("code", "userName")
+      .put("description", "userName")
+      .put("default", "false")
+      .put("enabled", "true")
+      .put("value", "username").encode()).
+      when().post("http://localhost:" + okapiPort + "/configurations/entries").
+      then().statusCode(201);
+
+    given().body(new JsonObject()
+      .put("module", "USERSBL")
+      .put("configName", "fogottenData")
+      .put("code", "phoneNumber")
+      .put("description", "personal.phone, personal.mobilePhone")
+      .put("default", "false")
+      .put("enabled", "true")
+      .put("value", "personal.phone, personal.mobilePhone").encode()).
+      when().post("http://localhost:" + okapiPort + "/configurations/entries").
+      then().statusCode(201);
+
+    given().body(new JsonObject()
+      .put("module", "USERSBL")
+      .put("configName", "fogottenData")
+      .put("code", "email")
+      .put("description", "personal.email")
+      .put("default", "false")
+      .put("enabled", "true")
+      .put("value", "personal.email").encode()).
+      when().post("http://localhost:" + okapiPort + "/configurations/entries").
+      then().statusCode(201);
 
   }
 
@@ -111,5 +143,31 @@ public class BLUsersAPITest {
     then().
             statusCode(200).
             body("compositeUsers[0].users.username", equalTo("maxi"));
+  }
+
+  @Test
+  public void postBlUsersForgottenPassword(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "maxi").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/password").
+      then().
+      statusCode(204);
+  }
+
+  @Test
+  public void postBlUsersForgottenUsername(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "maxi@maxi.com").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/username").
+      then().
+      statusCode(204);
   }
 }

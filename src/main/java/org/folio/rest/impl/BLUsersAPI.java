@@ -1,12 +1,21 @@
 package org.folio.rest.impl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import org.apache.commons.lang3.StringUtils;
+import org.folio.rest.client.ConfigurationsClient;
 import org.folio.rest.jaxrs.model.CompositeUser;
 import org.folio.rest.jaxrs.model.CompositeUserListObject;
 import org.folio.rest.jaxrs.model.Credentials;
+import org.folio.rest.jaxrs.model.Identifier;
 import org.folio.rest.jaxrs.model.LoginCredentials;
 import org.folio.rest.jaxrs.model.PatronGroup;
 import org.folio.rest.jaxrs.model.Permissions;
@@ -930,7 +939,7 @@ public class BLUsersAPI implements BlUsersResource {
    */
   private String buildQuery(List<String> locateUserFields, String value) {
     return locateUserFields.stream()
-      .map(field -> new StringBuilder(field).append(" = \"").append(value).append("\"").toString())
+      .map(field -> new StringBuilder(field).append("==\"").append(value).append("\"").toString())
       .collect(Collectors.joining(" or "));
   }
 
@@ -957,7 +966,7 @@ public class BLUsersAPI implements BlUsersResource {
 
     ConfigurationsClient configurationsClient = new ConfigurationsClient(host, StringUtils.isNotBlank(port) ? Integer.valueOf(port) : DEFAULT_PORT, tenant, token);
     StringBuilder query = new StringBuilder("module==USERSBL AND (")
-      .append(fieldAliasList.stream().map(f -> new StringBuilder("code=").append(f)).collect(Collectors.joining(" or ")))
+      .append(fieldAliasList.stream().map(f -> new StringBuilder("code==").append(f)).collect(Collectors.joining(" or ")))
       .append(")");
 
     try {
@@ -1015,8 +1024,9 @@ public class BLUsersAPI implements BlUsersResource {
 
         okapiHeaders.remove(OKAPI_URL_HEADER);
 
-        StringBuilder userUrl = new StringBuilder("/users?").append("query=").append(query).append("&").append("offset=0&limit=2");
         try {
+          StringBuilder userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2");
+
           client.request(userUrl.toString(), okapiHeaders).thenAccept(userResponse -> {
             String noUserFoundMessage = "User is not found: ";
 

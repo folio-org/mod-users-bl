@@ -3,23 +3,23 @@ package org.folio.rest;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpMethod;
-import static io.vertx.core.http.HttpMethod.DELETE;
-import static io.vertx.core.http.HttpMethod.GET;
-import static io.vertx.core.http.HttpMethod.POST;
-import static io.vertx.core.http.HttpMethod.PUT;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import org.z3950.zing.cql.CQLParseException;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.z3950.zing.cql.CQLParseException;
+
+import static io.vertx.core.http.HttpMethod.DELETE;
+import static io.vertx.core.http.HttpMethod.GET;
+import static io.vertx.core.http.HttpMethod.POST;
+import static io.vertx.core.http.HttpMethod.PUT;
 
 /**
  *
@@ -33,6 +33,7 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore proxiesStore;
   private JsonStore servicePointsStore;
   private JsonStore servicePointsUsersStore;
+  private JsonStore configurationStore;
 
   static final String USERS_ENDPOINT = "/users";
   static final String PERMS_USERS_ENDPOINT = "/perms/users";
@@ -41,6 +42,7 @@ public class MockOkapi extends AbstractVerticle {
   static final String PROXIES_ENDPOINT = "/proxiesfor";
   static final String SERVICE_POINTS_ENDPOINT = "/service-points";
   static final String SERVICE_POINTS_USERS_ENDPOINT = "/service-points-users";
+  static final String CONFIGURATIONS_ENTRIES_ENDPOINT = "/configurations/entries";
 
 
   @Override
@@ -71,6 +73,7 @@ public class MockOkapi extends AbstractVerticle {
     proxiesStore = new JsonStore();
     servicePointsStore = new JsonStore();
     servicePointsUsersStore = new JsonStore();
+    configurationStore = new JsonStore();
   }
 
   private void handleRequest(RoutingContext context) {
@@ -78,7 +81,7 @@ public class MockOkapi extends AbstractVerticle {
 
     String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT,
       PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT,
-      SERVICE_POINTS_USERS_ENDPOINT, SERVICE_POINTS_ENDPOINT};
+      SERVICE_POINTS_USERS_ENDPOINT, SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT};
     String uri = context.request().path();
     Matcher matcher;
     String id = null;
@@ -139,6 +142,10 @@ public class MockOkapi extends AbstractVerticle {
         case SERVICE_POINTS_USERS_ENDPOINT:
           mockResponse = handleServicePointsUsers(method, id, remainder,
               context.getBodyAsString(), context);
+          break;
+        case CONFIGURATIONS_ENTRIES_ENDPOINT:
+          mockResponse = handlerConfigurationEntries(method, id, remainder,
+            context.getBodyAsString(), context);
           break;
         default:
           break;
@@ -245,6 +252,12 @@ public class MockOkapi extends AbstractVerticle {
       String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(servicePointsUsersStore, "servicePointsUsers", method,
         id, url, payload, context);
+  }
+
+  private MockResponse handlerConfigurationEntries(HttpMethod method, String id, String url,
+                                                   String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(configurationStore, "configs", method, id, url,
+      payload, context);
   }
 
   private MockResponse handleBasicCrud(JsonStore store, String collectionName,
