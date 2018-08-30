@@ -33,7 +33,7 @@ public class Query {
     String[] fields = field.split("\\.");
 
     for (String fld: fields) {
-      checkObject = ((JsonObject)checkObject).getValue(fld);
+      checkObject = (checkObject instanceof JsonObject) ? ((JsonObject) checkObject).getValue(fld) : null;
     }
 
     switch (operator) {

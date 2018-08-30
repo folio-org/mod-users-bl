@@ -970,7 +970,7 @@ public class BLUsersAPI implements BlUsersResource {
       .append(")");
 
     try {
-      configurationsClient.getEntries(query.toString(), 0, 3, null, null, response -> {
+      configurationsClient.getEntries(query.toString(), 0, 3, null, null, response ->
         response.bodyHandler(body -> {
           if (response.statusCode() != 200) {
             future.fail("Expected status code 200, got '" + response.statusCode() +
@@ -984,9 +984,8 @@ public class BLUsersAPI implements BlUsersResource {
               .map(o -> ((JsonObject) o).getString("value"))
               .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
               .collect(Collectors.toList()));
-        });
-
-      });
+        })
+      );
     } catch (UnsupportedEncodingException e) {
       future.fail(e);
     }
@@ -1061,24 +1060,33 @@ public class BLUsersAPI implements BlUsersResource {
     return asyncResult;
   }
 
+  /*
+   * See MODLOGIN-44-45
+   *
+   * These methods (postBlUsersForgottenPassword & postBlUsersForgottenUsername) rely on the configuration properties from mod-config
+   * see BLUsersAPITest.insertData for example
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "userName", "description" : "userName", "default" : false, "enabled" : true, "value" : "username" }
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "phoneNumber", "description" : "personal.phone, personal.mobilePhone", "default" : false, "enabled" : true, "value" : "personal.phone, personal.mobilePhone" }
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "personal.email", "default" : false, "enabled" : true, "value" : "personal.email" }
+   */
   public void postBlUsersForgottenPassword(Boolean expandPermissions, List<String> include, Identifier entity, java.util.Map<String, String> okapiHeaders,
                                            io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
     doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
-      .setHandler(ar -> {
+      .setHandler(ar ->
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
           ar.succeeded() ? PostBlUsersForgottenPasswordResponse.withNoContent() :
-            PostBlUsersForgottenPasswordResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())));
-    });
+            PostBlUsersForgottenPasswordResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())))
+    );
   }
 
   public void postBlUsersForgottenUsername(Boolean expandPermissions, List<String> include, Identifier entity, java.util.Map<String, String> okapiHeaders,
                                            io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
     doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
-      .setHandler(ar -> {
+      .setHandler(ar ->
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
           ar.succeeded() ? PostBlUsersForgottenUsernameResponse.withNoContent() :
-            PostBlUsersForgottenUsernameResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())));
-      });
+            PostBlUsersForgottenUsernameResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())))
+      );
 
   }
 
