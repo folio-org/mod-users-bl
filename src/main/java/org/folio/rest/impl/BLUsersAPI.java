@@ -1065,9 +1065,9 @@ public class BLUsersAPI implements BlUsersResource {
    *
    * These methods (postBlUsersForgottenPassword & postBlUsersForgottenUsername) rely on the configuration properties from mod-config
    * see BLUsersAPITest.insertData for example
-   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "userName", "description" : "userName", "default" : false, "enabled" : true, "value" : "username" }
-   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "phoneNumber", "description" : "personal.phone, personal.mobilePhone", "default" : false, "enabled" : true, "value" : "personal.phone, personal.mobilePhone" }
-   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "personal.email", "default" : false, "enabled" : true, "value" : "personal.email" }
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "userName", "description" : "if true userName will be used fot forgot password search", "default" : false, "enabled" : true, "value" : "username" }
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "phoneNumber", "description" : "if true personal.phone & personal.mobilePhone will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.phone, personal.mobilePhone" }
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "if true personal.email will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.email" }
    */
   public void postBlUsersForgottenPassword(Boolean expandPermissions, List<String> include, Identifier entity, java.util.Map<String, String> okapiHeaders,
                                            io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {

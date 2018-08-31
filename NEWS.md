@@ -1,3 +1,6 @@
+## 4.0.3 2018-08-31
+ * postBlUsersForgottenPassword & postBlUsersForgottenUsername implementation
+
 ## 4.0.2 2018-08-20
  * Apply service point user bugfix to login logic
 
