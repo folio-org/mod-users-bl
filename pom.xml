@@ -101,7 +101,7 @@
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>mod-configuration-client</artifactId>
-      <version>4.0.4-SNAPSHOT</version>
+      <version>${mod-configuration-client.version}</version>
     </dependency>
   </dependencies>
 
@@ -430,6 +430,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <raml-module-builder.version>19.3.1</raml-module-builder.version>
+    <mod-configuration-client.version>4.0.3</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <ramlfiles_util_path>${basedir}/ramls/raml</ramlfiles_util_path>
     <postgresrunner.port>5434</postgresrunner.port>
