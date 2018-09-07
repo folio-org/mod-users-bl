@@ -76,7 +76,6 @@ resourceTypes:
   - compositeForgottenResource:
       post:
         description: called when a user has forgotten <<resourceTypeName>>
-        is: [permissionsExpandable, includeable]
         body:
           application/json:
             schema: identifier

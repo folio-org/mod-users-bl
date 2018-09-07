@@ -1063,14 +1063,14 @@ public class BLUsersAPI implements BlUsersResource {
   /*
    * See MODLOGIN-44-45
    *
-   * These methods (postBlUsersForgottenPassword & postBlUsersForgottenUsername) rely on the configuration properties from mod-config
+   * These methods (postBlUsersForgottenPassword & postBlUsersForgottenUsername) rely on the configuration properties from mod-configuration
    * see BLUsersAPITest.insertData for example
    * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "userName", "description" : "if true userName will be used fot forgot password search", "default" : false, "enabled" : true, "value" : "username" }
    * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "phoneNumber", "description" : "if true personal.phone & personal.mobilePhone will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.phone, personal.mobilePhone" }
    * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "if true personal.email will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.email" }
    */
-  public void postBlUsersForgottenPassword(Boolean expandPermissions, List<String> include, Identifier entity, java.util.Map<String, String> okapiHeaders,
-                                           io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
+  @Override
+  public void postBlUsersForgottenPassword(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
       .setHandler(ar ->
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
@@ -1079,8 +1079,8 @@ public class BLUsersAPI implements BlUsersResource {
     );
   }
 
-  public void postBlUsersForgottenUsername(Boolean expandPermissions, List<String> include, Identifier entity, java.util.Map<String, String> okapiHeaders,
-                                           io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
+  @Override
+  public void postBlUsersForgottenUsername(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
       .setHandler(ar ->
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
