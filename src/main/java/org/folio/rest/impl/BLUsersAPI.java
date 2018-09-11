@@ -966,7 +966,9 @@ public class BLUsersAPI implements BlUsersResource {
 
     ConfigurationsClient configurationsClient = new ConfigurationsClient(host, StringUtils.isNotBlank(port) ? Integer.valueOf(port) : DEFAULT_PORT, tenant, token);
     StringBuilder query = new StringBuilder("module==USERSBL AND (")
-      .append(fieldAliasList.stream().map(f -> new StringBuilder("code==").append(f)).collect(Collectors.joining(" or ")))
+      .append(fieldAliasList.stream()
+                            .map(f -> new StringBuilder("code==\"").append(f).append("\"").toString())
+                            .collect(Collectors.joining(" or ")))
       .append(")");
 
     try {
@@ -1013,48 +1015,46 @@ public class BLUsersAPI implements BlUsersResource {
                                                             java.util.Map<String, String> okapiHeaders) {
     io.vertx.core.Future<Void> asyncResult = io.vertx.core.Future.future();
     getLocateUserFields(fieldAliasList, okapiHeaders).setHandler(locateUserFieldsAR -> {
-      if (locateUserFieldsAR.succeeded()) {
-        String query = buildQuery(locateUserFieldsAR.result(), entity.getId());
+      if (!locateUserFieldsAR.succeeded()) {
+        asyncResult.fail(locateUserFieldsAR.cause());
+        return;
+      }
+      String query = buildQuery(locateUserFieldsAR.result(), entity.getId());
 
-        String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
-        String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+      String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
+      String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
 
-        HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+      HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
 
-        okapiHeaders.remove(OKAPI_URL_HEADER);
+      okapiHeaders.remove(OKAPI_URL_HEADER);
 
-        try {
-          StringBuilder userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2");
+      try {
+        StringBuilder userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2");
 
-          client.request(userUrl.toString(), okapiHeaders).thenAccept(userResponse -> {
-            String noUserFoundMessage = "User is not found: ";
+        client.request(userUrl.toString(), okapiHeaders).thenAccept(userResponse -> {
+          String noUserFoundMessage = "User is not found: ";
 
-            if(!responseOk(userResponse)) {
+          if(!responseOk(userResponse)) {
+            asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
+          } else {
+            JsonArray users = userResponse.getBody().getJsonArray("users");
+            int arraySize = users.size();
+            if (arraySize == 0 || arraySize > 1) {
               asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
             } else {
-              JsonArray users = userResponse.getBody().getJsonArray("users");
-              int arraySize = users.size();
-              if (arraySize == 0 || arraySize > 1) {
-                asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
-              } else {
-                try {
-                  User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
-                  sendResetPasswordNotification(user).setHandler(asyncResult::handle);
-                } catch (Exception e) {
-                  asyncResult.fail(e);
-                }
+              try {
+                User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
+                sendResetPasswordNotification(user).setHandler(asyncResult::handle);
+              } catch (Exception e) {
+                asyncResult.fail(e);
               }
             }
-          });
+          }
+        });
 
-        } catch (Exception e) {
-          asyncResult.fail(e);
-        }
-
-      } else {
-        asyncResult.fail(locateUserFieldsAR.cause());
+      } catch (Exception e) {
+        asyncResult.fail(e);
       }
-
     });
 
     return asyncResult;
