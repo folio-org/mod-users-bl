@@ -1029,26 +1029,27 @@ public class BLUsersAPI implements BlUsersResource {
       okapiHeaders.remove(OKAPI_URL_HEADER);
 
       try {
-        StringBuilder userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2");
+        String userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2").toString();
 
-        client.request(userUrl.toString(), okapiHeaders).thenAccept(userResponse -> {
+        client.request(userUrl, okapiHeaders).thenAccept(userResponse -> {
           String noUserFoundMessage = "User is not found: ";
 
           if(!responseOk(userResponse)) {
             asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
-          } else {
-            JsonArray users = userResponse.getBody().getJsonArray("users");
-            int arraySize = users.size();
-            if (arraySize == 0 || arraySize > 1) {
-              asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
-            } else {
-              try {
-                User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
-                sendResetPasswordNotification(user).setHandler(asyncResult::handle);
-              } catch (Exception e) {
-                asyncResult.fail(e);
-              }
-            }
+            return;
+          }
+
+          JsonArray users = userResponse.getBody().getJsonArray("users");
+          int arraySize = users.size();
+          if (arraySize == 0 || arraySize > 1) {
+            asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
+            return;
+          }
+          try {
+            User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
+            sendResetPasswordNotification(user).setHandler(asyncResult);
+          } catch (Exception e) {
+            asyncResult.fail(e);
           }
         });
 
