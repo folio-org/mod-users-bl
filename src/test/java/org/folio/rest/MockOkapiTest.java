@@ -6,29 +6,32 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpMethod;
-import static io.vertx.core.http.HttpMethod.GET;
-import static io.vertx.core.http.HttpMethod.POST;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Matcher;
 import org.folio.rest.TestUtil.WrappedResponse;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Matcher;
+
+import static io.vertx.core.http.HttpMethod.GET;
+import static io.vertx.core.http.HttpMethod.POST;
+import static org.folio.rest.MockOkapi.CONFIGURATIONS_ENTRIES_ENDPOINT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -195,6 +198,32 @@ public class MockOkapiTest {
         .put("servicePointsIds", new JsonArray())
       );
 
+  JsonArray configurationEntriesList = new JsonArray()
+    .add(new JsonObject()
+      .put("module", "USERSBL")
+      .put("configName", "fogottenData")
+      .put("code", "userName")
+      .put("description", "userName")
+      .put("default", "false")
+      .put("enabled", "true")
+      .put("value", "username"))
+    .add(new JsonObject()
+      .put("module", "USERSBL")
+      .put("configName", "fogottenData")
+      .put("code", "phoneNumber")
+      .put("description", "personal.phone, personal.mobilePhone")
+      .put("default", "false")
+      .put("enabled", "true")
+      .put("value", "personal.phone, personal.mobilePhone"))
+    .add(new JsonObject()
+      .put("module", "USERSBL")
+      .put("configName", "fogottenData")
+      .put("code", "email")
+      .put("description", "personal.email")
+      .put("default", "false")
+      .put("enabled", "true")
+      .put("value", "personal.email"));
+
   @BeforeClass
   public static void setupClass(TestContext context) {
     vertx = Vertx.vertx();
@@ -278,6 +307,8 @@ public class MockOkapiTest {
       return loadDataArray(context, "http://localhost:" + mockOkapiPort + "/service-points-users", servicePointsUserList);
     }).compose(w -> {
       return loadDataArray(context, "http://localhost:" + mockOkapiPort + "/perms/permissions", permissionList);
+    }).compose(w -> {
+      return loadDataArray(context, "http://localhost:" + mockOkapiPort + CONFIGURATIONS_ENTRIES_ENDPOINT, configurationEntriesList);
     }).compose( w -> {
       return getUserPerms(context, mphillipsPermId, new JsonArray()
               .add("gamma.a")
@@ -311,7 +342,10 @@ public class MockOkapiTest {
           expectedSPIds);
     }).compose(w -> {
       return getSingleBLUserWithServicePoints(context, lkoId, new ArrayList<>());
+    }).compose(w -> {
+      return getConfigurationsEntires(context);
     });
+
     startFuture.setHandler(res -> {
       if(res.succeeded()) {
         async.complete();
@@ -476,6 +510,23 @@ public class MockOkapiTest {
   private Future<WrappedResponse> getBLUserList(TestContext context) {
     Future<WrappedResponse> future = Future.future();
     String url = String.format("http://localhost:%s/bl-users", mockUsersBLPort);
+    CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+    headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
+    testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+      if(res.failed()) {
+        future.fail(res.cause());
+      } else if(res.result().getCode() != 200) {
+        future.fail("Expected 200, got code " + res.result().getCode());
+      } else {
+        future.complete(res.result());
+      }
+    });
+    return future;
+  }
+
+  private Future<WrappedResponse> getConfigurationsEntires(TestContext context) {
+    Future<WrappedResponse> future = Future.future();
+    String url = String.format("http://localhost:%s/configurations/entries", mockOkapiPort);
     CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
     headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
     testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {

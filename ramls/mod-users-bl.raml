@@ -18,6 +18,7 @@ schemas:
   - servicepoint.json: !include servicepoint.json
   - servicepointsuser.json: !include servicepointsuser.json
   - servicepointsexpandeduser.json: !include servicepointsexpandeduser.json
+  - identifier: !include identifier.json
   - errors: !include raml/schemas/errors.schema
   - error.schema: !include raml/schemas/error.schema
   - parameters.schema: !include raml/schemas/parameters.schema
@@ -72,6 +73,24 @@ resourceTypes:
           body:
             text/plain:
               example: "Internal server error"
+  - compositeForgottenResource:
+      post:
+        description: called when a user has forgotten <<resourceTypeName>>
+        body:
+          application/json:
+            schema: identifier
+        responses:
+          204:
+          400:
+            description: "Bad request"
+            body:
+              text/plain:
+                example: "Bad request"
+          500:
+            description: "Internal server error"
+            body:
+              text/plain:
+                example: "Internal server error"
 
 /bl-users:
   get:
@@ -135,4 +154,8 @@ resourceTypes:
           body:
             text/plain:
               example: "Internal server error"
-
+  /forgotten:
+    /password:
+      type: {compositeForgottenResource: {"resourceTypeName" : "a password"}}
+    /username:
+      type: {compositeForgottenResource: {"resourceTypeName" : "a username"}}

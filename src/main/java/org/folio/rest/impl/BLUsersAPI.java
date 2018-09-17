@@ -1,16 +1,21 @@
 package org.folio.rest.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import org.apache.commons.lang3.StringUtils;
+import org.folio.rest.client.ConfigurationsClient;
 import org.folio.rest.jaxrs.model.CompositeUser;
 import org.folio.rest.jaxrs.model.CompositeUserListObject;
 import org.folio.rest.jaxrs.model.Credentials;
+import org.folio.rest.jaxrs.model.Identifier;
 import org.folio.rest.jaxrs.model.LoginCredentials;
 import org.folio.rest.jaxrs.model.PatronGroup;
 import org.folio.rest.jaxrs.model.Permissions;
@@ -38,6 +43,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author shale
@@ -59,6 +68,14 @@ public class BLUsersAPI implements BlUsersResource {
   private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   private static String OKAPI_PERMISSIONS_HEADER = "X-Okapi-Permissions";
   private final Logger logger = LoggerFactory.getLogger(BLUsersAPI.class);
+
+  public static final String LOCATE_USER_USERNAME = "userName";
+  public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
+  public static final String LOCATE_USER_EMAIL = "email";
+
+  private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
+
+  private static final int DEFAULT_PORT = 9030;
 
   private List<String> getDefaultIncludes(){
     List<String> defaultIncludes = new ArrayList<>();
@@ -912,6 +929,166 @@ public class BLUsersAPI implements BlUsersResource {
 
       return expandSPUResponse;
     });
+  }
+
+  /**
+   *
+   * @param locateUserFields - a list of fields to be used for search
+   * @param value - a value to search
+   * @return
+   */
+  private String buildQuery(List<String> locateUserFields, String value) {
+    return locateUserFields.stream()
+      .map(field -> new StringBuilder(field).append("==\"").append(value).append("\"").toString())
+      .collect(Collectors.joining(" or "));
+  }
+
+  /**
+   * Maps aliases to configuration parameters
+   * @param fieldAliasList - a list of aliases
+   * @return a list of user fields to use for search
+   */
+  private io.vertx.core.Future<List<String>> getLocateUserFields(List<String> fieldAliasList, java.util.Map<String, String> okapiHeaders) {
+    //TODO:
+
+    String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
+    String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
+
+    Matcher matcher = HOST_PORT_PATTERN.matcher(okapiURL);
+    if (!matcher.find()) {
+      return io.vertx.core.Future.failedFuture("Could not parse okapiURL: " + okapiURL);
+    }
+    io.vertx.core.Future<List<String>> future = io.vertx.core.Future.future();
+
+    String host = matcher.group(1);
+    String port = matcher.group(2);
+
+    ConfigurationsClient configurationsClient = new ConfigurationsClient(host, StringUtils.isNotBlank(port) ? Integer.valueOf(port) : DEFAULT_PORT, tenant, token);
+    StringBuilder query = new StringBuilder("module==USERSBL AND (")
+      .append(fieldAliasList.stream()
+                            .map(f -> new StringBuilder("code==\"").append(f).append("\"").toString())
+                            .collect(Collectors.joining(" or ")))
+      .append(")");
+
+    try {
+      configurationsClient.getEntries(query.toString(), 0, 3, null, null, response ->
+        response.bodyHandler(body -> {
+          if (response.statusCode() != 200) {
+            future.fail("Expected status code 200, got '" + response.statusCode() +
+              "' :" + body.toString());
+            return;
+          }
+          JsonObject entries = body.toJsonObject();
+
+          future.complete(
+            entries.getJsonArray("configs").stream()
+              .map(o -> ((JsonObject) o).getString("value"))
+              .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
+              .collect(Collectors.toList()));
+        })
+      );
+    } catch (UnsupportedEncodingException e) {
+      future.fail(e);
+    }
+    return future;
+  }
+
+  /**
+   *
+   * @param userToNotify
+   * @return
+   */
+  private io.vertx.core.Future<Void> sendResetPasswordNotification(User userToNotify) {
+    //TODO: should be implemented once notification functionality is completed.
+    return io.vertx.core.Future.succeededFuture();
+  }
+
+  /**
+   *
+   * @param fieldAliasList list of aliases to use [LOCATE_USER_USERNAME LOCATE_USER_PHONE_NUMBER LOCATE_USER_EMAIL]
+   * @param entity - an identity with a value
+   * @param okapiHeaders
+   * @return
+   */
+  private io.vertx.core.Future<Void> doPostBlUsersForgotten(List<String> fieldAliasList, Identifier entity,
+                                                            java.util.Map<String, String> okapiHeaders) {
+    io.vertx.core.Future<Void> asyncResult = io.vertx.core.Future.future();
+    getLocateUserFields(fieldAliasList, okapiHeaders).setHandler(locateUserFieldsAR -> {
+      if (!locateUserFieldsAR.succeeded()) {
+        asyncResult.fail(locateUserFieldsAR.cause());
+        return;
+      }
+      String query = buildQuery(locateUserFieldsAR.result(), entity.getId());
+
+      String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
+      String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+
+      HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+
+      okapiHeaders.remove(OKAPI_URL_HEADER);
+
+      try {
+        String userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2").toString();
+
+        client.request(userUrl, okapiHeaders).thenAccept(userResponse -> {
+          String noUserFoundMessage = "User is not found: ";
+
+          if(!responseOk(userResponse)) {
+            asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
+            return;
+          }
+
+          JsonArray users = userResponse.getBody().getJsonArray("users");
+          int arraySize = users.size();
+          if (arraySize == 0 || arraySize > 1) {
+            asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
+            return;
+          }
+          try {
+            User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
+            sendResetPasswordNotification(user).setHandler(asyncResult);
+          } catch (Exception e) {
+            asyncResult.fail(e);
+          }
+        });
+
+      } catch (Exception e) {
+        asyncResult.fail(e);
+      }
+    });
+
+    return asyncResult;
+  }
+
+  /*
+   * See MODLOGIN-44-45
+   *
+   * These methods (postBlUsersForgottenPassword & postBlUsersForgottenUsername) rely on the configuration properties from mod-configuration
+   * see BLUsersAPITest.insertData for example
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "userName", "description" : "if true userName will be used fot forgot password search", "default" : false, "enabled" : true, "value" : "username" }
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "phoneNumber", "description" : "if true personal.phone & personal.mobilePhone will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.phone, personal.mobilePhone" }
+   * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "if true personal.email will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.email" }
+   */
+  @Override
+  public void postBlUsersForgottenPassword(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
+    doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
+      .setHandler(ar ->
+        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          ar.succeeded() ? PostBlUsersForgottenPasswordResponse.withNoContent() :
+            PostBlUsersForgottenPasswordResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())))
+    );
+  }
+
+  @Override
+  public void postBlUsersForgottenUsername(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
+    doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
+      .setHandler(ar ->
+        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          ar.succeeded() ? PostBlUsersForgottenUsernameResponse.withNoContent() :
+            PostBlUsersForgottenUsernameResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())))
+      );
+
   }
 
 }
