@@ -11,8 +11,8 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -24,14 +24,14 @@ import static org.hamcrest.Matchers.equalTo;
 
 @RunWith(VertxUnitRunner.class)
 public class BLUsersAPITest {
-  Vertx vertx;
-  RequestSpecification okapi;
-  int okapiPort;
+  static Vertx vertx;
+  static RequestSpecification okapi;
+  static int okapiPort;
   /** port of BLUsersAPI */
-  int port;
+  static int port;
 
-  @Before
-  public void before(TestContext context) {
+  @BeforeClass
+  public static void before(TestContext context) {
     vertx = Vertx.vertx();
     vertx.exceptionHandler(context.exceptionHandler());
 
@@ -56,7 +56,7 @@ public class BLUsersAPITest {
     okapi = builder.build();
   }
 
-  private String token(String tenant, String user) {
+  private static String token(String tenant, String user) {
     JsonObject payload = new JsonObject()
         .put("sub", user)
         .put("tenant", tenant);
@@ -64,7 +64,7 @@ public class BLUsersAPITest {
     return "dummyJwt." + Base64.getEncoder().encodeToString(bytes) + ".sig";
   }
 
-  private void insertData() {
+  private static void insertData() {
     String userId = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
     JsonObject userPost = new JsonObject()
         .put("username", "maxi")
@@ -129,8 +129,8 @@ public class BLUsersAPITest {
 
   }
 
-  @After
-  public void after(TestContext context) {
+  @AfterClass
+  public static void after(TestContext context) {
     vertx.close(context.asyncAssertSuccess());
   }
 
