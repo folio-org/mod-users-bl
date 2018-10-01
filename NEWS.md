@@ -1,3 +1,6 @@
+## 4.0.4 2018-09-30
+ * Change user's password endpoint was added
+
 ## 4.0.3 2018-08-31
  * postBlUsersForgottenPassword & postBlUsersForgottenUsername implementation
 

@@ -170,4 +170,72 @@ public class BLUsersAPITest {
       then().
       statusCode(204);
   }
+
+  @Test
+  public void postBlUsersUpdatePasswordFail(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("username", "superuser")
+        .put("password", "12345")
+        .put("newPassword", "123456")
+        .put("userId", "99999999-9999-9999-9999-999999999999")
+        .encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/settings/myprofile/password").
+      then().
+      statusCode(400);
+  }
+
+  @Test
+  public void postBlUsersUpdatePasswordInvalidOldPassword(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("username", "superuser")
+        .put("password", "123456")
+        .put("newPassword", "1q2w3E!190")
+        .put("userId", "99999999-9999-9999-9999-999999999999")
+        .encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/settings/myprofile/password").
+      then().
+      statusCode(401);
+  }
+
+  @Test
+  public void postBlUsersUpdatePasswordOk(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("username", "superuser")
+        .put("password", "12345")
+        .put("newPassword", "1q2w3E!190")
+        .put("userId", "99999999-9999-9999-9999-999999999999")
+        .encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/settings/myprofile/password").
+      then().
+      statusCode(204);
+  }
+
+  @Test
+  public void postBlUsersUpdatePasswordNoUser(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("username", "superuser")
+        .put("password", "12345")
+        .put("newPassword", "1q2w3E!190")
+        .put("userId", "99999999-9999-9999-9999-999999999991")
+        .encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/settings/myprofile/password").
+      then().
+      statusCode(500);
+  }
 }
