@@ -22,8 +22,9 @@ import java.util.List;
 
 public class UserPasswordServiceImpl implements UserPasswordService {
 
-  private static final String PASSWORD_VALIDATE_URL = "/password/validate";
-  private static final String PASSWORD_UPDATE_URL = "/authn/update";
+  public static final String USER_PASS_SERVICE_ADDRESS = "user-password-service.queue";
+  private static final String VALIDATE_URL = "/password/validate";
+  private static final String UPDATE_URL = "/authn/update";
 
   // Timeout to wait for response
   private int lookupTimeout = Integer
@@ -53,7 +54,7 @@ public class UserPasswordServiceImpl implements UserPasswordService {
                                                  Handler<AsyncResult<JsonObject>> asyncResultHandler) {
     try {
       OkapiConnectionParams params = okapiConnectionParams.mapTo(OkapiConnectionParams.class);
-      String url = params.getOkapiUrl() + PASSWORD_VALIDATE_URL;
+      String url = params.getOkapiUrl() + VALIDATE_URL;
       JsonObject password = new JsonObject()
         .put("password", updateCredentialsJson.getString("newPassword"));
       RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), password.encode())
@@ -93,7 +94,7 @@ public class UserPasswordServiceImpl implements UserPasswordService {
                                                   Handler<AsyncResult<Integer>> asyncResultHandler) {
     try {
       OkapiConnectionParams params = okapiConnectionParams.mapTo(OkapiConnectionParams.class);
-      String url = params.getOkapiUrl() + PASSWORD_UPDATE_URL;
+      String url = params.getOkapiUrl() + UPDATE_URL;
       RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), newPasswordObject.encode())
         .setHandler(h -> {
           if (h.failed()) {

@@ -49,6 +49,9 @@ public class RestUtil {
     }
   }
 
+  private RestUtil() {
+  }
+
   /**
    * Create http request
    *
@@ -72,12 +75,10 @@ public class RestUtil {
         }
       }
       request.exceptionHandler(future::fail);
-      request.handler(req -> {
-        req.bodyHandler(buf -> {
-          WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
-          future.complete(wr);
-        });
-      });
+      request.handler(req -> req.bodyHandler(buf -> {
+        WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
+        future.complete(wr);
+      }));
       if (method == HttpMethod.PUT || method == HttpMethod.POST) {
         request.end(payload);
       } else {

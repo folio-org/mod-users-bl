@@ -13,8 +13,6 @@ import io.vertx.core.json.JsonObject;
 @ProxyGen
 public interface UserPasswordService {
 
-  String USER_PASSWORD_SERVICE_ADDRESS = "user-password-service.queue";
-
   static UserPasswordService create(Vertx vertx) {
     return new UserPasswordServiceImpl(vertx);
   }

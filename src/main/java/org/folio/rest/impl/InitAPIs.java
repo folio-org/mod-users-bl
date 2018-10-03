@@ -8,6 +8,7 @@ import io.vertx.core.Vertx;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.folio.rest.resource.interfaces.InitAPI;
 import org.folio.services.UserPasswordService;
+import org.folio.services.UserPasswordServiceImpl;
 
 /**
  * Performs prepossessing operations before the verticle is deployed,
@@ -18,7 +19,7 @@ public class InitAPIs implements InitAPI {
   @Override
   public void init(Vertx vertx, Context context, Handler<AsyncResult<Boolean>> handler) {
     new ServiceBinder(vertx)
-      .setAddress(UserPasswordService.USER_PASSWORD_SERVICE_ADDRESS)
+      .setAddress(UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS)
       .register(UserPasswordService.class, UserPasswordService.create(vertx));
     handler.handle(Future.succeededFuture(true));
   }

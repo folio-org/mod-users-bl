@@ -33,6 +33,7 @@ import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.services.UserPasswordService;
+import org.folio.services.UserPasswordServiceImpl;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -68,10 +69,10 @@ public class BLUsersAPI implements BlUsersResource {
   private static final String EXPANDED_SERVICEPOINTS_INCLUDE = "expanded_servicepoints";
   private final Logger logger = LoggerFactory.getLogger(BLUsersAPI.class);
 
-  public static String OKAPI_URL_HEADER = "X-Okapi-URL";
-  public static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
-  public static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
-  public static String OKAPI_USER_ID = "X-Okapi-User-Id";
+  public static final String OKAPI_URL_HEADER = "X-Okapi-URL";
+  public static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
+  public static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
+  public static final String OKAPI_USER_ID = "X-Okapi-User-Id";
 
   public static final String LOCATE_USER_USERNAME = "userName";
   public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
@@ -81,12 +82,11 @@ public class BLUsersAPI implements BlUsersResource {
 
   private static final int DEFAULT_PORT = 9030;
 
-  private String tenantId;
   private UserPasswordService userPasswordService;
 
   public BLUsersAPI(Vertx vertx, String tenantId) {
-    this.tenantId = tenantId;
-    this.userPasswordService = UserPasswordService.createProxy(vertx, UserPasswordService.USER_PASSWORD_SERVICE_ADDRESS);
+    this.userPasswordService = UserPasswordService
+      .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
   }
 
   private List<String> getDefaultIncludes(){
