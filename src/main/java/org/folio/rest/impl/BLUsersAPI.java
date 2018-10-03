@@ -84,7 +84,7 @@ public class BLUsersAPI implements BlUsersResource {
 
   private UserPasswordService userPasswordService;
 
-  public BLUsersAPI(Vertx vertx, String tenantId) {
+  public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
   }
