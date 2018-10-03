@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.z3950.zing.cql.CQLParseException;
 
 import java.util.ArrayList;
@@ -35,13 +36,15 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore servicePointsUsersStore;
   private JsonStore configurationStore;
 
-  static final String USERS_ENDPOINT = "/users";
-  static final String PERMS_USERS_ENDPOINT = "/perms/users";
-  static final String PERMS_PERMISSIONS_ENDPOINT = "/perms/permissions";
-  static final String GROUPS_ENDPOINT = "/groups";
-  static final String PROXIES_ENDPOINT = "/proxiesfor";
-  static final String SERVICE_POINTS_ENDPOINT = "/service-points";
-  static final String SERVICE_POINTS_USERS_ENDPOINT = "/service-points-users";
+  private static final String USERS_ENDPOINT = "/users";
+  private static final String PASSWORD_VALIDATE_ENDPOINT = "/password/validate";
+  private static final String PASSWORD_UPDATE_ENDPOINT = "/authn/update";
+  private static final String PERMS_USERS_ENDPOINT = "/perms/users";
+  private static final String PERMS_PERMISSIONS_ENDPOINT = "/perms/permissions";
+  private static final String GROUPS_ENDPOINT = "/groups";
+  private static final String PROXIES_ENDPOINT = "/proxiesfor";
+  private static final String SERVICE_POINTS_ENDPOINT = "/service-points";
+  private static final String SERVICE_POINTS_USERS_ENDPOINT = "/service-points-users";
   static final String CONFIGURATIONS_ENTRIES_ENDPOINT = "/configurations/entries";
 
 
@@ -79,7 +82,7 @@ public class MockOkapi extends AbstractVerticle {
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
 
-    String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT,
+    String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT, PASSWORD_VALIDATE_ENDPOINT, PASSWORD_UPDATE_ENDPOINT,
       PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT,
       SERVICE_POINTS_USERS_ENDPOINT, SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT};
     String uri = context.request().path();
@@ -145,6 +148,14 @@ public class MockOkapi extends AbstractVerticle {
           break;
         case CONFIGURATIONS_ENTRIES_ENDPOINT:
           mockResponse = handlerConfigurationEntries(method, id, remainder,
+            context.getBodyAsString(), context);
+          break;
+        case PASSWORD_VALIDATE_ENDPOINT:
+          mockResponse = handlerPasswordValidate(method, id, remainder,
+            context.getBodyAsString(), context);
+          break;
+        case PASSWORD_UPDATE_ENDPOINT:
+          mockResponse = handlerPasswordUpdate(method, id, remainder,
             context.getBodyAsString(), context);
           break;
         default:
@@ -258,6 +269,47 @@ public class MockOkapi extends AbstractVerticle {
                                                    String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(configurationStore, "configs", method, id, url,
       payload, context);
+  }
+
+  private MockResponse handlerPasswordValidate(HttpMethod method, String id, String url,
+                                                   String payload, RoutingContext context) {
+    JsonObject object = new JsonObject(payload);
+    String newPassword = object.getString("password");
+    if (newPassword!=null && !newPassword.isEmpty()) {
+      if (newPassword.equals("123456")) {
+        return new MockResponse(200, new JsonObject()
+          .put("result", "invalid")
+          .put("messages", new JsonArray()
+            .add("password.specialCharacter.invalid"))
+          .encode());
+      } else if (newPassword.equals("1q2w3E!190")) {
+        return new MockResponse(200, new JsonObject()
+          .put("result", "valid")
+          .put("messages", new JsonArray())
+          .encode());
+      }
+    }
+    return new MockResponse(500, "");
+  }
+
+  private MockResponse handlerPasswordUpdate(HttpMethod method, String id, String url,
+                                             String payload, RoutingContext context) {
+    try {
+      JsonObject object = new JsonObject(payload);
+      UpdateCredentials updateCredentialsJson = object.mapTo(UpdateCredentials.class);
+      if (updateCredentialsJson.getPassword().equals("123456")) {
+        return new MockResponse(401, "Invalid password");
+      } else if (updateCredentialsJson.getUserId().equals("99999999-9999-9999-9999-999999999991")) {
+        return new MockResponse(400, "user not found");
+      } else if (updateCredentialsJson.getPassword().equals("12345")
+        && updateCredentialsJson.getNewPassword().equals("1q2w3E!190")
+        && updateCredentialsJson.getUserId().equals("99999999-9999-9999-9999-999999999999")) {
+        return new MockResponse(204, "");
+      }
+      return new MockResponse(500, "");
+    } catch (Exception e) {
+      return new MockResponse(500, "");
+    }
   }
 
   private MockResponse handleBasicCrud(JsonStore store, String collectionName,

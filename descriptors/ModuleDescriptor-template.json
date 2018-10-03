@@ -117,6 +117,14 @@
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
             "login.item.put"]
+        },
+        {
+          "methods": ["POST"],
+          "pathPattern": "/bl-users/settings/myprofile/password",
+          "permissionsDesired": [],
+          "permissionsRequired": [],
+          "modulePermissions": ["validation.validate.post",
+            "login.item.put", "users.item.get"]
         }
       ]
     }

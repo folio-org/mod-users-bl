@@ -17,6 +17,7 @@ types:
   proxyfor.json: !include proxyfor.json
   identifier: !include identifier.json
   errors: !include raml/schemas/errors.schema
+  updateCredentials: !include raml/schemas/mod-login/updateCredentials.json
 
 traits:
   orderable: !include raml/traits/orderable.raml
@@ -152,3 +153,31 @@ resourceTypes:
       type: {compositeForgottenResource: {"resourceTypeName" : "a password"}}
     /username:
       type: {compositeForgottenResource: {"resourceTypeName" : "a username"}}
+  /settings:
+    /myprofile:
+      /password:
+        post:
+          description: Allow change password for user
+          body:
+            application/json:
+              type: updateCredentials
+          responses:
+            204:
+              description: "Successful update"
+              body:
+                text/plain: !!null
+            400:
+              description: "Bad request"
+              body:
+                application/json:
+                  schema: errors
+            401:
+              description: "Unauthorized"
+              body:
+                text/plain:
+                  example: "Unauthorized"
+            500:
+              description: "Internal server error"
+              body:
+                text/plain:
+                  example: "Internal server error"

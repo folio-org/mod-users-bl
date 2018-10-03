@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>4.0.3-SNAPSHOT</version>
+  <version>4.0.4-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -34,6 +34,17 @@
     <tag>HEAD</tag>
   </scm>
   <dependencies>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-proxy</artifactId>
+      <version>${vertx-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codegen</artifactId>
+      <version>${vertx-version}</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>postgres-runner</artifactId>
@@ -107,6 +118,33 @@
 
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <encoding>UTF-8</encoding>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
+          <annotationProcessors>
+            <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+          </annotationProcessors>
+          <generatedSourcesDirectory>${project.build.directory}/generated-sources/services</generatedSourcesDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <phase>process-sources</phase>
+          </execution>
+          <execution>
+            <id>build-generated-code</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -434,6 +472,7 @@
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <ramlfiles_util_path>${basedir}/ramls/raml</ramlfiles_util_path>
     <postgresrunner.port>5434</postgresrunner.port>
+    <vertx-version>3.5.3</vertx-version>
     <!-- Postgres port for Jenkins CI build environment https://issues.folio.org/browse/METADATA-10 -->
     <postgres.port>5433</postgres.port>
   </properties>

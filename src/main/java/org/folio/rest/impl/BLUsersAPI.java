@@ -1,5 +1,43 @@
 package org.folio.rest.impl;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.folio.rest.client.ConfigurationsClient;
+import org.folio.rest.jaxrs.model.CompositeUser;
+import org.folio.rest.jaxrs.model.CompositeUserListObject;
+import org.folio.rest.jaxrs.model.Credentials;
+import org.folio.rest.jaxrs.model.Errors;
+import org.folio.rest.jaxrs.model.Identifier;
+import org.folio.rest.jaxrs.model.LoginCredentials;
+import org.folio.rest.jaxrs.model.PatronGroup;
+import org.folio.rest.jaxrs.model.Permissions;
+import org.folio.rest.jaxrs.model.ProxiesFor;
+import org.folio.rest.jaxrs.model.ServicePoint;
+import org.folio.rest.jaxrs.model.ServicePointsUser;
+
+import org.folio.rest.jaxrs.resource.BlUsers;
+import org.folio.rest.jaxrs.model.UpdateCredentials;
+import org.folio.rest.jaxrs.model.User;
+import org.folio.rest.tools.client.BuildCQL;
+import org.folio.rest.tools.client.HttpClientFactory;
+import org.folio.rest.tools.client.Response;
+import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
+import org.folio.rest.tools.client.interfaces.HttpClientInterface;
+import org.folio.rest.util.OkapiConnectionParams;
+import org.folio.services.UserPasswordService;
+import org.folio.services.UserPasswordServiceImpl;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -8,40 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
-
-import org.apache.commons.lang3.StringUtils;
-import org.folio.rest.client.ConfigurationsClient;
-import org.folio.rest.jaxrs.model.CompositeUser;
-import org.folio.rest.jaxrs.model.CompositeUserListObject;
-import org.folio.rest.jaxrs.model.Credentials;
-import org.folio.rest.jaxrs.model.Identifier;
-import org.folio.rest.jaxrs.model.LoginCredentials;
-import org.folio.rest.jaxrs.model.PatronGroup;
-import org.folio.rest.jaxrs.model.Permissions;
-import org.folio.rest.jaxrs.model.User;
-import org.folio.rest.jaxrs.model.ProxiesFor;
-import org.folio.rest.jaxrs.model.ServicePoint;
-import org.folio.rest.jaxrs.model.ServicePointsUser;
-import org.folio.rest.jaxrs.resource.BlUsers;
-import org.folio.rest.tools.client.BuildCQL;
-import org.folio.rest.tools.client.HttpClientFactory;
-import org.folio.rest.tools.client.Response;
-import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
-import org.folio.rest.tools.client.interfaces.HttpClientInterface;
-
-import io.vertx.core.Future;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,12 +68,12 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String EXPANDED_PERMISSIONS_INCLUDE = "expanded_perms";
   private static final String EXPANDED_SERVICEPOINTS_INCLUDE = "expanded_servicepoints";
-
-  private static String OKAPI_URL_HEADER = "X-Okapi-URL";
-  private static String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
-  private static String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
-  private static String OKAPI_PERMISSIONS_HEADER = "X-Okapi-Permissions";
   private final Logger logger = LoggerFactory.getLogger(BLUsersAPI.class);
+
+  public static final String OKAPI_URL_HEADER = "X-Okapi-URL";
+  public static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
+  public static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
+  public static final String OKAPI_USER_ID = "X-Okapi-User-Id";
 
   public static final String LOCATE_USER_USERNAME = "userName";
   public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
@@ -77,7 +83,14 @@ public class BLUsersAPI implements BlUsers {
 
   private static final int DEFAULT_PORT = 9030;
 
-  private List<String> getDefaultIncludes() {
+  private UserPasswordService userPasswordService;
+
+  public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
+    this.userPasswordService = UserPasswordService
+      .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
+  }
+
+  private List<String> getDefaultIncludes(){
     List<String> defaultIncludes = new ArrayList<>();
     defaultIncludes.add(GROUPS_INCLUDE);
     defaultIncludes.add(PERMISSIONS_INCLUDE);
@@ -1113,4 +1126,50 @@ public class BLUsersAPI implements BlUsers {
 
   }
 
+  @Override
+  public void postBlUsersSettingsMyprofilePassword(UpdateCredentials entity, Map<String, String> okapiHeaders,
+                                                   Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                                   Context vertxContext) {
+    try {
+      vertxContext.runOnContext(c -> {
+        OkapiConnectionParams connectionParams = new OkapiConnectionParams(
+          okapiHeaders.get(OKAPI_URL_HEADER),
+          okapiHeaders.get(OKAPI_TENANT_HEADER),
+          okapiHeaders.get(OKAPI_TOKEN_HEADER),
+          entity.getUserId());
+        userPasswordService.validateNewPassword(JsonObject.mapFrom(entity), JsonObject.mapFrom(connectionParams), h -> {
+          if (h.failed()) {
+            logger.error("Error during validate new user's password", h.cause());
+            Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+              .respond500WithTextPlain("Internal server error during validate new user's password"));
+          } else {
+            Errors errors = h.result().mapTo(Errors.class);
+            if (errors.getTotalRecords() == 0) {
+              userPasswordService.updateUserCredential(JsonObject.mapFrom(entity), JsonObject.mapFrom(connectionParams), r -> {
+                if (r.failed()) {
+                  asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                    .respond500WithTextPlain(r.cause().getMessage())));
+                } else {
+                  if (r.result().equals(401)) {
+                    asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                      .respond401WithTextPlain("Invalid credentials")));
+                  } else {
+                    asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                      .respond204WithTextPlain("User's password was successfully updated")));
+                  }
+                }
+              });
+            } else {
+              asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                .respond400WithApplicationJson(errors)));
+            }
+          }
+        });
+      });
+    } catch (Exception e) {
+      logger.error(e.getMessage(), e);
+      asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+        .respond500WithTextPlain("Internal server error during change user's password")));
+    }
+  }
 }
