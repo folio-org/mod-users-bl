@@ -103,8 +103,7 @@ public class BLUsersAPI implements BlUsers {
     boolean expandPerms, Map<String, String> okapiHeaders,
     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
     Context vertxContext) {
-    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler,
-      vertxContext);
+    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
   Consumer<Response> handlePreviousResponse(boolean requireOneResult,
@@ -213,14 +212,12 @@ public class BLUsersAPI implements BlUsers {
   @Override
   public void getBlUsersByIdById(String userid, List<String> include, boolean expandPerms, Map<String, String> okapiHeaders, 
     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
-    run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler,
-        vertxContext);
+    run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
   private void run(String userid, String username, Boolean expandPerms,
           List<String> include, Map<String, String> okapiHeaders,
-          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-          Context vertxContext) {
+          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
 
     //works on single user, no joins needed , just aggregate
 
@@ -674,7 +671,7 @@ public class BLUsersAPI implements BlUsers {
           Context vertxContext) {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
-    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler, vertxContext);
+    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
   @Override
