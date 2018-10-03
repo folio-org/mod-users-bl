@@ -24,6 +24,7 @@ schemas:
   - parameters.schema: !include raml/schemas/parameters.schema
   - raml/schemas/metadata.schema: !include raml/schemas/metadata.schema
   - raml/schemas/tags.schema: !include raml/schemas/tags.schema
+  - updateCredentials.json: !include raml/schemas/mod-login/updateCredentials.json
 
 traits:
   - secured: !include raml/traits/auth.raml
@@ -159,3 +160,31 @@ resourceTypes:
       type: {compositeForgottenResource: {"resourceTypeName" : "a password"}}
     /username:
       type: {compositeForgottenResource: {"resourceTypeName" : "a username"}}
+  /settings:
+    /myprofile:
+      /password:
+        post:
+          description: Allow change password for user
+          body:
+            application/json:
+              schema: updateCredentials.json
+          responses:
+            204:
+              description: "Successful update"
+              body:
+                text/plain: !!null
+            400:
+              description: "Bad request"
+              body:
+                application/json:
+                  schema: errors
+            401:
+              description: "Unauthorized"
+              body:
+                text/plain:
+                  example: "Unauthorized"
+            500:
+              description: "Internal server error"
+              body:
+                text/plain:
+                  example: "Internal server error"

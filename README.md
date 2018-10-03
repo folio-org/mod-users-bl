@@ -38,6 +38,12 @@ The module exposes a number of endpoints to provide a composite object that link
 * queryParameters supported: expandPermissions
 * Permissions required?: No
 
+#### `bl-users/settings/myprofile/password`
+* Description: Validate and change user's password
+* Support operations: POST
+* queryParameters supported: No
+* Permissions required?: No
+
 ## Object Format
 
 The returned composite object format contains both ids and objects for the component records. The ids will always be populated (if they exist). The objects will be populated if possible. If not possible, they will be `null`.
