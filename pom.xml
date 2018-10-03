@@ -467,7 +467,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <raml-module-builder.version>19.3.1</raml-module-builder.version>
+    <raml-module-builder.version>21.0.3</raml-module-builder.version>
     <mod-configuration-client.version>4.0.3</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <ramlfiles_util_path>${basedir}/ramls/raml</ramlfiles_util_path>

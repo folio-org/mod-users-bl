@@ -9,7 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import org.folio.rest.jaxrs.model.UpdateCredentialsJson;
+import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.z3950.zing.cql.CQLParseException;
 
 import java.util.ArrayList;
@@ -296,7 +296,7 @@ public class MockOkapi extends AbstractVerticle {
                                              String payload, RoutingContext context) {
     try {
       JsonObject object = new JsonObject(payload);
-      UpdateCredentialsJson updateCredentialsJson = object.mapTo(UpdateCredentialsJson.class);
+      UpdateCredentials updateCredentialsJson = object.mapTo(UpdateCredentials.class);
       if (updateCredentialsJson.getPassword().equals("123456")) {
         return new MockResponse(401, "Invalid password");
       } else if (updateCredentialsJson.getUserId().equals("99999999-9999-9999-9999-999999999991")) {

@@ -1,4 +1,4 @@
-#%RAML 0.8
+#%RAML 1.0
 title: Mod-Users BL
 baseUri: http://github.com/org/folio/mod-users-bl
 
@@ -6,92 +6,85 @@ documentation:
   - title: Business Logic Users API
     content: A front end for mod-users and mod-permissions
 
-schemas:
-  - compositeUser.json: !include compositeUser.json
-  - compositeUserListObject: !include compositeUserListObject.json
-  - loginCredentials: !include loginCredentials.json
-  - userdata.json: !include userdata.json
-  - usergroup.json: !include usergroup.json
-  - permissionUser.json: !include permissionUser.json
-  - credentials.json: !include credentials.json
-  - proxyfor.json: !include proxyfor.json
-  - servicepoint.json: !include servicepoint.json
-  - servicepointsuser.json: !include servicepointsuser.json
-  - servicepointsexpandeduser.json: !include servicepointsexpandeduser.json
-  - identifier: !include identifier.json
-  - errors: !include raml/schemas/errors.schema
-  - error.schema: !include raml/schemas/error.schema
-  - parameters.schema: !include raml/schemas/parameters.schema
-  - raml/schemas/metadata.schema: !include raml/schemas/metadata.schema
-  - raml/schemas/tags.schema: !include raml/schemas/tags.schema
-  - updateCredentials.json: !include raml/schemas/mod-login/updateCredentials.json
+types:
+  compositeUser: !include compositeUser.json
+  compositeUserListObject: !include compositeUserListObject.json
+  loginCredentials: !include loginCredentials.json
+  userdata.json: !include userdata.json
+  usergroup.json: !include usergroup.json
+  permissionUser.json: !include permissionUser.json
+  credentials.json: !include credentials.json
+  proxyfor.json: !include proxyfor.json
+  identifier: !include identifier.json
+  errors: !include raml/schemas/errors.schema
+  updateCredentials: !include raml/schemas/mod-login/updateCredentials.json
 
 traits:
-  - secured: !include raml/traits/auth.raml
-  - orderable: !include raml/traits/orderable.raml
-  - pageable: !include raml/traits/pageable.raml
-  - searchable: !include raml/traits/searchable.raml
-  - language: !include raml/traits/language.raml
-  - validate: !include raml/traits/validation.raml
-  - includeable: !include raml/traits/includes.raml
-  - permissionsExpandable:
-      queryParameters:
-        expandPermissions:
-          description:
-            Whether or not to expand permissions listings
-          type: boolean
-          required: false
+  orderable: !include raml/traits/orderable.raml
+  pageable: !include raml/traits/pageable.raml
+  searchable: !include raml/traits/searchable.raml
+  language: !include raml/traits/language.raml
+  validate: !include raml/traits/validation.raml
+  includeable: !include raml/traits/includes.raml
+  permissionsExpandable:
+    queryParameters:
+      expandPermissions:
+        description:
+          Whether or not to expand permissions listings
+        type: boolean
+        required: false
+        default: false
 resourceTypes:
-  - compositeUserResource:
-     get:
-      description: "Get a user by <<typeName>>"
-      is: [
-        includeable,
-        permissionsExpandable
-      ]
+  compositeUserResource:
+   get:
+    description: "Get a user by <<typeName>>"
+    is: [
+      includeable,
+      permissionsExpandable
+    ]
+    responses:
+      200:
+        body:
+          application/json:
+            schema: compositeUser
+      400:
+        description: "Bad request"
+        body:
+          text/plain:
+            example: "Bad request"
+      403:
+        description: "Access denied"
+        body:
+          text/plain:
+            example: "Access denied"
+      404:
+        description: "User not found"
+        body:
+          text/plain:
+            example: "User not found"
+      500:
+        description: "Internal server error"
+        body:
+          text/plain:
+            example: "Internal server error"
+  compositeForgottenResource:
+    post:
+      description: called when a user has forgotten <<resourceTypeName>>
+      body:
+        application/json:
+          schema: identifier
       responses:
-        200:
-          body:
-            application/json:
-              schema: compositeUser.json
+        204:
         400:
           description: "Bad request"
           body:
             text/plain:
               example: "Bad request"
-        403:
-          description: "Access denied"
-          body:
-            text/plain:
-              example: "Access denied"
-        404:
-          description: "User not found"
-          body:
-            text/plain:
-              example: "User not found"
         500:
           description: "Internal server error"
           body:
             text/plain:
               example: "Internal server error"
-  - compositeForgottenResource:
-      post:
-        description: called when a user has forgotten <<resourceTypeName>>
-        body:
-          application/json:
-            schema: identifier
-        responses:
-          204:
-          400:
-            description: "Bad request"
-            body:
-              text/plain:
-                example: "Bad request"
-          500:
-            description: "Internal server error"
-            body:
-              text/plain:
-                example: "Internal server error"
 
 /bl-users:
   get:
@@ -142,7 +135,7 @@ resourceTypes:
         201:
           body:
             application/json:
-              schema: compositeUser.json
+              schema: compositeUser
           headers:
             x-okapi-token:
         400:
@@ -167,7 +160,7 @@ resourceTypes:
           description: Allow change password for user
           body:
             application/json:
-              schema: updateCredentials.json
+              type: updateCredentials
           responses:
             204:
               description: "Successful update"

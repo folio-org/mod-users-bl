@@ -23,9 +23,10 @@ import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.ProxiesFor;
 import org.folio.rest.jaxrs.model.ServicePoint;
 import org.folio.rest.jaxrs.model.ServicePointsUser;
-import org.folio.rest.jaxrs.model.UpdateCredentialsJson;
+
+import org.folio.rest.jaxrs.resource.BlUsers;
+import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.folio.rest.jaxrs.model.User;
-import org.folio.rest.jaxrs.resource.BlUsersResource;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
@@ -57,7 +58,7 @@ import java.util.stream.Stream;
  * @author shale
  *
  */
-public class BLUsersAPI implements BlUsersResource {
+public class BLUsersAPI implements BlUsers {
 
   private static final String CREDENTIALS_INCLUDE = "credentials";
   private static final String GROUPS_INCLUDE = "groups";
@@ -99,12 +100,10 @@ public class BLUsersAPI implements BlUsersResource {
 
   @Override
   public void getBlUsersByUsernameByUsername(String username, List<String> include,
-      Boolean expandPerms, Map<String, String> okapiHeaders,
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-      Context vertxContext) throws Exception {
-    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler,
-        vertxContext);
-
+    boolean expandPerms, Map<String, String> okapiHeaders,
+    Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+    Context vertxContext) {
+    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
   Consumer<Response> handlePreviousResponse(boolean requireOneResult,
@@ -130,7 +129,7 @@ public class BLUsersAPI implements BlUsersResource {
       //set previousFailure flag to true so that we don't send another error response to the client
       if(!previousFailure[0]){
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-          GetBlUsersByIdByIdResponse.withPlainInternalServerError(
+          GetBlUsersByIdByIdResponse.respond500WithTextPlain(
               "response is null from one of the services requested")));
       }
       previousFailure[0] = true;
@@ -157,13 +156,13 @@ public class BLUsersAPI implements BlUsersResource {
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainNotFound("No record found for query '"
+            GetBlUsersByIdByIdResponse.respond404WithTextPlain("No record found for query '"
                 + response.getEndpoint() + "'")));
         } else if(totalRecords != null && totalRecords > 1 && requireOneResult) {
           logger.error("'" + response.getEndpoint() + "' returns multiple results");
           previousFailure[0] = true;
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainBadRequest(("'" + response.getEndpoint()
+            GetBlUsersByIdByIdResponse.respond400WithTextPlain(("'" + response.getEndpoint()
                 + "' returns multiple results"))));
         }
       }
@@ -186,43 +185,39 @@ public class BLUsersAPI implements BlUsersResource {
           logger.error(message);
           previousFailure[0] = true;
           asyncResultHandler.handle(Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainNotFound(message)));
+            GetBlUsersByIdByIdResponse.respond404WithTextPlain(message)));
         }
         else if(statusCode == 400){
           logger.error(message);
           previousFailure[0] = true;
           asyncResultHandler.handle(Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainBadRequest(message)));
+            GetBlUsersByIdByIdResponse.respond400WithTextPlain(message)));
         }
         else if(statusCode == 403){
           logger.error(message);
           previousFailure[0] = true;
           asyncResultHandler.handle(Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainForbidden(message)));
+            GetBlUsersByIdByIdResponse.respond403WithTextPlain(message)));
         }
         else{
           logger.error(message);
           previousFailure[0] = true;
           asyncResultHandler.handle(Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withPlainInternalServerError(message)));
+            GetBlUsersByIdByIdResponse.respond500WithTextPlain(message)));
         }
       }
     }
   }
 
   @Override
-  public void getBlUsersByIdById(String userid, List<String> include,
-      Boolean expandPerms, Map<String, String> okapiHeaders,
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-      Context vertxContext) throws Exception {
-    run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler,
-        vertxContext);
+  public void getBlUsersByIdById(String userid, List<String> include, boolean expandPerms, Map<String, String> okapiHeaders, 
+    Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
+    run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
   private void run(String userid, String username, Boolean expandPerms,
           List<String> include, Map<String, String> okapiHeaders,
-          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-          Context vertxContext) throws Exception {
+          Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
 
     //works on single user, no joins needed , just aggregate
 
@@ -244,21 +239,25 @@ public class BLUsersAPI implements BlUsersResource {
     String groupTemplate = "";
     StringBuffer userUrl = new StringBuffer("/users");
     String mode[] = new String[1];
-    if(userid != null) {
-      userUrl.append("/").append(userid);
-      userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
-      userTemplate = "{id}";
-      groupTemplate = "{patronGroup}";
-      mode[0] = "id";
+    try {
+      if (userid != null) {
+        userUrl.append("/").append(userid);
+        userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
+        userTemplate = "{id}";
+        groupTemplate = "{patronGroup}";
+        mode[0] = "id";
+      } else if (username != null) {
+        userUrl.append("?query=username==").append(username);
+        userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
+        userTemplate = "{users[0].id}";
+        groupTemplate = "{users[0].patronGroup}";
+        mode[0] = "username";
+      }
+    } catch (Exception ex) {
+      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+        GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
+      return;
     }
-    else if(username != null){
-      userUrl.append("?query=username==").append(username);
-      userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
-      userTemplate = "{users[0].id}";
-      groupTemplate = "{users[0].patronGroup}";
-      mode[0] = "username";
-    }
-
     int includeCount = include.size();
     ArrayList<CompletableFuture<Response>> requestedIncludes = new ArrayList<>();
     Map<String, CompletableFuture<Response>> completedLookup = new HashMap<>();
@@ -321,16 +320,21 @@ public class BLUsersAPI implements BlUsersResource {
       requestedIncludes.add(expandPermsResponse);
       completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
     }
+    try {
 
-    if(completedLookup.containsKey(SERVICEPOINTS_INCLUDE)) {
-      CompletableFuture<Response> expandSPUResponse = expandServicePoints(
+      if (completedLookup.containsKey(SERVICEPOINTS_INCLUDE)) {
+        CompletableFuture<Response> expandSPUResponse = expandServicePoints(
           completedLookup.get(SERVICEPOINTS_INCLUDE), client, aRequestHasFailed,
           okapiHeaders, asyncResultHandler);
-      completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
-      requestedIncludes.add(expandSPUResponse);
+        completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
+        requestedIncludes.add(expandSPUResponse);
 
+      }
+    } catch (Exception ex) {
+      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+        GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
+      return;
     }
-
     requestedIncludes.add(userIdResponse[0]);
     CompletableFuture.allOf(requestedIncludes.toArray(
         new CompletableFuture[requestedIncludes.size()]))
@@ -448,20 +452,20 @@ public class BLUsersAPI implements BlUsersResource {
         client.closeClient();
         if(mode[0].equals("id")){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.withJsonOK(cu)));
+            GetBlUsersByIdByIdResponse.respond200WithApplicationJson(cu)));
         }else if(mode[0].equals("username")){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersByUsernameByUsernameResponse.withJsonOK(cu)));
+            GetBlUsersByUsernameByUsernameResponse.respond200WithApplicationJson(cu)));
         }
       } catch (Exception e) {
         if(!aRequestHasFailed[0]){
           logger.error(e.getMessage(), e);
           if(mode[0].equals("id")){
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-              GetBlUsersByIdByIdResponse.withPlainInternalServerError(e.getLocalizedMessage())));
+              GetBlUsersByIdByIdResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }else if(mode[0].equals("username")){
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-              GetBlUsersByUsernameByUsernameResponse.withPlainInternalServerError(e.getLocalizedMessage())));
+              GetBlUsersByUsernameByUsernameResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
         }
       }
@@ -471,8 +475,7 @@ public class BLUsersAPI implements BlUsersResource {
   @Override
   public void getBlUsers(String query, int offset, int limit,
       List<String> include, Map<String, String> okapiHeaders,
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext)
-      throws Exception {
+      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
 
     //works on multiple users, joins needed to aggregate
 
@@ -496,8 +499,13 @@ public class BLUsersAPI implements BlUsersResource {
     }
     userUrl.append("offset=").append(offset).append("&limit=").append(limit);
 
-    userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
-
+    try {
+      userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
+    } catch (Exception ex) {
+      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+        GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
+      return;
+    }
     int includeCount = include.size();
     ArrayList<CompletableFuture<Response>> requestedIncludes = new ArrayList<>();
     //CompletableFuture<Response> []requestedIncludes = new CompletableFuture[includeCount+1];
@@ -558,7 +566,7 @@ public class BLUsersAPI implements BlUsersResource {
         if(composite.getBody().isEmpty()){
           if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-              GetBlUsersResponse.withJsonOK(cu)));
+              GetBlUsersResponse.respond200WithApplicationJson(cu)));
           }
           aRequestHasFailed[0] = true;
           return;
@@ -611,12 +619,12 @@ public class BLUsersAPI implements BlUsersResource {
         cu.setCompositeUsers(cuol);
         if(!aRequestHasFailed[0]){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersResponse.withJsonOK(cu)));
+            GetBlUsersResponse.respond200WithApplicationJson(cu)));
         }
       } catch (Exception e) {
         if(!aRequestHasFailed[0]){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-            GetBlUsersResponse.withPlainInternalServerError(e.getLocalizedMessage())));
+            GetBlUsersResponse.respond500WithTextPlain(e.getLocalizedMessage())));
         }
         logger.error(e.getMessage(), e);
       }
@@ -657,21 +665,20 @@ public class BLUsersAPI implements BlUsersResource {
   }
 
   @Override
-  public void getBlUsersSelf(List<String> include, Boolean expandPerms,
+  public void getBlUsersSelf(List<String> include, boolean expandPerms,
           Map<String, String> okapiHeaders,
           Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-          Context vertxContext)
-      throws Exception {
+          Context vertxContext) {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
-    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler, vertxContext);
+    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
   @Override
-  public void postBlUsersLogin(Boolean expandPerms, List<String> include,
+  public void postBlUsersLogin(boolean expandPerms, List<String> include,
       LoginCredentials entity, Map<String, String> okapiHeaders,
       Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-      Context vertxContext) throws Exception {
+      Context vertxContext) {
 
     //works on single user, no joins needed , just aggregate
 
@@ -693,21 +700,27 @@ public class BLUsersAPI implements BlUsersResource {
       include = getDefaultIncludes();
     }
 
-    if(entity == null || entity.getUsername() == null || entity.getPassword() == null) {
+    if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-        PostBlUsersLoginResponse.withPlainBadRequest("Improperly formatted request")));
+        PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
       String moduleURL = "/authn/login";
       logger.debug("Requesting login from " + moduleURL);
       //can only be one user with this username - so only one result expected
-      String userUrl = "/users?query=username="+entity.getUsername();
+      String userUrl = "/users?query=username=" + entity.getUsername();
       //run login
-      loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL,
+      try {
+        loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL,
           okapiHeaders);
+      } catch (Exception ex) {
+        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
+        return;
+      }
       //then get user by username, inject okapi headers from the login response into the user request
       //see 'true' flag passed into the chainedRequest
       userResponse[0] = loginResponse[0].thenCompose(client.chainedRequest(
-          userUrl, okapiHeaders, false, null, handlePreviousResponse(false,
+        userUrl, okapiHeaders, false, null, handlePreviousResponse(false,
           false, true, aRequestHasFailed, asyncResultHandler)));
 
       //populate composite based on includes
@@ -752,15 +765,21 @@ public class BLUsersAPI implements BlUsersResource {
           );
           requestedIncludes.add(servicePointsResponse);
           completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
-          CompletableFuture<Response> expandSPUResponse = expandServicePoints(
-            servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
-            asyncResultHandler);
-          completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
-          requestedIncludes.add(expandSPUResponse);
+          try {
+            CompletableFuture<Response> expandSPUResponse = expandServicePoints(
+              servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
+              asyncResultHandler);
+            completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
+            requestedIncludes.add(expandSPUResponse);
+          } catch (Exception ex) {
+            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+              PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
+            return;
+          }
         }
       }
 
-      if(expandPerms != null && expandPerms){
+      if (expandPerms){
         CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
           client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
             handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
@@ -873,12 +892,13 @@ public class BLUsersAPI implements BlUsersResource {
           client.closeClient();
           if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-              PostBlUsersLoginResponse.withJsonCreated(token, cu)));
+              PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
+                PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
           }
         } catch (Exception e) {
           if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-              PostBlUsersLoginResponse.withPlainInternalServerError(e.getLocalizedMessage())));
+              PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
           logger.error(e.getMessage(), e);
         }
@@ -1087,8 +1107,8 @@ public class BLUsersAPI implements BlUsersResource {
     doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
       .setHandler(ar ->
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-          ar.succeeded() ? PostBlUsersForgottenPasswordResponse.withNoContent() :
-            PostBlUsersForgottenPasswordResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())))
+          ar.succeeded() ? PostBlUsersForgottenPasswordResponse.respond204() :
+            PostBlUsersForgottenPasswordResponse.respond400WithTextPlain(ar.cause().getLocalizedMessage())))
     );
   }
 
@@ -1097,14 +1117,14 @@ public class BLUsersAPI implements BlUsersResource {
     doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
       .setHandler(ar ->
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-          ar.succeeded() ? PostBlUsersForgottenUsernameResponse.withNoContent() :
-            PostBlUsersForgottenUsernameResponse.withPlainBadRequest(ar.cause().getLocalizedMessage())))
+          ar.succeeded() ? PostBlUsersForgottenUsernameResponse.respond204() :
+            PostBlUsersForgottenUsernameResponse.respond400WithTextPlain(ar.cause().getLocalizedMessage())))
       );
 
   }
 
   @Override
-  public void postBlUsersSettingsMyprofilePassword(UpdateCredentialsJson entity, Map<String, String> okapiHeaders,
+  public void postBlUsersSettingsMyprofilePassword(UpdateCredentials entity, Map<String, String> okapiHeaders,
                                                    Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                                    Context vertxContext) {
     try {
@@ -1118,27 +1138,27 @@ public class BLUsersAPI implements BlUsersResource {
           if (h.failed()) {
             logger.error("Error during validate new user's password", h.cause());
             Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-              .withPlainInternalServerError("Internal server error during validate new user's password"));
+              .respond500WithTextPlain("Internal server error during validate new user's password"));
           } else {
             Errors errors = h.result().mapTo(Errors.class);
             if (errors.getTotalRecords() == 0) {
               userPasswordService.updateUserCredential(JsonObject.mapFrom(entity), JsonObject.mapFrom(connectionParams), r -> {
                 if (r.failed()) {
                   asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-                    .withPlainInternalServerError(r.cause().getMessage())));
+                    .respond500WithTextPlain(r.cause().getMessage())));
                 } else {
                   if (r.result().equals(401)) {
                     asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-                      .withPlainUnauthorized("Invalid credentials")));
+                      .respond401WithTextPlain("Invalid credentials")));
                   } else {
                     asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-                      .withPlainNoContent("User's password was successfully updated")));
+                      .respond204WithTextPlain("User's password was successfully updated")));
                   }
                 }
               });
             } else {
               asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-                .withJsonBadRequest(errors)));
+                .respond400WithApplicationJson(errors)));
             }
           }
         });
@@ -1146,7 +1166,7 @@ public class BLUsersAPI implements BlUsersResource {
     } catch (Exception e) {
       logger.error(e.getMessage(), e);
       asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-        .withPlainInternalServerError("Internal server error during change user's password")));
+        .respond500WithTextPlain("Internal server error during change user's password")));
     }
   }
 }
