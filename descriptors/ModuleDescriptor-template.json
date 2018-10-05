@@ -149,6 +149,10 @@
     {
       "id" : "service-points-users",
       "version" : "1.0"
+    },
+    {
+      "id": "password-validator",
+      "version": "1.0",
     }
   ],
   "permissionSets": [
