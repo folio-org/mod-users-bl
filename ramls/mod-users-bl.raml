@@ -62,6 +62,11 @@ resourceTypes:
         body:
           text/plain:
             example: "User not found"
+      422:
+        description: "Unprocessable Entity"
+        body:
+          text/plain:
+            example: "Bad request"
       500:
         description: "Internal server error"
         body:
@@ -140,6 +145,11 @@ resourceTypes:
             x-okapi-token:
         400:
           description: "Bad request"
+          body:
+            text/plain:
+              example: "Bad request"
+        422:
+          description: "Unprocessable Entity"
           body:
             text/plain:
               example: "Bad request"
