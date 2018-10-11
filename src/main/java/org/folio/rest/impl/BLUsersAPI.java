@@ -127,14 +127,11 @@ public class BLUsersAPI implements BlUsers {
     if(isNull(response)){
       //response is null, meaning the previous call failed.
       //set previousFailure flag to true so that we don't send another error response to the client
-      if(!previousFailure[0]){
-        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-          GetBlUsersByIdByIdResponse.respond500WithTextPlain(
-              "response is null from one of the services requested")));
-      }
+      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+        GetBlUsersByIdByIdResponse.respond500WithTextPlain(
+            "response is null from one of the services requested")));
       previousFailure[0] = true;
-    }
-    else {
+    } else {
       //check if the previous request failed
       int statusCode = response.getCode();
       boolean ok = Response.isSuccess(statusCode);
@@ -165,8 +162,7 @@ public class BLUsersAPI implements BlUsers {
             GetBlUsersByIdByIdResponse.respond400WithTextPlain(("'" + response.getEndpoint()
                 + "' returns multiple results"))));
         }
-      }
-      else if(!ok){
+      } else {
         String message = "";
         if(response.getError() != null){
           statusCode = response.getError().getInteger("statusCode");
@@ -181,27 +177,22 @@ public class BLUsersAPI implements BlUsers {
             }
           }
         }
+
+        logger.error(message);
+        previousFailure[0] = true;
         if(statusCode == 404){
-          logger.error(message);
-          previousFailure[0] = true;
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond404WithTextPlain(message)));
-        }
-        else if(statusCode == 400){
-          logger.error(message);
-          previousFailure[0] = true;
+        } else if(statusCode == 400){
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond400WithTextPlain(message)));
-        }
-        else if(statusCode == 403){
-          logger.error(message);
-          previousFailure[0] = true;
+        } else if(statusCode == 422){
+          asyncResultHandler.handle(Future.succeededFuture(
+            GetBlUsersByIdByIdResponse.respond422WithTextPlain(message)));
+        } else if(statusCode == 403){
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond403WithTextPlain(message)));
-        }
-        else{
-          logger.error(message);
-          previousFailure[0] = true;
+        } else{
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond500WithTextPlain(message)));
         }
