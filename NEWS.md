@@ -1,4 +1,5 @@
-## 4.0.4 2018-09-30
+## 4.0.4 UNRELEASED
+ * Update descriptor to be compatible with servicepoints 3.0
  * Change user's password endpoint was added
 
 ## 4.0.3 2018-08-31
