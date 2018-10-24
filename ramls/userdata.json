@@ -123,11 +123,11 @@
     },
     "metadata": {
       "type": "object",
-      "$ref": "raml/schemas/metadata.schema"
+      "$ref": "raml-util/schemas/metadata.schema"
     },
     "tags": {
       "type": "object",
-      "$ref": "raml/schemas/tags.schema"
+      "$ref": "raml-util/schemas/tags.schema"
     }
   },
   "additionalProperties": false,
