@@ -16,16 +16,16 @@ types:
   credentials.json: !include credentials.json
   proxyfor.json: !include proxyfor.json
   identifier: !include identifier.json
-  errors: !include raml/schemas/errors.schema
-  updateCredentials: !include raml/schemas/mod-login/updateCredentials.json
+  errors: !include raml-util/schemas/errors.schema
+  updateCredentials: !include raml-util/schemas/mod-login/updateCredentials.json
 
 traits:
-  orderable: !include raml/traits/orderable.raml
-  pageable: !include raml/traits/pageable.raml
-  searchable: !include raml/traits/searchable.raml
-  language: !include raml/traits/language.raml
-  validate: !include raml/traits/validation.raml
-  includeable: !include raml/traits/includes.raml
+  orderable: !include raml-util/traits/orderable.raml
+  pageable: !include raml-util/traits/pageable.raml
+  searchable: !include raml-util/traits/searchable.raml
+  language: !include raml-util/traits/language.raml
+  validate: !include raml-util/traits/validation.raml
+  includeable: !include raml-util/traits/includes.raml
   permissionsExpandable:
     queryParameters:
       expandPermissions:

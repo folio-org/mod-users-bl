@@ -13,7 +13,7 @@
       "type": "string"
     },
     "metadata": {
-      "$ref": "raml/schemas/metadata.schema",
+      "$ref": "raml-util/schemas/metadata.schema",
       "readonly": true
     }
   },
