@@ -107,7 +107,8 @@
           "permissionsRequired": [],
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
-            "login.item.put"]
+            "login.item.put",
+            "configuration.entries.item.get"]
         },
         {
           "methods": ["POST"],
@@ -116,7 +117,8 @@
           "permissionsRequired": [],
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
-            "login.item.put"]
+            "login.item.put",
+            "configuration.entries.item.get"]
         },
         {
           "methods": ["POST"],
