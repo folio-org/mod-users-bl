@@ -102,21 +102,23 @@
         },
         {
           "methods": ["POST"],
-          "pathPattern": "/forgotten/password",
+          "pathPattern": "/bl-users/forgotten/password",
           "permissionsDesired": [],
           "permissionsRequired": [],
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
-            "login.item.put"]
+            "login.item.put",
+            "configuration.entries.item.get"]
         },
         {
           "methods": ["POST"],
-          "pathPattern": "/forgotten/username",
+          "pathPattern": "/bl-users/forgotten/username",
           "permissionsDesired": [],
           "permissionsRequired": [],
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
-            "login.item.put"]
+            "login.item.put",
+            "configuration.entries.item.get"]
         },
         {
           "methods": ["POST"],
