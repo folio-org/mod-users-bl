@@ -108,7 +108,8 @@
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
             "login.item.put",
-            "configuration.entries.item.get"]
+            "configuration.entries.collection.get",
+            "users.collection.get" ]
         },
         {
           "methods": ["POST"],
@@ -118,7 +119,8 @@
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
             "login.item.put",
-            "configuration.entries.item.get"]
+            "configuration.entries.collection.get",
+            "users.collection.get" ]
         },
         {
           "methods": ["POST"],
