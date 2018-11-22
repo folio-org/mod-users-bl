@@ -18,6 +18,9 @@ types:
   identifier: !include identifier.json
   errors: !include raml-util/schemas/errors.schema
   updateCredentials: !include raml-util/schemas/mod-login/updateCredentials.json
+  passwordRestAction: !include passwordResetAction.json
+  tokenResponse: !include tokenResponse.json
+
 
 traits:
   orderable: !include raml-util/traits/orderable.raml
@@ -191,3 +194,22 @@ resourceTypes:
               body:
                 text/plain:
                   example: "Internal server error"
+  /password-reset:
+    /validate:
+      post:
+        responses:
+          200:
+            description: "Successfully signed token"
+            body:
+              application/json:
+                type: tokenResponse
+          422:
+            description: "Unprocessable Entity"
+            body:
+              text/plain:
+                example: "Bad request"
+          500:
+            description: "Internal server error"
+            body:
+              text/plain:
+                example: "Internal server error"

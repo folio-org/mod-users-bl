@@ -129,6 +129,13 @@
           "permissionsRequired": [],
           "modulePermissions": ["validation.validate.post",
             "login.item.put", "users.item.get"]
+        },
+        {
+          "methods": ["POST"],
+          "pathPattern": "/bl-users/password-reset/validate",
+          "permissionsDesired": [],
+          "permissionsRequired": [],
+          "modulePermissions": ["users.item.get", "auth.signtoken"]
         }
       ]
     }

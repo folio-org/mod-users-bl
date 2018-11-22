@@ -5,13 +5,19 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.folio.rest.RestVerticle;
 import org.folio.rest.client.ConfigurationsClient;
+import org.folio.rest.client.impl.AuthTokenClientImpl;
+import org.folio.rest.client.impl.PasswordResetActionClientImpl;
+import org.folio.rest.client.impl.UserModuleClientImpl;
+import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.jaxrs.model.CompositeUser;
 import org.folio.rest.jaxrs.model.CompositeUserListObject;
 import org.folio.rest.jaxrs.model.Credentials;
@@ -23,18 +29,20 @@ import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.ProxiesFor;
 import org.folio.rest.jaxrs.model.ServicePoint;
 import org.folio.rest.jaxrs.model.ServicePointsUser;
-
-import org.folio.rest.jaxrs.resource.BlUsers;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.folio.rest.jaxrs.model.User;
+import org.folio.rest.jaxrs.resource.BlUsers;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
+import org.folio.rest.util.ExceptionHelper;
 import org.folio.rest.util.OkapiConnectionParams;
-import org.folio.services.UserPasswordService;
-import org.folio.services.UserPasswordServiceImpl;
+import org.folio.service.PasswordRestLinkService;
+import org.folio.service.PasswordRestLinkServiceImpl;
+import org.folio.service.password.UserPasswordService;
+import org.folio.service.password.UserPasswordServiceImpl;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -85,9 +93,15 @@ public class BLUsersAPI implements BlUsers {
 
   private UserPasswordService userPasswordService;
 
+  private PasswordRestLinkService passwordRestLinkService;
+
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
+
+    HttpClient httpClient = vertx.createHttpClient();
+    passwordRestLinkService = new PasswordRestLinkServiceImpl(new AuthTokenClientImpl(httpClient),
+      new PasswordResetActionClientImpl(httpClient), new UserModuleClientImpl(httpClient));
   }
 
   private List<String> getDefaultIncludes(){
@@ -1159,5 +1173,31 @@ public class BLUsersAPI implements BlUsers {
       asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
         .respond500WithTextPlain("Internal server error during change user's password")));
     }
+  }
+
+  @Override
+  public void postBlUsersPasswordResetValidate(Map<String, String> okapiHeaders,
+                                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                               Context vertxContext) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get("x-okapi-url"),
+      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT), okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN), "");
+
+    passwordRestLinkService.validateLinkAndLoginUser(connectionParams)
+      .setHandler(res -> {
+        if (res.succeeded()) {
+          asyncResultHandler.handle(Future.succeededFuture(
+            PostBlUsersPasswordResetValidateResponse.respond200WithApplicationJson(res.result())));
+        } else {
+          if (res.cause().getClass() == UnprocessableEntityException.class) {
+            asyncResultHandler.handle(Future.succeededFuture(
+                PostBlUsersPasswordResetValidateResponse.respond422WithTextPlain(
+                  ExceptionHelper.handleException(res.cause()))));
+          } else {
+            asyncResultHandler.handle(Future.succeededFuture(
+              PostBlUsersPasswordResetValidateResponse.respond500WithTextPlain(
+                ExceptionHelper.handleException(res.cause()))));
+          }
+        }
+      });
   }
 }

@@ -7,8 +7,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.folio.rest.resource.interfaces.InitAPI;
-import org.folio.services.UserPasswordService;
-import org.folio.services.UserPasswordServiceImpl;
+import org.folio.service.password.UserPasswordService;
+import org.folio.service.password.UserPasswordServiceImpl;
 
 /**
  * Performs prepossessing operations before the verticle is deployed,

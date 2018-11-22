@@ -1,4 +1,4 @@
-package org.folio.services;
+package org.folio.service.password;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;

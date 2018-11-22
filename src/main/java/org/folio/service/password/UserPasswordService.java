@@ -1,4 +1,4 @@
-package org.folio.services;
+package org.folio.service.password;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.ProxyGen;
