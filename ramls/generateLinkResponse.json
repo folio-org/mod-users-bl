@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "link": {
+      "type": "string",
+      "description": "Link for resetting password"
+    }
+  },
+  "additionalProperties": false
+}

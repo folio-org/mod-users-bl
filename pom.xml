@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>4.0.4-SNAPSHOT</version>
+  <version>4.0.5-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -113,6 +113,13 @@
       <groupId>org.folio</groupId>
       <artifactId>mod-configuration-client</artifactId>
       <version>${mod-configuration-client.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.tomakehurst</groupId>
+      <artifactId>wiremock</artifactId>
+      <version>2.19.0</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -474,6 +481,7 @@
     <ramlfiles_util_path>${basedir}/ramls/raml</ramlfiles_util_path>
     <postgresrunner.port>5434</postgresrunner.port>
     <vertx-version>3.5.3</vertx-version>
+    <rest-assured.version>3.1.1</rest-assured.version>
     <!-- Postgres port for Jenkins CI build environment https://issues.folio.org/browse/METADATA-10 -->
     <postgres.port>5433</postgres.port>
   </properties>

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Notification schema for mod-notify",
+  "additionalProperties": false,
+  "properties": {
+    "eventConfigId": {
+      "description": "Event config id",
+      "type": "string"
+    },
+    "recipientId": {
+      "description": "The UUID of the receiving user",
+      "type": "string"
+    },
+    "text": {
+      "description": "The text of this notification",
+      "type": "string"
+    },
+    "lang": {
+      "description": "Notification language",
+      "type": "string"
+    },
+    "context": {
+      "type": "object",
+      "description": "Context object"
+    }
+  }
+}

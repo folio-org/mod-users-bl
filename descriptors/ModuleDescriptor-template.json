@@ -129,6 +129,19 @@
           "permissionsRequired": [],
           "modulePermissions": ["validation.validate.post",
             "login.item.put", "users.item.get"]
+        },
+        {
+          "methods": ["POST"],
+          "pathPattern": "/bl-users/password-reset/link",
+          "permissionsRequired": ["users-bl.password-reset-link.generate"],
+          "permissionsDesired": [],
+          "modulePermissions": [
+            "users.item.get",
+            "configuration.entries.collection.get",
+            "login.password-reset-action.post",
+            "auth.signtoken",
+            "notify.item.post"
+          ]
         }
       ]
     }
@@ -181,6 +194,16 @@
       "description" : "Modify a composite user record"
     },
     {
+      "permissionName" : "users-bl.password-reset-link.generate",
+      "displayName" : "users-bl password reset link generate",
+      "description" : "Generate and send password reset link"
+    },
+    {
+      "permissionName" : "users-bl.password-reset-link.validate",
+      "displayName" : "users-bl password reset link validate",
+      "description" : "Validate password reset link"
+    },
+    {
       "permissionName" : "users-bl.all",
       "displayName" : "users-bl all",
       "description" : "All user business-logic permissions",
@@ -188,7 +211,8 @@
         "users-bl.collection.get",
         "users-bl.item.get",
         "users-bl.item.post",
-        "users-bl.item.put"
+        "users-bl.item.put",
+        "users-bl.password-reset-link.generate"
       ],
       "visible" : false
     }

@@ -18,6 +18,11 @@ types:
   identifier: !include identifier.json
   errors: !include raml-util/schemas/errors.schema
   updateCredentials: !include raml-util/schemas/mod-login/updateCredentials.json
+  generateLinkRequest: !include generateLinkRequest.json
+  generateLinkResponse: !include generateLinkResponse.json
+  configurations: !include configurations.json
+  passwordRestAction: !include passwordResetAction.json
+  notification : !include notification.json
 
 traits:
   orderable: !include raml-util/traits/orderable.raml
@@ -191,3 +196,15 @@ resourceTypes:
               body:
                 text/plain:
                   example: "Internal server error"
+  /password-reset:
+    /link:
+      post:
+        description: Generate and send password reset link
+        body:
+          application/json:
+            type: generateLinkRequest
+        responses:
+          200:
+            body:
+              application/json:
+                type: generateLinkResponse
