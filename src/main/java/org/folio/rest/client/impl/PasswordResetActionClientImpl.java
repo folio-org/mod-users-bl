@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public class PasswordResetActionClientImpl implements PasswordResetActionClient {
 
-  private static final String PASSWORD_RESET_ACTION_PATH = "/authn/password-reset-action/";
+  private static final String PW_RESET_ACTION_ENDPOINT = "/authn/password-reset-action/";
 
   private HttpClient httpClient;
 
@@ -24,7 +24,7 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
 
   @Override
   public Future<Optional<PasswordRestAction>> getAction(String passwordResetActionId, OkapiConnectionParams okapiConnectionParams) {
-    String requestUrl = okapiConnectionParams.getOkapiUrl() + PASSWORD_RESET_ACTION_PATH + passwordResetActionId;
+    String requestUrl = okapiConnectionParams.getOkapiUrl() + PW_RESET_ACTION_ENDPOINT + passwordResetActionId;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
