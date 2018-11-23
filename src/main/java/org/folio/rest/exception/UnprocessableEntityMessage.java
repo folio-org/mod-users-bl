@@ -1,5 +1,7 @@
 package org.folio.rest.exception;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import java.io.Serializable;
 
 /**
@@ -27,5 +29,13 @@ public class UnprocessableEntityMessage implements Serializable {
 
   public String getMessage() {
     return message;
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+      .append("code", code)
+      .append("message", message)
+      .toString();
   }
 }
