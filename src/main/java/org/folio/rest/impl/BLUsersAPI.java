@@ -17,7 +17,6 @@ import org.folio.rest.client.ConfigurationsClient;
 import org.folio.rest.client.impl.AuthTokenClientImpl;
 import org.folio.rest.client.impl.PasswordResetActionClientImpl;
 import org.folio.rest.client.impl.UserModuleClientImpl;
-import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.jaxrs.model.CompositeUser;
 import org.folio.rest.jaxrs.model.CompositeUserListObject;
 import org.folio.rest.jaxrs.model.Credentials;
@@ -1188,15 +1187,7 @@ public class BLUsersAPI implements BlUsers {
           asyncResultHandler.handle(Future.succeededFuture(
             PostBlUsersPasswordResetValidateResponse.respond200WithApplicationJson(res.result())));
         } else {
-          if (res.cause().getClass() == UnprocessableEntityException.class) {
-            asyncResultHandler.handle(Future.succeededFuture(
-                PostBlUsersPasswordResetValidateResponse.respond422WithTextPlain(
-                  ExceptionHelper.handleException(res.cause()))));
-          } else {
-            asyncResultHandler.handle(Future.succeededFuture(
-              PostBlUsersPasswordResetValidateResponse.respond500WithTextPlain(
-                ExceptionHelper.handleException(res.cause()))));
-          }
+          asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
         }
       });
   }

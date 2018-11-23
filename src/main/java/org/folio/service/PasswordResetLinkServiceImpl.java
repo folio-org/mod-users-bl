@@ -41,7 +41,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         if (pwdResetAction.isPresent()) {
           return Future.succeededFuture(pwdResetAction.get());
         } else {
-          UnprocessableEntityMessage message = new UnprocessableEntityMessage("action.not.found",
+          UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.used",
             String.format("PasswordResetAction with id = %s is not found", passwordResetActionId));
           return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
         }
@@ -49,7 +49,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         if (pwdResetAction.getExpirationTime().toInstant().isAfter(Instant.now())) {
           return Future.succeededFuture(pwdResetAction);
         } else {
-          UnprocessableEntityMessage message = new UnprocessableEntityMessage("action.expired",
+          UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.expired",
             String.format("PasswordResetAction with id = %s is expired", passwordResetActionId));
           return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
         }
@@ -58,13 +58,14 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         if (user.isPresent()) {
           return Future.succeededFuture(user.get());
         } else {
-          UnprocessableEntityMessage message = new UnprocessableEntityMessage("user.not.found",
+          UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.invalid",
             String.format("User with id = %s in not found", pwdResetAction.getUserId()));
           return Future.<User>failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
         }
       })).compose(user -> {
-        JsonObject tokenPayload = new JsonObject().put("payload",
-          new JsonObject().put("sub", user.result().getUsername()).put("user_id", user.result().getId()));
+        JsonObject tokenPayload = new JsonObject()
+          .put("sub", user.result().getUsername())
+          .put("user_id", user.result().getId());
         return authTokenClient.signToken(tokenPayload, okapiConnectionParams).map(newToken -> {
           TokenResponse response = new TokenResponse();
           response.setResetPasswordActionId(passwordResetActionId);

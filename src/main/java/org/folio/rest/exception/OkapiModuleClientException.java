@@ -1,5 +1,8 @@
 package org.folio.rest.exception;
 
+/**
+ * Exception indicating that okapi module responded in unexpected way
+ */
 public class OkapiModuleClientException extends RuntimeException {
 
   public OkapiModuleClientException() {
