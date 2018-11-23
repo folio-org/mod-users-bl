@@ -11,7 +11,7 @@ public interface PasswordRestLinkService {
   /**
    * Generates password reset link and sends it to user
    * @param userId id of user to reset password
-   * @param okapiConnectionParams parameters for requests to okapi modules
+   * @param okapiConnectionParams connection params
    * @return Future with generated link
    */
   Future<String> sendPasswordRestLink(String userId, OkapiConnectionParams okapiConnectionParams);
