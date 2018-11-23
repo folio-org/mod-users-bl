@@ -1,3 +1,7 @@
+## 4.2.0 2018-11-23
+ * New endpoint POST /bl-users/password-reset/validate to validate create/reset password
+   link and log user into system to change password
+ 
 ## 4.0.4 UNRELEASED
  * Update descriptor to be compatible with servicepoints 3.0
  * Change user's password endpoint was added
