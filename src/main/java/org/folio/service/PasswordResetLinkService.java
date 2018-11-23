@@ -6,7 +6,7 @@ import org.folio.rest.util.OkapiConnectionParams;
 /**
  * Service for password reset link functionality
  */
-public interface PasswordRestLinkService {
+public interface PasswordResetLinkService {
 
   /**
    * Generates password reset link and sends it to user

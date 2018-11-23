@@ -43,8 +43,8 @@ import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.ExceptionHelper;
 import org.folio.rest.util.OkapiConnectionParams;
-import org.folio.service.PasswordRestLinkService;
-import org.folio.service.PasswordRestLinkServiceImpl;
+import org.folio.service.PasswordResetLinkService;
+import org.folio.service.PasswordResetLinkServiceImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 
@@ -96,13 +96,13 @@ public class BLUsersAPI implements BlUsers {
   private static final int DEFAULT_PORT = 9030;
 
   private UserPasswordService userPasswordService;
-  private PasswordRestLinkService passwordRestLinkService;
+  private PasswordResetLinkService passwordResetLinkService;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
     HttpClient httpClient = initHttpClient(vertx);
-    passwordRestLinkService = new PasswordRestLinkServiceImpl(
+    passwordResetLinkService = new PasswordResetLinkServiceImpl(
       new ConfigurationClientImpl(httpClient),
       new AuthTokenClientImpl(httpClient),
       new NotificationClientImpl(httpClient),
@@ -1049,11 +1049,14 @@ public class BLUsersAPI implements BlUsers {
   /**
    *
    * @param userToNotify
+   * @param okapiHeaders
    * @return
    */
-  private io.vertx.core.Future<Void> sendResetPasswordNotification(User userToNotify) {
+  private io.vertx.core.Future<Void> sendResetPasswordNotification(User userToNotify, Map<String, String> okapiHeaders) {
     //TODO: should be implemented once notification functionality is completed.
-    return io.vertx.core.Future.succeededFuture();
+
+    return passwordResetLinkService.sendPasswordRestLink(userToNotify.getId(), new OkapiConnectionParams(okapiHeaders))
+      .map(s -> null);
   }
 
   /**
@@ -1099,7 +1102,7 @@ public class BLUsersAPI implements BlUsers {
           }
           try {
             User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
-            sendResetPasswordNotification(user).setHandler(asyncResult);
+            sendResetPasswordNotification(user, okapiHeaders).setHandler(asyncResult);
           } catch (Exception e) {
             asyncResult.fail(e);
           }
@@ -1195,7 +1198,7 @@ public class BLUsersAPI implements BlUsers {
                                            Map<String, String> okapiHeaders,
                                            Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                            Context vertxContext) {
-    passwordRestLinkService.sendPasswordRestLink(entity.getUserId(), new OkapiConnectionParams(okapiHeaders))
+    passwordResetLinkService.sendPasswordRestLink(entity.getUserId(), new OkapiConnectionParams(okapiHeaders))
       .map(link ->
         PostBlUsersPasswordResetLinkResponse.respond200WithApplicationJson(
           new GenerateLinkResponse().withLink(link)))

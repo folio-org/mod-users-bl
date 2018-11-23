@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class PasswordRestLinkServiceImpl implements PasswordRestLinkService {
+public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private static final String MODULE_NAME = "USERSBL";
 
@@ -50,9 +50,9 @@ public class PasswordRestLinkServiceImpl implements PasswordRestLinkService {
 
   private String resetPasswordUIPathDefault;
 
-  public PasswordRestLinkServiceImpl(ConfigurationClient configurationClient, AuthTokenClient authTokenClient,
-                                     NotificationClient notificationClient, PasswordResetActionClient passwordResetActionClient,
-                                     UserModuleClient userModuleClient) {
+  public PasswordResetLinkServiceImpl(ConfigurationClient configurationClient, AuthTokenClient authTokenClient,
+                                      NotificationClient notificationClient, PasswordResetActionClient passwordResetActionClient,
+                                      UserModuleClient userModuleClient) {
     this.configurationClient = configurationClient;
     this.authTokenClient = authTokenClient;
     this.notificationClient = notificationClient;
