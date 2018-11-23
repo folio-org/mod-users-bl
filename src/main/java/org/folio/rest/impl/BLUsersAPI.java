@@ -1049,14 +1049,11 @@ public class BLUsersAPI implements BlUsers {
   /**
    *
    * @param userToNotify
-   * @param okapiHeaders
    * @return
    */
-  private io.vertx.core.Future<Void> sendResetPasswordNotification(User userToNotify, Map<String, String> okapiHeaders) {
+  private io.vertx.core.Future<Void> sendResetPasswordNotification(User userToNotify) {
     //TODO: should be implemented once notification functionality is completed.
-
-    return passwordResetLinkService.sendPasswordRestLink(userToNotify.getId(), new OkapiConnectionParams(okapiHeaders))
-      .map(s -> null);
+    return io.vertx.core.Future.succeededFuture();
   }
 
   /**
@@ -1102,7 +1099,7 @@ public class BLUsersAPI implements BlUsers {
           }
           try {
             User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
-            sendResetPasswordNotification(user, okapiHeaders).setHandler(asyncResult);
+            sendResetPasswordNotification(user).setHandler(asyncResult);
           } catch (Exception e) {
             asyncResult.fail(e);
           }
