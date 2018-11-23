@@ -1,3 +1,5 @@
+## 4.0.5
+ * A new endpoint **POST /bl-users/password-reset/link** was implemented
 ## 4.0.4 UNRELEASED
  * Update descriptor to be compatible with servicepoints 3.0
  * Change user's password endpoint was added

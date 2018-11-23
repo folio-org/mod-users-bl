@@ -38,8 +38,8 @@ public class PasswordRestLinkServiceImpl implements PasswordRestLinkService {
 
   private static final String LINK_EXPIRATION_TIME_DEFAULT = "86400000";
 
-  private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
-  private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";
+  private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";//NOSONAR
+  private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";//NOSONAR
   public static final String DEFAULT_NOTIFICATION_LANG = "en";
 
   private ConfigurationClient configurationClient;
@@ -67,7 +67,7 @@ public class PasswordRestLinkServiceImpl implements PasswordRestLinkService {
     Holder<User> userHolder = new Holder<>();
     Holder<String> passwordResetActionIdHolder = new Holder<>();
     Holder<Boolean> passwordExistsHolder = new Holder<>();
-    Holder<String> tokenHolder = new Holder<>();
+    Holder<String> linkHolder = new Holder<>();
 
     return configurationClient.lookupConfigByModuleName(MODULE_NAME, GENERATE_LINK_REQUIRED_CONFIGURATION, connectionParams)
       .compose(configurations -> {
@@ -102,10 +102,10 @@ public class PasswordRestLinkServiceImpl implements PasswordRestLinkService {
         return authTokenClient.signToken(tokenPayload, connectionParams);
       })
       .compose(token -> {
-        tokenHolder.value = token;
         String linkHost = configMapHolder.value.get(FOLIO_HOST_CONFIG_KEY);
         String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
         String generatedLink = linkHost + linkPath + '/' + token;
+        linkHolder.value = generatedLink;
 
         String eventConfigId = passwordExistsHolder.value ? RESET_PASSWORD_EVENT_CONFIG_ID : CREATE_PASSWORD_EVENT_CONFIG_ID;
         Notification notification = new Notification()
@@ -119,6 +119,6 @@ public class PasswordRestLinkServiceImpl implements PasswordRestLinkService {
           .withLang(DEFAULT_NOTIFICATION_LANG);
         return notificationClient.sendNotification(notification, connectionParams);
       })
-      .map(v -> tokenHolder.value);
+      .map(v -> linkHolder.value);
   }
 }

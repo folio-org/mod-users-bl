@@ -71,7 +71,9 @@ public class RestUtil {
         headers.add("Content-type", "application/json")
           .add("Accept", "application/json, text/plain");
         for (Map.Entry entry : headers.entries()) {
-          request.putHeader((String) entry.getKey(), (String) entry.getValue());
+          if (entry.getValue() != null) {
+            request.putHeader((String) entry.getKey(), (String) entry.getValue());
+          }
         }
       }
       request.exceptionHandler(future::fail);

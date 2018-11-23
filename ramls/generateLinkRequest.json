@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
+  "description": "Request to generate and send reset password link",
   "properties": {
     "userId": {
       "type": "string",

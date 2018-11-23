@@ -18,19 +18,19 @@ import java.util.stream.Collectors;
 
 public class ConfigurationClientImpl implements ConfigurationClient {
 
-  private static final String CONFIG_REQUEST_PATH = "/configurations/entries";
-
   private HttpClient httpClient;
+  private String configRequestPath;
 
   public ConfigurationClientImpl(HttpClient httpClient) {
     this.httpClient = httpClient;
+    this.configRequestPath = System.getProperty("config.client.path", "/configurations/entries");
   }
 
   @Override
   public Future<Map<String, String>> lookupConfigByModuleName(String moduleName, Set<String> requiredConfiguration,
                                                               OkapiConnectionParams okapiConnectionParams) {
     String requestUrl =
-      String.format("%s?query=module==%s", okapiConnectionParams.getOkapiUrl() + CONFIG_REQUEST_PATH, moduleName);
+      String.format("%s?query=module==%s", okapiConnectionParams.getOkapiUrl() + configRequestPath, moduleName);
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET, okapiConnectionParams.buildHeaders(), null)
       .map(response -> {
         if (response.getCode() != HttpStatus.SC_OK) {
