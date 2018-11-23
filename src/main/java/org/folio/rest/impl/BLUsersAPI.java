@@ -39,8 +39,8 @@ import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.ExceptionHelper;
 import org.folio.rest.util.OkapiConnectionParams;
-import org.folio.service.PasswordRestLinkService;
-import org.folio.service.PasswordRestLinkServiceImpl;
+import org.folio.service.PasswordResetLinkService;
+import org.folio.service.PasswordResetLinkServiceImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 
@@ -93,14 +93,14 @@ public class BLUsersAPI implements BlUsers {
 
   private UserPasswordService userPasswordService;
 
-  private PasswordRestLinkService passwordRestLinkService;
+  private PasswordResetLinkService passwordResetLinkService;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
 
     HttpClient httpClient = vertx.createHttpClient();
-    passwordRestLinkService = new PasswordRestLinkServiceImpl(new AuthTokenClientImpl(httpClient),
+    passwordResetLinkService = new PasswordResetLinkServiceImpl(new AuthTokenClientImpl(httpClient),
       new PasswordResetActionClientImpl(httpClient), new UserModuleClientImpl(httpClient));
   }
 
@@ -1182,7 +1182,7 @@ public class BLUsersAPI implements BlUsers {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get("x-okapi-url"),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT), okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN), "");
 
-    passwordRestLinkService.validateLinkAndLoginUser(connectionParams)
+    passwordResetLinkService.validateLinkAndLoginUser(connectionParams)
       .setHandler(res -> {
         if (res.succeeded()) {
           asyncResultHandler.handle(Future.succeededFuture(

@@ -16,15 +16,15 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Collections;
 
-public class PasswordRestLinkServiceImpl implements PasswordRestLinkService {
+public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private AuthTokenClient authTokenClient;
   private PasswordResetActionClient passwordResetActionClient;
   private UserModuleClient userModuleClient;
 
-  public PasswordRestLinkServiceImpl(AuthTokenClient authTokenClient,
-                                     PasswordResetActionClient passwordResetActionClient,
-                                     UserModuleClient userModuleClient) {
+  public PasswordResetLinkServiceImpl(AuthTokenClient authTokenClient,
+                                      PasswordResetActionClient passwordResetActionClient,
+                                      UserModuleClient userModuleClient) {
     this.authTokenClient = authTokenClient;
     this.passwordResetActionClient = passwordResetActionClient;
     this.userModuleClient = userModuleClient;
