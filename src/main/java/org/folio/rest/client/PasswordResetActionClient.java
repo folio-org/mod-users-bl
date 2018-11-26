@@ -12,6 +12,15 @@ import java.util.Optional;
 public interface PasswordResetActionClient {
 
   /**
+   * Saves given action
+   *
+   * @param passwordRestAction    entry to save
+   * @param okapiConnectionParams connection params
+   * @return future with true if password already exists
+   */
+  Future<Boolean> saveAction(PasswordRestAction passwordRestAction, OkapiConnectionParams okapiConnectionParams);
+
+  /**
    * Retrieves an password reset action with given id
    *
    * @param passwordResetActionId password reset action id

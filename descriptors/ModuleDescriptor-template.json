@@ -132,6 +132,19 @@
         },
         {
           "methods": ["POST"],
+          "pathPattern": "/bl-users/password-reset/link",
+          "permissionsRequired": ["users-bl.password-reset-link.generate"],
+          "permissionsDesired": [],
+          "modulePermissions": [
+            "users.item.get",
+            "configuration.entries.collection.get",
+            "login.password-reset-action.post",
+            "auth.signtoken",
+            "notify.item.post"
+          ]
+        },
+        {
+          "methods": ["POST"],
           "pathPattern": "/bl-users/password-reset/validate",
           "permissionsDesired": [],
           "permissionsRequired": ["users-bl.password-reset-link.validate"],
@@ -193,6 +206,11 @@
       "description" : "Modify a composite user record"
     },
     {
+      "permissionName" : "users-bl.password-reset-link.generate",
+      "displayName" : "users-bl password reset link generate",
+      "description" : "Generate and send password reset link"
+    },
+    {
       "permissionName" : "users-bl.password-reset-link.validate",
       "displayName" : "users-bl password-reset-link validate",
       "description" : "Validate create/reset password link and log user into system to change password"
@@ -206,6 +224,7 @@
         "users-bl.item.get",
         "users-bl.item.post",
         "users-bl.item.put",
+        "users-bl.password-reset-link.generate"
         "users-bl.password-reset-link.validate"
       ],
       "visible" : false

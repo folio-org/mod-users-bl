@@ -10,6 +10,14 @@ import org.folio.rest.util.OkapiConnectionParams;
 public interface PasswordResetLinkService {
 
   /**
+   * Generates password reset link and sends it to user
+   * @param userId id of user to reset password
+   * @param okapiConnectionParams connection params
+   * @return Future with generated link
+   */
+  Future<String> sendPasswordRestLink(String userId, OkapiConnectionParams okapiConnectionParams);
+
+  /**
    * Retrieves reset password action id from x-okapi-token connection param, retrieves password reset action,
    * validates the action, then signs new system JWT token.
    *

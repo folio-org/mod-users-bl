@@ -3,9 +3,9 @@ package org.folio.rest.util;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.apache.http.HttpStatus;
+import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.jaxrs.model.Error;
 import org.folio.rest.jaxrs.model.Errors;
-import org.folio.rest.exception.UnprocessableEntityException;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -19,6 +19,12 @@ public final class ExceptionHelper {
   private ExceptionHelper() {
   }
 
+  /**
+   * Maps given exception to http response
+   *
+   * @param throwable exception
+   * @return response
+   */
   public static Response handleException(Throwable throwable) {
     if (throwable.getClass() == UnprocessableEntityException.class) {
       UnprocessableEntityException exception = ((UnprocessableEntityException) throwable);
