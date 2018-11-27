@@ -325,6 +325,74 @@ public class BLUsersAPITest {
       .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
   }
 
+  @Test
+  public void postPasswordReset() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .port(port)
+      .body(new JsonObject()
+        .put("resetPasswordActionId", NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)
+        .put("newPassword", "1q2w3E!190").encode())
+      .accept("text/plain")
+      .contentType("application/json")
+      .when()
+      .post("/bl-users/password-reset/reset")
+      .then()
+      .statusCode(HttpStatus.SC_NO_CONTENT);
+  }
+
+  @Test
+  public void postPasswordResetInvalidPassword() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .port(port)
+      .body(new JsonObject()
+        .put("resetPasswordActionId", NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)
+        .put("newPassword", "123456").encode())
+      .accept("text/plain")
+      .contentType("application/json")
+      .when()
+      .post("/bl-users/password-reset/reset")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
+  @Test
+  public void postPasswordResetNonexistentAction() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .port(port)
+      .body(new JsonObject()
+        .put("resetPasswordActionId", NONEXISTENT_PASSWORD_RESET_ACTION_ID)
+        .put("newPassword", "1q2w3E!190").encode())
+      .accept("text/plain")
+      .contentType("application/json")
+      .when()
+      .post("/bl-users/password-reset/reset")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
+  @Test
+  public void postPasswordResetExpiredAction() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .port(port)
+      .body(new JsonObject()
+        .put("resetPasswordActionId", EXPIRED_PASSWORD_RESET_ACTION_ID)
+        .put("newPassword", "1q2w3E!190").encode())
+      .accept("text/plain")
+      .contentType("application/json")
+      .when()
+      .post("/bl-users/password-reset/reset")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
   private String buildToken(String passwordResetActionId) {
     JsonObject payload = new JsonObject()
       .put("passwordResetActionId", passwordResetActionId);
