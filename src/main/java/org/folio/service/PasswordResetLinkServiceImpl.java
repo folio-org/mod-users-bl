@@ -80,7 +80,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
         }
         if (StringUtils.isBlank(optionalUser.get().getUsername())) {
-          String message = String.format("User without username cannot reset password", userId);
+          String message = "User without username cannot reset password";
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
           throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
         }
