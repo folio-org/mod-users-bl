@@ -4,7 +4,7 @@
   "provides": [
     {
       "id": "users-bl",
-      "version": "3.2",
+      "version": "3.3",
       "handlers": [
         {
           "methods": ["GET"],
@@ -141,6 +141,18 @@
             "login.password-reset-action.post",
             "auth.signtoken",
             "notify.item.post"
+          ]
+        },
+        {
+          "methods": ["POST"],
+          "pathPattern": "/bl-users/password-reset/reset",
+          "permissionsDesired": [],
+          "permissionsRequired": ["users-bl.password-reset-link.reset"],
+          "modulePermissions": [
+            "login.password-reset-action.get",
+            "users.item.get",
+            "auth.signtoken",
+            "login.password-reset.post"
           ]
         },
         {
