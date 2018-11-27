@@ -1,3 +1,6 @@
+## 4.3.0 2018-11-27
+ * New endpoint POST /bl-users/password-reset/reset for resetting password by the link
+
 ## 4.2.0 2018-11-23
  * New endpoint POST /bl-users/password-reset/validate to validate create/reset password
    link and log user into system to change password
