@@ -47,8 +47,6 @@ public class GeneratePasswordRestLinkTest {
 
   private static final String MODULE_NAME = "USERSBL";
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
-  private static final String UI_PATH_CONFIG_KEY = "RESET_PASSWORD_UI_PATH";
-  private static final String LINK_EXPIRATION_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
   private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
   private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";
 
@@ -56,8 +54,8 @@ public class GeneratePasswordRestLinkTest {
   private static final String MOCK_FOLIO_UI_HOST = "http://localhost:3000";
   private static final String DEFAULT_UI_URL = "/reset-password";
   private static final String MOCK_TOKEN = "mockToken";
-  public static final String PASSWORD_RESET_ACTION_PATH = "/authn/password-reset-action";
-
+  private static final String MOCK_USERNAME = "username";
+  private static final String PASSWORD_RESET_ACTION_PATH = "/authn/password-reset-action";
 
   private static Vertx vertx;
   private static int port;
@@ -101,7 +99,8 @@ public class GeneratePasswordRestLinkTest {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
-      .withId(UUID.randomUUID().toString());
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
@@ -129,7 +128,7 @@ public class GeneratePasswordRestLinkTest {
     Assert.assertThat(requestBodyByUrl.get(0).getUserId(), Matchers.is(mockUser.getId()));
 
     Notification expectedNotification = new Notification()
-      .withEventConfigId(RESET_PASSWORD_EVENT_CONFIG_ID)
+      .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
       .withContext(
         new Context()
           .withAdditionalProperty("user", mockUser)
@@ -144,7 +143,8 @@ public class GeneratePasswordRestLinkTest {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
-      .withId(UUID.randomUUID().toString());
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
     boolean passwordExists = false;
 
     mockUserFound(mockUser.getId(), mockUser);
@@ -173,7 +173,7 @@ public class GeneratePasswordRestLinkTest {
     Assert.assertThat(requestBodyByUrl.get(0).getUserId(), Matchers.is(mockUser.getId()));
 
     Notification expectedNotification = new Notification()
-      .withEventConfigId(CREATE_PASSWORD_EVENT_CONFIG_ID)
+      .withEventConfigName(CREATE_PASSWORD_EVENT_CONFIG_ID)
       .withContext(
         new Context()
           .withAdditionalProperty("user", mockUser)
@@ -190,8 +190,8 @@ public class GeneratePasswordRestLinkTest {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
-      .withId(UUID.randomUUID().toString());
-    boolean passwordExists = false;
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
 
     mockUserNotFound(mockUser.getId());
     mockConfigModule(MODULE_NAME, configToMock);
@@ -213,8 +213,8 @@ public class GeneratePasswordRestLinkTest {
   public void shouldReturn500WhenRequiredConfigNotFound() {
     Map<String, String> emptyConfigToMock = new HashMap<>();
     User mockUser = new User()
-      .withId(UUID.randomUUID().toString());
-    boolean passwordExists = false;
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
 
     mockConfigModule(MODULE_NAME, emptyConfigToMock);
     mockUserFound(mockUser.getId(), mockUser);
@@ -230,6 +230,29 @@ public class GeneratePasswordRestLinkTest {
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
       .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  public void shouldReturn422WhenUserHasNoUsername() {
+    Map<String, String> configToMock = new HashMap<>();
+    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
+    User mockUser = new User()
+      .withId(UUID.randomUUID().toString());
+
+    mockConfigModule(MODULE_NAME, configToMock);
+    mockUserFound(mockUser.getId(), mockUser);
+
+    JsonObject requestBody = new JsonObject()
+      .put("userId", mockUser.getId());
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
+    RestAssured.given()
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
   }
 
   private String toJson(Object object) {
@@ -271,7 +294,7 @@ public class GeneratePasswordRestLinkTest {
 
   private void mockNotificationModule() {
     WireMock.stubFor(WireMock.post("/notify")
-      .willReturn(WireMock.noContent()));
+      .willReturn(WireMock.created()));
   }
 
   private <T> List<T> getRequestBodyByUrl(String url, Class<T> clazz) {
