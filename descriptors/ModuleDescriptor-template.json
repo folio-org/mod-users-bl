@@ -224,7 +224,7 @@
         "users-bl.item.get",
         "users-bl.item.post",
         "users-bl.item.put",
-        "users-bl.password-reset-link.generate"
+        "users-bl.password-reset-link.generate",
         "users-bl.password-reset-link.validate"
       ],
       "visible" : false
