@@ -141,7 +141,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   public Future<Void> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
     Future<PasswordResetAction> passwordResetActionFuture = passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
       .compose(checkPasswordResetActionPresence(passwordResetActionId))
-      .compose(checkPasswordRestActionExpirationTime(passwordResetActionId));
+      .compose(checkPasswordResetActionExpirationTime(passwordResetActionId));
 
     return CompositeFuture.all(validatePassword(newPassword, okapiConnectionParams), passwordResetActionFuture)
       .compose(res ->
@@ -164,7 +164,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
     return passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
       .compose(checkPasswordResetActionPresence(passwordResetActionId))
-      .compose(checkPasswordRestActionExpirationTime(passwordResetActionId))
+      .compose(checkPasswordResetActionExpirationTime(passwordResetActionId))
       .compose(pwdResetAction -> userModuleClient.lookupUserById(pwdResetAction.getUserId(), okapiConnectionParams)
         .map(user -> {
           if (user.isPresent()) {
@@ -186,7 +186,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       });
   }
 
-  private Function<PasswordResetAction, Future<PasswordResetAction>> checkPasswordRestActionExpirationTime(
+  private Function<PasswordResetAction, Future<PasswordResetAction>> checkPasswordResetActionExpirationTime(
     String passwordResetActionId) {
     return pwdResetAction -> {
       if (pwdResetAction.getExpirationTime().toInstant().isAfter(Instant.now())) {

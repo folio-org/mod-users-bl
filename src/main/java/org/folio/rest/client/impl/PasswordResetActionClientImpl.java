@@ -26,11 +26,11 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
   }
 
   @Override
-  public Future<Boolean> saveAction(PasswordResetAction passwordRestAction, OkapiConnectionParams okapiConnectionParams) {
+  public Future<Boolean> saveAction(PasswordResetAction passwordResetAction, OkapiConnectionParams okapiConnectionParams) {
     String requestUrl = okapiConnectionParams.getOkapiUrl() + PW_RESET_ACTION_ENDPOINT;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST,
-      okapiConnectionParams.buildHeaders(), JsonObject.mapFrom(passwordRestAction).encode())
+      okapiConnectionParams.buildHeaders(), JsonObject.mapFrom(passwordResetAction).encode())
       .map((response -> {
         if (response.getCode() != HttpStatus.SC_CREATED) {
           String logMessage =

@@ -14,11 +14,11 @@ public interface PasswordResetActionClient {
   /**
    * Saves given action
    *
-   * @param passwordRestAction    entry to save
+   * @param passwordResetAction    entry to save
    * @param okapiConnectionParams connection params
    * @return future with true if password already exists
    */
-  Future<Boolean> saveAction(PasswordResetAction passwordRestAction, OkapiConnectionParams okapiConnectionParams);
+  Future<Boolean> saveAction(PasswordResetAction passwordResetAction, OkapiConnectionParams okapiConnectionParams);
 
   /**
    * Retrieves password reset action with given id
