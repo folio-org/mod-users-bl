@@ -228,6 +228,11 @@
       "description" : "Validate create/reset password link and log user into system to change password"
     },
     {
+      "permissionName" : "users-bl.password-reset-link.reset",
+      "displayName" : "users-bl password-reset-link reset",
+      "description" : "Reset password by link"
+    },
+    {
       "permissionName" : "users-bl.all",
       "displayName" : "users-bl all",
       "description" : "All user business-logic permissions",
@@ -236,8 +241,9 @@
         "users-bl.item.get",
         "users-bl.item.post",
         "users-bl.item.put",
-        "users-bl.password-reset-link.generate"
-        "users-bl.password-reset-link.validate"
+        "users-bl.password-reset-link.generate",
+        "users-bl.password-reset-link.validate",
+        "users-bl.password-reset-link.reset"
       ],
       "visible" : false
     }
