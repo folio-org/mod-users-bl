@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import org.apache.http.HttpStatus;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.z3950.zing.cql.CQLParseException;
 
@@ -35,6 +36,7 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore servicePointsStore;
   private JsonStore servicePointsUsersStore;
   private JsonStore configurationStore;
+  private JsonStore resetPasswordActionStore;
 
   private static final String USERS_ENDPOINT = "/users";
   private static final String PASSWORD_VALIDATE_ENDPOINT = "/password/validate";
@@ -46,6 +48,8 @@ public class MockOkapi extends AbstractVerticle {
   private static final String SERVICE_POINTS_ENDPOINT = "/service-points";
   private static final String SERVICE_POINTS_USERS_ENDPOINT = "/service-points-users";
   static final String CONFIGURATIONS_ENTRIES_ENDPOINT = "/configurations/entries";
+  private static final String PASSWORD_RESET_ACTION_ENDPOINT = "/authn/password-reset-action";
+  private static final String SIGN_TOKEN_ENDPOINT = "/token";
 
 
   @Override
@@ -77,14 +81,15 @@ public class MockOkapi extends AbstractVerticle {
     servicePointsStore = new JsonStore();
     servicePointsUsersStore = new JsonStore();
     configurationStore = new JsonStore();
+    resetPasswordActionStore = new JsonStore();
   }
 
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
 
     String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT, PASSWORD_VALIDATE_ENDPOINT, PASSWORD_UPDATE_ENDPOINT,
-      PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT,
-      SERVICE_POINTS_USERS_ENDPOINT, SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT};
+      PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT, SERVICE_POINTS_USERS_ENDPOINT,
+      SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT, PASSWORD_RESET_ACTION_ENDPOINT, SIGN_TOKEN_ENDPOINT};
     String uri = context.request().path();
     Matcher matcher;
     String id = null;
@@ -158,6 +163,11 @@ public class MockOkapi extends AbstractVerticle {
           mockResponse = handlerPasswordUpdate(method, id, remainder,
             context.getBodyAsString(), context);
           break;
+        case PASSWORD_RESET_ACTION_ENDPOINT:
+          mockResponse = handleResetPasswordActions(method, id, remainder, context.getBodyAsString(), context);
+          break;
+        case SIGN_TOKEN_ENDPOINT:
+          mockResponse = handleSingToken(method, context.getBodyAsString());
         default:
           break;
       }
@@ -270,6 +280,20 @@ public class MockOkapi extends AbstractVerticle {
     return handleBasicCrud(configurationStore, "configs", method, id, url,
       payload, context);
   }
+
+  private MockResponse handleResetPasswordActions(HttpMethod method, String id, String url,
+                                                  String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(resetPasswordActionStore, "resetPasswordActions", method, id, url, payload, context);
+  }
+
+  private MockResponse handleSingToken(HttpMethod method, String payload) {
+    if (method.equals(HttpMethod.POST)) {
+      return new MockResponse(HttpStatus.SC_CREATED, "{\"token\":\"header.payload.signature\"}");
+    } else {
+      return new MockResponse(HttpStatus.SC_NOT_FOUND, method.name());
+    }
+  }
+
 
   private MockResponse handlerPasswordValidate(HttpMethod method, String id, String url,
                                                    String payload, RoutingContext context) {

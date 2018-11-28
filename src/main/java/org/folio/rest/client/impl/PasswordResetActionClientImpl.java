@@ -6,14 +6,17 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import org.apache.http.HttpStatus;
 import org.folio.rest.exception.OkapiModuleClientException;
+import org.apache.commons.lang3.StringUtils;
 import org.folio.rest.client.PasswordResetActionClient;
 import org.folio.rest.jaxrs.model.PasswordRestAction;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 
+import java.util.Optional;
+
 public class PasswordResetActionClientImpl implements PasswordResetActionClient {
 
-  private static final String PASSWORD_RESET_ACTION_PATH = "/authn/password-reset-action";//NOSONAR
+  private static final String PW_RESET_ACTION_ENDPOINT = "/authn/password-reset-action";
 
   private HttpClient httpClient;
 
@@ -23,7 +26,7 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
 
   @Override
   public Future<Boolean> saveAction(PasswordRestAction passwordRestAction, OkapiConnectionParams okapiConnectionParams) {
-    String requestUrl = okapiConnectionParams.getOkapiUrl() + PASSWORD_RESET_ACTION_PATH;
+    String requestUrl = okapiConnectionParams.getOkapiUrl() + PW_RESET_ACTION_ENDPOINT;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST,
       okapiConnectionParams.buildHeaders(), JsonObject.mapFrom(passwordRestAction).encode())
@@ -35,5 +38,21 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
         }
         return response.getJson().getBoolean("passwordExists");
       }));
+  }
+
+  @Override
+  public Future<Optional<PasswordRestAction>> getAction(String passwordResetActionId, OkapiConnectionParams okapiConnectionParams) {
+    String requestUrl = okapiConnectionParams.getOkapiUrl() + PW_RESET_ACTION_ENDPOINT + "/" + passwordResetActionId;
+
+    return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
+      okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
+      .map(resp -> {
+          if (resp.getCode() == HttpStatus.SC_OK) {
+            return Optional.of(resp.getJson().mapTo(PasswordRestAction.class));
+          } else {
+            return Optional.empty();
+          }
+        }
+      );
   }
 }

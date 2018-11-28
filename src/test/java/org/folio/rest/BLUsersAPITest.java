@@ -2,6 +2,7 @@ package org.folio.rest;
 
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.http.Header;
 import io.restassured.specification.RequestSpecification;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
@@ -9,6 +10,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.apache.http.HttpStatus;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.AfterClass;
@@ -17,10 +19,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+
 
 @RunWith(VertxUnitRunner.class)
 public class BLUsersAPITest {
@@ -29,6 +34,13 @@ public class BLUsersAPITest {
   static int okapiPort;
   /** port of BLUsersAPI */
   static int port;
+
+  private static final String NOT_EXPIRED_PASSWORD_RESET_ACTION_ID = "5ac3b82d-a7d4-43a0-8285-104e84e01274";
+  private static final String EXPIRED_PASSWORD_RESET_ACTION_ID = "16423d10-f403-4de5-a6e9-8e0add61bf5b";
+  private static final String NONEXISTENT_PASSWORD_RESET_ACTION_ID = "41a9a229-6492-46ae-b9fc-017ba1e2705d";
+  private static final String FAKE_USER_ID_PASSWORD_RESET_ACTION_ID = "2a604a02-666c-44b6-b238-e81f379f1eb4";
+  private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
+  private static final String FAKE_USER_ID = "f2216cfc-4abb-4f54-85bb-4945c9fd91cb";
 
   @BeforeClass
   public static void before(TestContext context) {
@@ -65,10 +77,9 @@ public class BLUsersAPITest {
   }
 
   private static void insertData() {
-    String userId = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
     JsonObject userPost = new JsonObject()
         .put("username", "maxi")
-        .put("id", userId)
+        .put("id", USER_ID)
         .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
         .put("active", true)
         .put("personal", new JsonObject().put("email", "maxi@maxi.com"));
@@ -89,7 +100,7 @@ public class BLUsersAPITest {
         put("id", "604a6236-1c9d-4681-ace1-a0dd1bba5058");
     JsonObject permsUsersPost = new JsonObject()
         .put("permissions", new JsonArray().add(permission))
-        .put("userId", userId);
+        .put("userId", USER_ID);
     given().body(permsUsersPost.encode()).
     when().post("http://localhost:" + okapiPort + "/perms/users").
     then().statusCode(201);
@@ -127,6 +138,29 @@ public class BLUsersAPITest {
       when().post("http://localhost:" + okapiPort + "/configurations/entries").
       then().statusCode(201);
 
+    given().body(new JsonObject()
+      .put("id", NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)
+      .put("userId", USER_ID)
+      .put("expirationTime", Instant.now().plus(1, ChronoUnit.DAYS))
+      .encode())
+      .when().post("http://localhost:" + okapiPort + "/authn/password-reset-action")
+      .then().statusCode(201);
+
+    given().body(new JsonObject()
+      .put("id", EXPIRED_PASSWORD_RESET_ACTION_ID)
+      .put("userId", USER_ID)
+      .put("expirationTime", Instant.now().minus(1, ChronoUnit.DAYS))
+      .encode())
+      .when().post("http://localhost:" + okapiPort + "/authn/password-reset-action")
+      .then().statusCode(201);
+
+    given().body(new JsonObject()
+      .put("id", FAKE_USER_ID_PASSWORD_RESET_ACTION_ID)
+      .put("userId", FAKE_USER_ID)
+      .put("expirationTime", Instant.now().minus(1, ChronoUnit.DAYS))
+      .encode())
+      .when().post("http://localhost:" + okapiPort + "/authn/password-reset-action")
+      .then().statusCode(201);
   }
 
   @AfterClass
@@ -237,5 +271,64 @@ public class BLUsersAPITest {
       post("/bl-users/settings/myprofile/password").
       then().
       statusCode(500);
+  }
+
+  @Test
+  public void postBlUsersPasswordResetValidate() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-url", "http://localhost:" + okapiPort))
+      .header(new Header("x-okapi-token", buildToken(NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)))
+      .header(new Header("x-okapi-tenant", "supertenant"))
+      .when()
+      .post("/bl-users/password-reset/validate")
+      .then()
+      .statusCode(HttpStatus.SC_OK);
+  }
+
+  @Test
+  public void postBlUsersPasswordResetValidateExpiredAction() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-url", "http://localhost:" + okapiPort))
+      .header(new Header("x-okapi-token", buildToken(EXPIRED_PASSWORD_RESET_ACTION_ID)))
+      .header(new Header("x-okapi-tenant", "supertenant"))
+      .when()
+      .post("/bl-users/password-reset/validate")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
+  @Test
+  public void postBlUsersPasswordResetValidateNonexistentAction() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-url", "http://localhost:" + okapiPort))
+      .header(new Header("x-okapi-token", buildToken(NONEXISTENT_PASSWORD_RESET_ACTION_ID)))
+      .header(new Header("x-okapi-tenant", "supertenant"))
+      .when()
+      .post("/bl-users/password-reset/validate")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
+  @Test
+  public void postBlUsersPasswordResetValidateFakeUserId() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-url", "http://localhost:" + okapiPort))
+      .header(new Header("x-okapi-token", buildToken(FAKE_USER_ID_PASSWORD_RESET_ACTION_ID)))
+      .header(new Header("x-okapi-tenant", "supertenant"))
+      .when()
+      .post("/bl-users/password-reset/validate")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
+  private String buildToken(String passwordResetActionId) {
+    JsonObject payload = new JsonObject()
+      .put("passwordResetActionId", passwordResetActionId);
+    byte[] bytes = payload.encode().getBytes(StandardCharsets.UTF_8);
+    return "dummyJwt." + Base64.getEncoder().encodeToString(bytes) + ".sig";
   }
 }

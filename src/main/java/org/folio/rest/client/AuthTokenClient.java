@@ -4,7 +4,6 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.folio.rest.util.OkapiConnectionParams;
 
-
 /**
  * Client for mod-authtoken module
  */

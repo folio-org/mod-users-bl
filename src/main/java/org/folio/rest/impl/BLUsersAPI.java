@@ -1203,4 +1203,22 @@ public class BLUsersAPI implements BlUsers {
       .otherwise(ExceptionHelper::handleException)
       .setHandler(asyncResultHandler);
   }
+
+  @Override
+  public void postBlUsersPasswordResetValidate(Map<String, String> okapiHeaders,
+                                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                               Context vertxContext) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get("x-okapi-url"),
+      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT), okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN), "");
+
+    passwordResetLinkService.validateLinkAndLoginUser(connectionParams)
+      .setHandler(res -> {
+        if (res.succeeded()) {
+          asyncResultHandler.handle(Future.succeededFuture(
+            PostBlUsersPasswordResetValidateResponse.respond200WithApplicationJson(res.result())));
+        } else {
+          asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
+        }
+      });
+  }
 }

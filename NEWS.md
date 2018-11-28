@@ -1,5 +1,10 @@
+## 4.2.0 2018-11-23
+ * New endpoint POST /bl-users/password-reset/validate to validate create/reset password
+   link and log user into system to change password
+
 ## 4.1.0 2018-11-23
  * A new endpoint **POST /bl-users/password-reset/link** was implemented. Endpoint requires FOLIO_HOST config for USERSBL module storing host of FOLIO ui application. Example "http://localhost:3000"
+ 
 ## 4.0.4 UNRELEASED
  * Update descriptor to be compatible with servicepoints 3.0
  * Change user's password endpoint was added
