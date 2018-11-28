@@ -41,6 +41,7 @@ public class BLUsersAPITest {
   private static final String FAKE_USER_ID_PASSWORD_RESET_ACTION_ID = "2a604a02-666c-44b6-b238-e81f379f1eb4";
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String FAKE_USER_ID = "f2216cfc-4abb-4f54-85bb-4945c9fd91cb";
+  private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
 
   @BeforeClass
   public static void before(TestContext context) {
@@ -395,7 +396,7 @@ public class BLUsersAPITest {
 
   private String buildToken(String passwordResetActionId) {
     JsonObject payload = new JsonObject()
-      .put("passwordResetActionId", passwordResetActionId);
+      .put("sub", UNDEFINED_USER_NAME + passwordResetActionId);
     byte[] bytes = payload.encode().getBytes(StandardCharsets.UTF_8);
     return "dummyJwt." + Base64.getEncoder().encodeToString(bytes) + ".sig";
   }

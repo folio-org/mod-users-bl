@@ -39,6 +39,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private static final String MODULE_NAME = "USERSBL";
 
+  private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String UI_PATH_CONFIG_KEY = "RESET_PASSWORD_UI_PATH";
   private static final String LINK_EXPIRATION_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
@@ -111,7 +112,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .compose(passwordExists -> {
         passwordExistsHolder.value = passwordExists;
         JsonObject tokenPayload = new JsonObject()
-          .put("sub", passwordResetActionIdHolder.value)
+          .put("sub", UNDEFINED_USER_NAME + passwordResetActionIdHolder.value)
           .put("dummy", true)
           .put("extra_permissions", new JsonArray().add("users-bl.password-reset-link.validate"));
         return authTokenClient.signToken(tokenPayload, connectionParams);
@@ -185,7 +186,13 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   public Future<TokenResponse> validateLinkAndLoginUser(OkapiConnectionParams okapiConnectionParams) {
     String token = okapiConnectionParams.getToken();
     JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
-    String passwordResetActionId = payload.getString("passwordResetActionId");
+    String tokenSub = payload.getString("sub");
+    if (!tokenSub.startsWith(UNDEFINED_USER_NAME)) {
+      UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.invalid",
+        "Invalid token.");
+      return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
+    }
+    String passwordResetActionId = tokenSub.substring(UNDEFINED_USER_NAME.length());
 
     return passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
       .compose(checkPasswordResetActionPresence(passwordResetActionId))
