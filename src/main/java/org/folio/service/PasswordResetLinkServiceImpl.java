@@ -139,19 +139,44 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   @Override
   public Future<Void> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
+    Holder<User> userHolder = new Holder<>();
+    Holder<String> userIdHolder = new Holder<>();
+
     Future<PasswordResetAction> passwordResetActionFuture = passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
-      .compose(checkPasswordResetActionPresence(passwordResetActionId))
+      .compose(checkPasswordResetActionPresence(passwordResetActionId));
+
+    Future<PasswordResetAction> passwordResetActionExpirationFuture = passwordResetActionFuture
       .compose(checkPasswordResetActionExpirationTime(passwordResetActionId));
 
-    return CompositeFuture.all(validatePassword(newPassword, okapiConnectionParams), passwordResetActionFuture)
+    Future<User> userFuture = passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
+      .compose(checkPasswordResetActionPresence(passwordResetActionId))
+      .compose(passwordResetAction -> {
+        userIdHolder.value = passwordResetAction.getUserId();
+        return userModuleClient.lookupUserById(passwordResetAction.getUserId(), okapiConnectionParams);
+      })
+      .compose(optionalUser -> {
+        if (optionalUser.isPresent()) {
+          User user = optionalUser.get();
+          userHolder.value = user;
+          return Future.succeededFuture(user);
+        }
+        String message = String.format("User with id '%s' not found", userIdHolder.value);
+        UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.not-found", message);
+        throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+      });
+
+    return CompositeFuture.all(validatePassword(newPassword, okapiConnectionParams),
+      passwordResetActionExpirationFuture, userFuture)
       .compose(res ->
         passwordResetActionClient.resetPassword(passwordResetActionId, newPassword, okapiConnectionParams))
-      .compose(v -> {
+      .compose(isNewPassword -> {
         Notification notification = new Notification();
-        notification.setEventConfigId("eventConfig");
         notification.setRecipientId("recipient");
         notification.setLang("en");
         notification.setText(StringUtils.EMPTY);
+        notification.setEventConfigName(isNewPassword ?
+          CREATE_PASSWORD_EVENT_CONFIG_NAME : RESET_PASSWORD_EVENT_CONFIG_NAME);
+        notification.setContext(new Context().withAdditionalProperty("user", userHolder.value));
         return notificationClient.sendNotification(notification, okapiConnectionParams);
       });
   }

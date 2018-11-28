@@ -35,7 +35,8 @@ public interface PasswordResetActionClient {
    * @param passwordResetActionId password reset action id
    * @param newPassword           new password
    * @param okapiConnectionParams connection params
+   * @return true if password is
    * @return succeeded future if password is reset, otherwise - failed future
    */
-  Future<Void> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams);
+  Future<Boolean> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams);
 }

@@ -58,7 +58,7 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
   }
 
   @Override
-  public Future<Void> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
+  public Future<Boolean> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
     String requestUrl = okapiConnectionParams.getOkapiUrl() + PW_RESET_ENDPOINT;
     JsonObject payload = new JsonObject()
       .put("passwordResetActionId", passwordResetActionId)
@@ -70,7 +70,7 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
         if (resp.getCode() != HttpStatus.SC_CREATED) {
           throw new OkapiModuleClientException();
         }
-        return null;
+        return Boolean.valueOf(resp.getJson().getString("isNewPassword"));
       });
   }
 }
