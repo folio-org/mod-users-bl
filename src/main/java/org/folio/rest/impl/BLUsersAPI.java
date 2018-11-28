@@ -5,17 +5,27 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.folio.rest.RestVerticle;
 import org.folio.rest.client.ConfigurationsClient;
+import org.folio.rest.client.impl.AuthTokenClientImpl;
+import org.folio.rest.client.impl.ConfigurationClientImpl;
+import org.folio.rest.client.impl.NotificationClientImpl;
+import org.folio.rest.client.impl.PasswordResetActionClientImpl;
+import org.folio.rest.client.impl.UserModuleClientImpl;
 import org.folio.rest.jaxrs.model.CompositeUser;
 import org.folio.rest.jaxrs.model.CompositeUserListObject;
 import org.folio.rest.jaxrs.model.Credentials;
 import org.folio.rest.jaxrs.model.Errors;
+import org.folio.rest.jaxrs.model.GenerateLinkRequest;
+import org.folio.rest.jaxrs.model.GenerateLinkResponse;
 import org.folio.rest.jaxrs.model.Identifier;
 import org.folio.rest.jaxrs.model.LoginCredentials;
 import org.folio.rest.jaxrs.model.PatronGroup;
@@ -23,18 +33,20 @@ import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.ProxiesFor;
 import org.folio.rest.jaxrs.model.ServicePoint;
 import org.folio.rest.jaxrs.model.ServicePointsUser;
-
-import org.folio.rest.jaxrs.resource.BlUsers;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.folio.rest.jaxrs.model.User;
+import org.folio.rest.jaxrs.resource.BlUsers;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
+import org.folio.rest.util.ExceptionHelper;
 import org.folio.rest.util.OkapiConnectionParams;
-import org.folio.services.UserPasswordService;
-import org.folio.services.UserPasswordServiceImpl;
+import org.folio.service.PasswordResetLinkService;
+import org.folio.service.PasswordResetLinkServiceImpl;
+import org.folio.service.password.UserPasswordService;
+import org.folio.service.password.UserPasswordServiceImpl;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -84,10 +96,27 @@ public class BLUsersAPI implements BlUsers {
   private static final int DEFAULT_PORT = 9030;
 
   private UserPasswordService userPasswordService;
+  private PasswordResetLinkService passwordResetLinkService;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
+    HttpClient httpClient = initHttpClient(vertx);
+    passwordResetLinkService = new PasswordResetLinkServiceImpl(
+      new ConfigurationClientImpl(httpClient),
+      new AuthTokenClientImpl(httpClient),
+      new NotificationClientImpl(httpClient),
+      new PasswordResetActionClientImpl(httpClient),
+      new UserModuleClientImpl(httpClient));
+  }
+
+  private HttpClient initHttpClient(Vertx vertx) {
+    int lookupTimeout = Integer
+      .parseInt(RestVerticle.MODULE_SPECIFIC_ARGS.getOrDefault("lookup.timeout", "1000"));
+    HttpClientOptions options = new HttpClientOptions();
+    options.setConnectTimeout(lookupTimeout);
+    options.setIdleTimeout(lookupTimeout);
+    return vertx.createHttpClient(options);
   }
 
   private List<String> getDefaultIncludes(){
@@ -201,7 +230,7 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void getBlUsersByIdById(String userid, List<String> include, boolean expandPerms, Map<String, String> okapiHeaders, 
+  public void getBlUsersByIdById(String userid, List<String> include, boolean expandPerms, Map<String, String> okapiHeaders,
     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
     run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
@@ -1159,5 +1188,19 @@ public class BLUsersAPI implements BlUsers {
       asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
         .respond500WithTextPlain("Internal server error during change user's password")));
     }
+  }
+
+  @Override
+  public void postBlUsersPasswordResetLink(GenerateLinkRequest entity,
+                                           Map<String, String> okapiHeaders,
+                                           Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                           Context vertxContext) {
+    passwordResetLinkService.sendPasswordRestLink(entity.getUserId(), new OkapiConnectionParams(okapiHeaders))
+      .map(link ->
+        PostBlUsersPasswordResetLinkResponse.respond200WithApplicationJson(
+          new GenerateLinkResponse().withLink(link)))
+      .map(javax.ws.rs.core.Response.class::cast)
+      .otherwise(ExceptionHelper::handleException)
+      .setHandler(asyncResultHandler);
   }
 }
