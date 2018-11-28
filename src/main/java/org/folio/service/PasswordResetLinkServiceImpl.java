@@ -207,8 +207,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
             return Future.<User>failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
           }
         })).compose(user -> {
-        JsonObject tokenPayload = new JsonObject().put("payload",
-          new JsonObject().put("sub", user.result().getUsername()).put("user_id", user.result().getId()));
+        JsonObject tokenPayload = new JsonObject()
+          .put("sub", user.result().getUsername())
+          .put("user_id", user.result().getId());
         return authTokenClient.signToken(tokenPayload, okapiConnectionParams).map(newToken -> {
           TokenResponse response = new TokenResponse();
           response.setResetPasswordActionId(passwordResetActionId);
