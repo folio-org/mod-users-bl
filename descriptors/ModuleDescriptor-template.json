@@ -152,7 +152,9 @@
             "login.password-reset-action.get",
             "users.item.get",
             "auth.signtoken",
-            "login.password-reset.post"
+            "login.password-reset.post",
+            "validation.validate.post",
+            "notify.item.post"
           ]
         },
         {

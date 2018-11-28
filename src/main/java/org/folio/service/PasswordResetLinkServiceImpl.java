@@ -49,6 +49,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private static final String CREATE_PASSWORD_EVENT_CONFIG_NAME = "CREATE_PASSWORD_EVENT";//NOSONAR
   private static final String RESET_PASSWORD_EVENT_CONFIG_NAME = "RESET_PASSWORD_EVENT";//NOSONAR
+  private static final String PASSWORD_CREATED_EVENT_CONFIG_NAME = "PASSWORD_CREATED_EVENT";//NOSONAR
+  private static final String PASSWORD_CHANGED_EVENT_CONFIG_NAME = "PASSWORD_CHANGED_EVENT";//NOSONAR
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
 
   private ConfigurationClient configurationClient;
@@ -172,11 +174,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         passwordResetActionClient.resetPassword(passwordResetActionId, newPassword, okapiConnectionParams))
       .compose(isNewPassword -> {
         Notification notification = new Notification();
-        notification.setRecipientId("recipient");
+        notification.setRecipientId(userIdHolder.value);
         notification.setLang("en");
         notification.setText(StringUtils.EMPTY);
         notification.setEventConfigName(isNewPassword ?
-          CREATE_PASSWORD_EVENT_CONFIG_NAME : RESET_PASSWORD_EVENT_CONFIG_NAME);
+          PASSWORD_CREATED_EVENT_CONFIG_NAME : PASSWORD_CHANGED_EVENT_CONFIG_NAME);
         notification.setContext(new Context().withAdditionalProperty("user", userHolder.value));
         return notificationClient.sendNotification(notification, okapiConnectionParams);
       });

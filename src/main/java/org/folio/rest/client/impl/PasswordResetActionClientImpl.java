@@ -70,7 +70,7 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
         if (resp.getCode() != HttpStatus.SC_CREATED) {
           throw new OkapiModuleClientException();
         }
-        return Boolean.valueOf(resp.getJson().getString("isNewPassword"));
+        return resp.getJson().getBoolean("isNewPassword");
       });
   }
 }
