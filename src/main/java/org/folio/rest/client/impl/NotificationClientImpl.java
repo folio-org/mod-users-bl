@@ -25,7 +25,7 @@ public class NotificationClientImpl implements NotificationClient {
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST,
       okapiConnectionParams.buildHeaders(), JsonObject.mapFrom(notification).encode())
       .map(response -> {
-        if (response.getCode() != HttpStatus.SC_NO_CONTENT) {
+        if (response.getCode() != HttpStatus.SC_CREATED) {
           String logMessage =
             String.format("Error sending notification. Status: %d, body: %s", response.getCode(), response.getBody());
           throw new OkapiModuleClientException(logMessage);

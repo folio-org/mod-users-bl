@@ -38,12 +38,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String LINK_EXPIRATION_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
   private static final Set<String> GENERATE_LINK_REQUIRED_CONFIGURATION =
     Collections.unmodifiableSet(new HashSet<>(Collections.singletonList(FOLIO_HOST_CONFIG_KEY)));
+ private static final String LINK_EXPIRATION_TIME_DEFAULT = "86400000";
 
-  private static final String LINK_EXPIRATION_TIME_DEFAULT = "86400000";
-
-  private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";//NOSONAR
-  private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";//NOSONAR
-  public static final String DEFAULT_NOTIFICATION_LANG = "en";
+  private static final String CREATE_PASSWORD_EVENT_CONFIG_NAME = "CREATE_PASSWORD_EVENT";//NOSONAR
+  private static final String RESET_PASSWORD_EVENT_CONFIG_NAME = "RESET_PASSWORD_EVENT";//NOSONAR
+  private static final String DEFAULT_NOTIFICATION_LANG = "en";
 
   private ConfigurationClient configurationClient;
   private AuthTokenClient authTokenClient;
@@ -83,6 +82,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.not-found", message);
           throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
         }
+        if (StringUtils.isBlank(optionalUser.get().getUsername())) {
+          String message = "User without username cannot reset password";
+          UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
+          throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+        }
         userHolder.value = optionalUser.get();
         long expirationTimeFromConfig = Long.parseLong(
           configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT));
@@ -110,9 +114,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         String generatedLink = linkHost + linkPath + '/' + token;
         linkHolder.value = generatedLink;
 
-        String eventConfigId = passwordExistsHolder.value ? RESET_PASSWORD_EVENT_CONFIG_ID : CREATE_PASSWORD_EVENT_CONFIG_ID;
+        String eventConfigName = passwordExistsHolder.value ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
         Notification notification = new Notification()
-          .withEventConfigId(eventConfigId)
+          .withEventConfigName(eventConfigName)
           .withRecipientId(userId)
           .withContext(
             new Context()
