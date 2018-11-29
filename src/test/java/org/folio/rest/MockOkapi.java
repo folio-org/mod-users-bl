@@ -306,7 +306,7 @@ public class MockOkapi extends AbstractVerticle {
 
   private MockResponse handleResetPassword(HttpMethod method, String payload) {
     if (method.equals(HttpMethod.POST)) {
-      return new MockResponse(HttpStatus.SC_CREATED, "{\"isNewPassword\":\"true\"}");
+      return new MockResponse(HttpStatus.SC_CREATED, "{\"isNewPassword\":true}");
     } else {
       return new MockResponse(HttpStatus.SC_NOT_FOUND, method.name());
     }
