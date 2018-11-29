@@ -1,3 +1,6 @@
+## 4.3.1 2018-11-29
+ * Adding functionality of sending notification to /bl-users/forgotten/password and /bl-users/forgotten/username
+
 ## 4.3.0 2018-11-27
  * New endpoint POST /bl-users/password-reset/reset for resetting password by the link
 
