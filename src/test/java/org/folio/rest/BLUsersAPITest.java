@@ -140,6 +140,18 @@ public class BLUsersAPITest {
       then().statusCode(201);
 
     given().body(new JsonObject()
+      .put("module", "USERSBL")
+      .put("configName", "resetPassword")
+      .put("code", "FOLIO_HOST")
+      .put("description", "folio host")
+      .put("default", "false")
+      .put("enabled", "true")
+      .put("value", "http://localhost").encode()).
+      when().post("http://localhost:" + okapiPort + "/configurations/entries").
+      then().statusCode(201);
+
+
+    given().body(new JsonObject()
       .put("id", NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)
       .put("userId", USER_ID)
       .put("expirationTime", Instant.now().plus(1, ChronoUnit.DAYS))

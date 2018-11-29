@@ -10,6 +10,7 @@ import org.folio.rest.jaxrs.model.Errors;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 public final class ExceptionHelper {
@@ -36,6 +37,12 @@ public final class ExceptionHelper {
       return Response.status(HttpStatus.SC_UNPROCESSABLE_ENTITY)
         .type(MediaType.APPLICATION_JSON)
         .entity(new Errors().withErrors(errors).withTotalRecords(errors.size()))
+        .build();
+    }
+    if (throwable.getClass() == NoSuchElementException.class) {
+      return Response.status(HttpStatus.SC_BAD_REQUEST)
+        .type(MediaType.TEXT_PLAIN)
+        .entity(throwable.getMessage())
         .build();
     }
     LOG.error(throwable.getMessage(), throwable);

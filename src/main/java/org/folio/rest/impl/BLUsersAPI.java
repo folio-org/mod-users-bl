@@ -15,6 +15,7 @@ import io.vertx.core.logging.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.client.ConfigurationsClient;
+import org.folio.rest.client.NotificationClient;
 import org.folio.rest.client.impl.AuthTokenClientImpl;
 import org.folio.rest.client.impl.ConfigurationClientImpl;
 import org.folio.rest.client.impl.NotificationClientImpl;
@@ -28,6 +29,7 @@ import org.folio.rest.jaxrs.model.GenerateLinkRequest;
 import org.folio.rest.jaxrs.model.GenerateLinkResponse;
 import org.folio.rest.jaxrs.model.Identifier;
 import org.folio.rest.jaxrs.model.LoginCredentials;
+import org.folio.rest.jaxrs.model.Notification;
 import org.folio.rest.jaxrs.model.PasswordReset;
 import org.folio.rest.jaxrs.model.PatronGroup;
 import org.folio.rest.jaxrs.model.Permissions;
@@ -91,6 +93,10 @@ public class BLUsersAPI implements BlUsers {
   public static final String LOCATE_USER_USERNAME = "userName";
   public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
   public static final String LOCATE_USER_EMAIL = "email";
+  private static final List<String> DEFAULT_FIELDS_TO_LOCATE_USER = Arrays.asList("personal.email", "personal.phone", "personal.mobilePhone");
+
+  private static final String USERNAME_LOCATED_EVENT_CONFIG_NAME = "USERNAME_LOCATED_EVENT";
+  private static final String DEFAULT_NOTIFICATION_LANG = "en";
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
 
@@ -98,15 +104,17 @@ public class BLUsersAPI implements BlUsers {
 
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
+  private NotificationClient notificationClient;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
     HttpClient httpClient = initHttpClient(vertx);
+    this.notificationClient = new NotificationClientImpl(httpClient);
     passwordResetLinkService = new PasswordResetLinkServiceImpl(
       new ConfigurationClientImpl(httpClient),
       new AuthTokenClientImpl(httpClient),
-      new NotificationClientImpl(httpClient),
+      this.notificationClient,
       new PasswordResetActionClientImpl(httpClient),
       new UserModuleClientImpl(httpClient),
       new UserPasswordServiceImpl(vertx));
@@ -1035,11 +1043,15 @@ public class BLUsersAPI implements BlUsers {
           }
           JsonObject entries = body.toJsonObject();
 
-          future.complete(
-            entries.getJsonArray("configs").stream()
-              .map(o -> ((JsonObject) o).getString("value"))
-              .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
-              .collect(Collectors.toList()));
+          if (!entries.getJsonArray("configs").isEmpty()) {
+            future.complete(
+              entries.getJsonArray("configs").stream()
+                .map(o -> ((JsonObject) o).getString("value"))
+                .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
+                .collect(Collectors.toList()));
+          } else {
+            future.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
+          }
         })
       );
     } catch (UnsupportedEncodingException e) {
@@ -1048,15 +1060,6 @@ public class BLUsersAPI implements BlUsers {
     return future;
   }
 
-  /**
-   *
-   * @param userToNotify
-   * @return
-   */
-  private io.vertx.core.Future<Void> sendResetPasswordNotification(User userToNotify) {
-    //TODO: should be implemented once notification functionality is completed.
-    return io.vertx.core.Future.succeededFuture();
-  }
 
   /**
    *
@@ -1065,9 +1068,9 @@ public class BLUsersAPI implements BlUsers {
    * @param okapiHeaders
    * @return
    */
-  private io.vertx.core.Future<Void> doPostBlUsersForgotten(List<String> fieldAliasList, Identifier entity,
-                                                            java.util.Map<String, String> okapiHeaders) {
-    io.vertx.core.Future<Void> asyncResult = io.vertx.core.Future.future();
+  private io.vertx.core.Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
+                                                       java.util.Map<String, String> okapiHeaders) {
+    io.vertx.core.Future<User> asyncResult = io.vertx.core.Future.future();
     getLocateUserFields(fieldAliasList, okapiHeaders).setHandler(locateUserFieldsAR -> {
       if (!locateUserFieldsAR.succeeded()) {
         asyncResult.fail(locateUserFieldsAR.cause());
@@ -1101,7 +1104,7 @@ public class BLUsersAPI implements BlUsers {
           }
           try {
             User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
-            sendResetPasswordNotification(user).setHandler(asyncResult);
+            asyncResult.complete(user);
           } catch (Exception e) {
             asyncResult.fail(e);
           }
@@ -1126,23 +1129,34 @@ public class BLUsersAPI implements BlUsers {
    */
   @Override
   public void postBlUsersForgottenPassword(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
-    doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
-      .setHandler(ar ->
-        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-          ar.succeeded() ? PostBlUsersForgottenPasswordResponse.respond204() :
-            PostBlUsersForgottenPasswordResponse.respond400WithTextPlain(ar.cause().getLocalizedMessage())))
-    );
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
+      .compose(user -> passwordResetLinkService.sendPasswordRestLink(user.getId(), connectionParams))
+      .map(PostBlUsersForgottenPasswordResponse.respond204())
+      .map(javax.ws.rs.core.Response.class::cast)
+      .otherwise(ExceptionHelper::handleException)
+      .setHandler(asyncResultHandler);
   }
 
   @Override
   public void postBlUsersForgottenUsername(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
-    doPostBlUsersForgotten(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
-      .setHandler(ar ->
-        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-          ar.succeeded() ? PostBlUsersForgottenUsernameResponse.respond204() :
-            PostBlUsersForgottenUsernameResponse.respond400WithTextPlain(ar.cause().getLocalizedMessage())))
-      );
-
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
+      .compose(user -> {
+        Notification notification = new Notification()
+          .withEventConfigName(USERNAME_LOCATED_EVENT_CONFIG_NAME)
+          .withRecipientId(user.getId())
+          .withText(StringUtils.EMPTY)
+          .withLang(DEFAULT_NOTIFICATION_LANG)
+          .withContext(new org.folio.rest.jaxrs.model.Context()
+            .withAdditionalProperty("user", user)
+          );
+        return notificationClient.sendNotification(notification, connectionParams);
+      })
+      .map(PostBlUsersForgottenPasswordResponse.respond204())
+      .map(javax.ws.rs.core.Response.class::cast)
+      .otherwise(ExceptionHelper::handleException)
+      .setHandler(asyncResultHandler);
   }
 
   @Override
