@@ -53,6 +53,10 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String PASSWORD_CHANGED_EVENT_CONFIG_NAME = "PASSWORD_CHANGED_EVENT";//NOSONAR
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
 
+  private static final String LINK_INVALID_STATUS_CODE = "link.invalid";
+  private static final String LINK_EXPIRED_STATUS_CODE = "link.expired";
+  private static final String LINK_USED_STATUS_CODE = "link.used";
+
   private ConfigurationClient configurationClient;
   private AuthTokenClient authTokenClient;
   private NotificationClient notificationClient;
@@ -164,7 +168,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           return Future.succeededFuture(user);
         }
         String message = String.format("User with id '%s' not found", userIdHolder.value);
-        UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("link.invalid", message);
+        UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
         throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
       });
 
@@ -190,7 +194,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
     String tokenSub = payload.getString("sub");
     if (!tokenSub.startsWith(UNDEFINED_USER_NAME)) {
-      UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.invalid",
+      UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE,
         "Invalid token.");
       return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
     }
@@ -204,7 +208,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           if (user.isPresent()) {
             return Future.succeededFuture(user.get());
           } else {
-            UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.invalid",
+            UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE,
               String.format("User with id = %s in not found", pwdResetAction.getUserId()));
             return Future.<User>failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
           }
@@ -227,7 +231,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       if (pwdResetAction.getExpirationTime().toInstant().isAfter(Instant.now())) {
         return Future.succeededFuture(pwdResetAction);
       } else {
-        UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.expired",
+        UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_EXPIRED_STATUS_CODE,
           String.format("PasswordResetAction with id = %s is expired", passwordResetActionId));
         return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
       }
@@ -240,7 +244,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       if (pwdResetAction.isPresent()) {
         return Future.succeededFuture(pwdResetAction.get());
       } else {
-        UnprocessableEntityMessage message = new UnprocessableEntityMessage("link.used",
+        UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_USED_STATUS_CODE,
           String.format("PasswordResetAction with id = %s is not found", passwordResetActionId));
         return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
       }
