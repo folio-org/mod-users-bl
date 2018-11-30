@@ -4,7 +4,7 @@
   "provides": [
     {
       "id": "users-bl",
-      "version": "3.2",
+      "version": "3.3",
       "handlers": [
         {
           "methods": ["GET"],
@@ -145,6 +145,20 @@
         },
         {
           "methods": ["POST"],
+          "pathPattern": "/bl-users/password-reset/reset",
+          "permissionsDesired": [],
+          "permissionsRequired": ["users-bl.password-reset-link.reset"],
+          "modulePermissions": [
+            "login.password-reset-action.get",
+            "users.item.get",
+            "auth.signtoken",
+            "login.password-reset.post",
+            "validation.validate.post",
+            "notify.item.post"
+          ]
+        },
+        {
+          "methods": ["POST"],
           "pathPattern": "/bl-users/password-reset/validate",
           "permissionsDesired": [],
           "permissionsRequired": ["users-bl.password-reset-link.validate"],
@@ -224,6 +238,11 @@
       "description" : "Validate create/reset password link and log user into system to change password"
     },
     {
+      "permissionName" : "users-bl.password-reset-link.reset",
+      "displayName" : "users-bl password-reset-link reset",
+      "description" : "Reset password by link"
+    },
+    {
       "permissionName" : "users-bl.all",
       "displayName" : "users-bl all",
       "description" : "All user business-logic permissions",
@@ -233,7 +252,8 @@
         "users-bl.item.post",
         "users-bl.item.put",
         "users-bl.password-reset-link.generate",
-        "users-bl.password-reset-link.validate"
+        "users-bl.password-reset-link.validate",
+        "users-bl.password-reset-link.reset"
       ],
       "visible" : false
     }

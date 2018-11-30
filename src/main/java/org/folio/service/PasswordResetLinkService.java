@@ -25,4 +25,7 @@ public interface PasswordResetLinkService {
    * @return new JWT token
    */
   Future<TokenResponse> validateLinkAndLoginUser(OkapiConnectionParams okapiConnectionParams);
+
+  Future<Void> resetPassword(String passwordResetActionId, String newPassword,
+                             OkapiConnectionParams okapiConnectionParams);
 }

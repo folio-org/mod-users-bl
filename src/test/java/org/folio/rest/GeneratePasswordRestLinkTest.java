@@ -21,7 +21,7 @@ import org.folio.rest.jaxrs.model.Config;
 import org.folio.rest.jaxrs.model.Configurations;
 import org.folio.rest.jaxrs.model.Context;
 import org.folio.rest.jaxrs.model.Notification;
-import org.folio.rest.jaxrs.model.PasswordRestAction;
+import org.folio.rest.jaxrs.model.PasswordResetAction;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.hamcrest.Matchers;
@@ -106,7 +106,7 @@ public class GeneratePasswordRestLinkTest {
     mockUserFound(mockUser.getId(), mockUser);
     mockConfigModule(MODULE_NAME, configToMock);
     mockSignAuthToken(MOCK_TOKEN);
-    mockPostPasswordRestAction(passwordExists);
+    mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
@@ -122,8 +122,8 @@ public class GeneratePasswordRestLinkTest {
       .statusCode(HttpStatus.SC_OK)
       .body("link", Matchers.is(expectedLink));
 
-    List<PasswordRestAction> requestBodyByUrl =
-      getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordRestAction.class);
+    List<PasswordResetAction> requestBodyByUrl =
+      getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
     Assert.assertThat(requestBodyByUrl, Matchers.hasSize(1));
     Assert.assertThat(requestBodyByUrl.get(0).getUserId(), Matchers.is(mockUser.getId()));
 
@@ -150,7 +150,7 @@ public class GeneratePasswordRestLinkTest {
     mockUserFound(mockUser.getId(), mockUser);
     mockConfigModule(MODULE_NAME, configToMock);
     mockSignAuthToken(MOCK_TOKEN);
-    mockPostPasswordRestAction(passwordExists);
+    mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
@@ -167,8 +167,8 @@ public class GeneratePasswordRestLinkTest {
       .body("link", Matchers.is(expectedLink));
 
 
-    List<PasswordRestAction> requestBodyByUrl =
-      getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordRestAction.class);
+    List<PasswordResetAction> requestBodyByUrl =
+      getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
     Assert.assertThat(requestBodyByUrl, Matchers.hasSize(1));
     Assert.assertThat(requestBodyByUrl.get(0).getUserId(), Matchers.is(mockUser.getId()));
 
@@ -280,7 +280,7 @@ public class GeneratePasswordRestLinkTest {
       .willReturn(WireMock.notFound()));
   }
 
-  private void mockPostPasswordRestAction(boolean passwordExists) {
+  private void mockPostPasswordResetAction(boolean passwordExists) {
     JsonObject response = new JsonObject().put("passwordExists", passwordExists);
     WireMock.stubFor(WireMock.post(PASSWORD_RESET_ACTION_PATH)
       .willReturn(WireMock.created().withBody(response.encode())));

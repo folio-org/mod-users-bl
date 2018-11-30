@@ -50,6 +50,8 @@ public class MockOkapi extends AbstractVerticle {
   static final String CONFIGURATIONS_ENTRIES_ENDPOINT = "/configurations/entries";
   private static final String PASSWORD_RESET_ACTION_ENDPOINT = "/authn/password-reset-action";
   private static final String SIGN_TOKEN_ENDPOINT = "/token";
+  private static final String RESET_PASSWORD_ENDPOINT = "/authn/reset-password";
+  private static final String NOTIFY_ENDPOINT = "/notify";
 
 
   @Override
@@ -89,7 +91,8 @@ public class MockOkapi extends AbstractVerticle {
 
     String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT, PASSWORD_VALIDATE_ENDPOINT, PASSWORD_UPDATE_ENDPOINT,
       PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT, SERVICE_POINTS_USERS_ENDPOINT,
-      SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT, PASSWORD_RESET_ACTION_ENDPOINT, SIGN_TOKEN_ENDPOINT};
+      SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT, PASSWORD_RESET_ACTION_ENDPOINT, SIGN_TOKEN_ENDPOINT,
+      RESET_PASSWORD_ENDPOINT, NOTIFY_ENDPOINT};
     String uri = context.request().path();
     Matcher matcher;
     String id = null;
@@ -168,6 +171,13 @@ public class MockOkapi extends AbstractVerticle {
           break;
         case SIGN_TOKEN_ENDPOINT:
           mockResponse = handleSingToken(method, context.getBodyAsString());
+          break;
+        case RESET_PASSWORD_ENDPOINT:
+          mockResponse = handleResetPassword(method, context.getBodyAsString());
+          break;
+        case NOTIFY_ENDPOINT:
+          mockResponse = handleNotify(method, context.getBodyAsString());
+          break;
         default:
           break;
       }
@@ -294,6 +304,21 @@ public class MockOkapi extends AbstractVerticle {
     }
   }
 
+  private MockResponse handleResetPassword(HttpMethod method, String payload) {
+    if (method.equals(HttpMethod.POST)) {
+      return new MockResponse(HttpStatus.SC_CREATED, "{\"isNewPassword\":true}");
+    } else {
+      return new MockResponse(HttpStatus.SC_NOT_FOUND, method.name());
+    }
+  }
+
+  private MockResponse handleNotify(HttpMethod method, String payload) {
+    if (method.equals(HttpMethod.POST)) {
+      return new MockResponse(HttpStatus.SC_CREATED, "");
+    } else {
+      return new MockResponse(HttpStatus.SC_NOT_FOUND, method.name());
+    }
+  }
 
   private MockResponse handlerPasswordValidate(HttpMethod method, String id, String url,
                                                    String payload, RoutingContext context) {

@@ -21,7 +21,8 @@ types:
   generateLinkRequest: !include generateLinkRequest.json
   generateLinkResponse: !include generateLinkResponse.json
   configurations: !include configurations.json
-  passwordRestAction: !include passwordResetAction.json
+  passwordResetAction: !include passwordResetAction.json
+  passwordReset: !include passwordReset.json
   notification : !include notification.json
   tokenResponse: !include tokenResponse.json
 
@@ -209,6 +210,25 @@ resourceTypes:
             body:
               application/json:
                 type: generateLinkResponse
+    /reset:
+      post:
+        description: "Reset password"
+        body:
+          application/json:
+            type: passwordReset
+        responses:
+          204:
+            description: "Successful password reset"
+          422:
+            description: "Unprocessable Entity"
+            body:
+              text/plain:
+                example: "Bad request"
+          500:
+            description: "Internal server error"
+            body:
+              text/plain:
+                example: "Internal server error"
     /validate:
       post:
         responses:

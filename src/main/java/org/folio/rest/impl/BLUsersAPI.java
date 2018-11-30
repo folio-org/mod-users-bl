@@ -28,6 +28,7 @@ import org.folio.rest.jaxrs.model.GenerateLinkRequest;
 import org.folio.rest.jaxrs.model.GenerateLinkResponse;
 import org.folio.rest.jaxrs.model.Identifier;
 import org.folio.rest.jaxrs.model.LoginCredentials;
+import org.folio.rest.jaxrs.model.PasswordReset;
 import org.folio.rest.jaxrs.model.PatronGroup;
 import org.folio.rest.jaxrs.model.Permissions;
 import org.folio.rest.jaxrs.model.ProxiesFor;
@@ -107,7 +108,8 @@ public class BLUsersAPI implements BlUsers {
       new AuthTokenClientImpl(httpClient),
       new NotificationClientImpl(httpClient),
       new PasswordResetActionClientImpl(httpClient),
-      new UserModuleClientImpl(httpClient));
+      new UserModuleClientImpl(httpClient),
+      new UserPasswordServiceImpl(vertx));
   }
 
   private HttpClient initHttpClient(Vertx vertx) {
@@ -1202,6 +1204,23 @@ public class BLUsersAPI implements BlUsers {
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
       .setHandler(asyncResultHandler);
+  }
+
+  @Override
+  public void postBlUsersPasswordResetReset(PasswordReset entity, Map<String, String> okapiHeaders,
+                                            Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                            Context vertxContext) {
+    OkapiConnectionParams okapiConnectionParams = new OkapiConnectionParams(okapiHeaders);
+    JsonObject request = JsonObject.mapFrom(entity);
+    passwordResetLinkService.resetPassword(request.getString("resetPasswordActionId"), request.getString("newPassword"),
+      okapiConnectionParams).setHandler(res -> {
+        if (res.succeeded()) {
+          asyncResultHandler.handle(Future.succeededFuture(PostBlUsersPasswordResetResetResponse.respond204()));
+        } else {
+          asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
+        }
+    });
+
   }
 
   @Override
