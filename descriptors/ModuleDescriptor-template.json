@@ -109,7 +109,12 @@
             "perms.users.item.put",
             "login.item.put",
             "configuration.entries.collection.get",
-            "users.collection.get" ]
+            "users.collection.get",
+            "users.item.get",
+            "login.password-reset-action.post",
+            "auth.signtoken",
+            "notify.item.post"
+          ]
         },
         {
           "methods": ["POST"],
@@ -120,7 +125,9 @@
             "perms.users.item.put",
             "login.item.put",
             "configuration.entries.collection.get",
-            "users.collection.get" ]
+            "users.collection.get",
+            "notify.item.post"
+          ]
         },
         {
           "methods": ["POST"],

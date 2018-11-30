@@ -293,7 +293,11 @@ public class MockOkapi extends AbstractVerticle {
 
   private MockResponse handleResetPasswordActions(HttpMethod method, String id, String url,
                                                   String payload, RoutingContext context) throws CQLParseException {
-    return handleBasicCrud(resetPasswordActionStore, "resetPasswordActions", method, id, url, payload, context);
+    MockResponse response = handleBasicCrud(resetPasswordActionStore, "resetPasswordActions", method, id, url, payload, context);
+    if (method.equals(HttpMethod.POST)) {
+      return new MockResponse(HttpStatus.SC_CREATED, new JsonObject().put("passwordExists", true).encode());
+    }
+    return response;
   }
 
   private MockResponse handleSingToken(HttpMethod method, String payload) {
