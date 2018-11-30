@@ -182,6 +182,14 @@
     {
       "id": "authtoken",
       "version": "2.0"
+    },
+    {
+      "id": "notify",
+      "version": "2.0"
+    },
+    {
+      "id": "configuration",
+      "version": "2.0"
     }
   ],
   "permissionSets": [
