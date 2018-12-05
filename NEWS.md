@@ -1,19 +1,13 @@
-## 4.3.1 2018-11-29
- * Adding functionality of sending notification to /bl-users/forgotten/password and /bl-users/forgotten/username
-
-## 4.3.0 2018-11-27
- * New endpoint POST /bl-users/password-reset/reset for resetting password by the link
-
-## 4.2.0 2018-11-23
- * New endpoint POST /bl-users/password-reset/validate to validate create/reset password
-   link and log user into system to change password
-
-## 4.1.0 2018-11-23
- * A new endpoint **POST /bl-users/password-reset/link** was implemented. Endpoint requires FOLIO_HOST config for USERSBL module storing host of FOLIO ui application. Example "http://localhost:3000"
- 
-## 4.0.4 UNRELEASED
- * Update descriptor to be compatible with servicepoints 3.0
- * Change user's password endpoint was added
+## 4.3.1 2018-12-04
+ * Add functionality to provide links for creation and reset of user passwords (MODUSERBL50,51,52,53)
+ * Add endpoint POST /settings/myprofile/password for self-change of password (MODUSERBL-43)
+ * Add functionality of sending notification to /bl-users/forgotten/password and /bl-users/forgotten/username (MODUSERBL-41)
+ * New endpoint POST /bl-users/password-reset/reset for resetting password by the link (MODUSERBL-41)
+ * New endpoint POST /bl-users/password-reset/validate to validate create/reset password link and log user into system to change password (MODUSERBL-40)
+ * New endpoint POST /bl-users/password-reset/link. (MODUSERBL-39)
+ * Update descriptor to be compatible with servicepoints 3.0 interface (MODUSERBL-45)
+ * Change user's password endpoint was added (MODUSERBL-43)
+ * Update RAML to 1.0 (MODUSERBL-38)
 
 ## 4.0.3 2018-08-31
  * postBlUsersForgottenPassword & postBlUsersForgottenUsername implementation
