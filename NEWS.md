@@ -1,5 +1,5 @@
 ## 4.3.1 2018-12-04
- * Add functionality to provide links for creation and reset of user passwords (MODUSERBL50,51,52,530
+ * Add functionality to provide links for creation and reset of user passwords (MODUSERBL50,51,52,53)
  * Add endpoint POST /settings/myprofile/password for self-change of password (MODUSERBL-43)
  * Add functionality of sending notification to /bl-users/forgotten/password and /bl-users/forgotten/username (MODUSERBL-41)
  * New endpoint POST /bl-users/password-reset/reset for resetting password by the link (MODUSERBL-41)
