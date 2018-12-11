@@ -24,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 
 import static io.restassured.RestAssured.given;
+import io.vertx.ext.unit.Async;
 import static org.hamcrest.Matchers.equalTo;
 
 
@@ -45,15 +46,21 @@ public class BLUsersAPITest {
 
   @BeforeClass
   public static void before(TestContext context) {
+    Async async = context.async();
     vertx = Vertx.vertx();
     vertx.exceptionHandler(context.exceptionHandler());
 
     okapiPort = NetworkUtils.nextFreePort();
     DeploymentOptions okapiOptions = new DeploymentOptions()
         .setConfig(new JsonObject().put("http.port", okapiPort));
-    vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions, context.asyncAssertSuccess());
-
-    insertData();
+    vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions, res -> {
+      if(res.failed()) {
+        context.fail(res.cause());
+      } else {
+        insertData();
+        async.complete();
+      }
+    });   
 
     port = NetworkUtils.nextFreePort();
     DeploymentOptions options = new DeploymentOptions()
