@@ -1,16 +1,20 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "User Group Schema",
+  "description": "User group schema",
   "type": "object",
   "properties": {
     "group": {
-      "type": "string"
+      "type": "string",
+      "description": "group"
     },
     "desc": {
-      "type": "string"
+      "type": "string",
+      "description": "description"
     },
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "id"
     },
     "metadata": {
       "$ref": "raml-util/schemas/metadata.schema",

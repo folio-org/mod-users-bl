@@ -1,25 +1,31 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
+  "description": "Composite user object",
   "properties": {
     "user": {
       "type": "object",
+      "description": "User object",
       "$ref": "userdata.json"
     },
     "patronGroup": {
       "type": "object",
+      "description": "Patron group object",
       "$ref": "usergroup.json"
     },
     "permissions": {
       "type": "object",
+      "description": "Permissions object",
       "$ref": "permissionUser.json"
     },
     "credentials": {
       "type": "object",
+      "description": "Credentials object",
       "$ref": "credentials.json"
     },
     "proxiesFor": {
       "type": "array",
+      "description": "Proxies for, array",
       "id": "proxyFor",
       "items": {
         "type": "object",
@@ -28,6 +34,7 @@
     },
     "servicePointsUser": {
       "type": "object",
+      "description": "Service point user",
       "$ref": "servicepointsexpandeduser.json"
     }
   }

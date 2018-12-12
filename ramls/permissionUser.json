@@ -1,14 +1,19 @@
 {
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
+  "description": "Permission User Object",
   "properties": {
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "Id"
     },
     "userId": {
-      "type": "string"
+      "type": "string",
+      "description": "User Id"
     },
     "permissions": {
-      "type": "array"
+      "type": "array",
+      "description": "Permissions array"
     },
     "metadata" : {
       "type" : "object",
