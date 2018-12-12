@@ -1034,7 +1034,7 @@ public class BLUsersAPI implements BlUsers {
       .append(")");
 
     try {
-      configurationsClient.getEntries(query.toString(), 0, 3, null, null, response ->
+      configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null, response ->
         response.bodyHandler(body -> {
           if (response.statusCode() != 200) {
             future.fail("Expected status code 200, got '" + response.statusCode() +

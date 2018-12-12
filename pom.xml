@@ -417,7 +417,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <raml-module-builder.version>23.3.0-SNAPSHOT</raml-module-builder.version>
-    <mod-configuration-client.version>4.0.3</mod-configuration-client.version>
+    <mod-configuration-client.version>5.0.1</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <vertx-version>3.5.4</vertx-version>
     <rest-assured.version>3.1.1</rest-assured.version>
