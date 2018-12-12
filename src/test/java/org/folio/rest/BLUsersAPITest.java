@@ -40,6 +40,8 @@ public class BLUsersAPITest {
   private static final String NONEXISTENT_PASSWORD_RESET_ACTION_ID = "41a9a229-6492-46ae-b9fc-017ba1e2705d";
   private static final String FAKE_USER_ID_PASSWORD_RESET_ACTION_ID = "2a604a02-666c-44b6-b238-e81f379f1eb4";
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
+  private static final String USER_ID_2 = "0bb4f26d-e073-4f93-afbc-dcc24fd88812";
+  private static final String USER_ID_3 = "0bb4f26d-e073-4f93-afbc-dcc24fd88813";
   private static final String FAKE_USER_ID = "f2216cfc-4abb-4f54-85bb-4945c9fd91cb";
   private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
 
@@ -87,6 +89,26 @@ public class BLUsersAPITest {
     given().body(userPost.encode()).
     when().post("http://localhost:" + okapiPort + "/users").
     then().statusCode(201);
+
+    userPost = new JsonObject()
+      .put("username", "twin1")
+      .put("id", USER_ID_2)
+      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
+      .put("active", true)
+      .put("personal", new JsonObject().put("email", "twin1@maxi.com").put("phone", "123-12-123"));
+    given().body(userPost.encode()).
+      when().post("http://localhost:" + okapiPort + "/users").
+      then().statusCode(201);
+
+    userPost = new JsonObject()
+      .put("username", "twin1")
+      .put("id", USER_ID_3)
+      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
+      .put("active", true)
+      .put("personal", new JsonObject().put("email", "twin1@maxi.com").put("phone", "123-12-123"));
+    given().body(userPost.encode()).
+      when().post("http://localhost:" + okapiPort + "/users").
+      then().statusCode(201);
 
     JsonObject groupPost = new JsonObject().put("group", "staff")
         .put("desc", "people running the library")
@@ -203,6 +225,42 @@ public class BLUsersAPITest {
       post("/bl-users/forgotten/password").
       then().
       statusCode(204);
+
+    //by username
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "twin1").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/password").
+      then().
+      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      body("errors[0].code", equalTo("forgotten.password.found.multiple.users"));
+
+    //by email
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "twin1@maxi.com").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/password").
+      then().
+      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      body("errors[0].code", equalTo("forgotten.password.found.multiple.users"));
+
+    //by phone
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "123-12-123").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/password").
+      then().
+      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      body("errors[0].code", equalTo("forgotten.password.found.multiple.users"));
   }
 
   @Test
@@ -216,6 +274,30 @@ public class BLUsersAPITest {
       post("/bl-users/forgotten/username").
       then().
       statusCode(204);
+
+    //by email
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "twin1@maxi.com").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/username").
+      then().
+      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      body("errors[0].code", equalTo("forgotten.username.found.multiple.users"));
+
+    //by phone
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "123-12-123").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/username").
+      then().
+      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      body("errors[0].code", equalTo("forgotten.username.found.multiple.users"));
   }
 
   @Test
