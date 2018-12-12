@@ -47,12 +47,6 @@
     </dependency>
     <dependency>
       <groupId>org.folio</groupId>
-      <artifactId>postgres-runner</artifactId>
-      <version>${raml-module-builder.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.folio</groupId>
       <artifactId>domain-models-runtime</artifactId>
       <version>${raml-module-builder.version}</version>
     </dependency>
@@ -92,6 +86,12 @@
       <version>3.5</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <version>4.4.6</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <version>3.0.7</version>
@@ -106,7 +106,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
-      <version>3.5.1</version>
+      <version>${vertx-version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -234,55 +234,6 @@
               <goal>exec</goal>
             </goals>
           </execution>
-          <execution>
-            <id>start-postgres</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>java</executable>
-              <async>true</async>
-              <classpathScope>test</classpathScope>
-              <arguments>
-                <argument>-classpath</argument>
-                <classpath />
-                <argument>org.folio.rest.persist.PostgresRunner</argument>
-                <argument>${postgresrunner.port}</argument>
-                <argument>${postgres.port}</argument>
-                <argument>postgres</argument>  <!-- username -->
-                <argument>postgres</argument>  <!-- password -->
-              </arguments>
-            </configuration>
-          </execution>
-          <execution>
-            <id>wait-for-postgres</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <classpathScope>test</classpathScope>
-              <mainClass>org.folio.rest.persist.PostgresWaiter</mainClass>
-              <arguments>
-                <argument>${postgresrunner.port}</argument>
-              </arguments>
-            </configuration>
-          </execution>
-          <execution>
-            <id>stop-postgres</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <classpathScope>test</classpathScope>
-              <mainClass>org.folio.rest.persist.PostgresStopper</mainClass>
-              <arguments>
-                <argument>${postgresrunner.port}</argument>
-              </arguments>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
 
@@ -343,22 +294,6 @@
               <resources>
                 <resource>
                   <directory>${ramlfiles_path}</directory>
-                  <filtering>true</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <execution>
-            <id>copy-resources-2</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/target/classes/apidocs/raml-util</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${ramlfiles_util_path}</directory>
                   <filtering>true</filtering>
                 </resource>
               </resources>
@@ -481,12 +416,10 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <raml-module-builder.version>23.0.0</raml-module-builder.version>
+    <raml-module-builder.version>23.3.0-SNAPSHOT</raml-module-builder.version>
     <mod-configuration-client.version>4.0.3</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <ramlfiles_util_path>${basedir}/ramls/raml</ramlfiles_util_path>
-    <postgresrunner.port>5434</postgresrunner.port>
-    <vertx-version>3.5.3</vertx-version>
+    <vertx-version>3.5.4</vertx-version>
     <rest-assured.version>3.1.1</rest-assured.version>
     <!-- Postgres port for Jenkins CI build environment https://issues.folio.org/browse/METADATA-10 -->
     <postgres.port>5433</postgres.port>
