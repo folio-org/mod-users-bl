@@ -44,7 +44,8 @@
     },
     "metadata" : {
       "$ref" : "raml-util/schemas/metadata.schema",
-      "readonly" : true
+      "readonly" : true,
+      "description": "Metadata"
     }
   },
   "additionalProperties": false

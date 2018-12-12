@@ -17,7 +17,8 @@
     },
     "metadata" : {
       "type" : "object",
-      "$ref" : "raml-util/schemas/metadata.schema"
+      "$ref" : "raml-util/schemas/metadata.schema",
+      "description": "Metadata"
     }
   },
   "additionalProperties": false

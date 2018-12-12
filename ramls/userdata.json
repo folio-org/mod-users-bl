@@ -154,10 +154,12 @@
     },
     "metadata": {
       "type": "object",
+      "description": "Metadata",
       "$ref": "raml-util/schemas/metadata.schema"
     },
     "tags": {
       "type": "object",
+      "description": "Tags",
       "$ref": "raml-util/schemas/tags.schema"
     }
   },
