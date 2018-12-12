@@ -33,13 +33,14 @@
       "description": "User patron group"
     },
     "meta": {
-      "type": "object"
+      "type": "object",
+      "description": "Metadata object"
     },
     "proxyFor": {
       "description" : "Deprecated",
       "type": "array",
       "items": {
-      "type": "string"
+        "type": "string"
       }
     },
     "personal": {
