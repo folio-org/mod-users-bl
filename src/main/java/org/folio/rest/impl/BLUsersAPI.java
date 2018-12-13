@@ -103,6 +103,7 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String FORGOTTEN_USERNAME_ERROR_KEY = "forgotten.username.found.multiple.users";
   private static final String FORGOTTEN_PASSWORD_ERROR_KEY = "forgotten.password.found.multiple.users";//NOSONAR
+  private static final String FORGOTTEN_PASSWORD_FOUND_INACTIVE = "forgotten.password.found.inactive";//NOSONAR
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
 
@@ -1115,6 +1116,11 @@ public class BLUsersAPI implements BlUsers {
           }
           try {
             User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
+            if (user != null && !user.getActive()) {
+              String message = String.format("Users associated with '%s' is not active", entity.getId());
+              UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(FORGOTTEN_PASSWORD_FOUND_INACTIVE, message);
+              throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+            }
             asyncResult.complete(user);
           } catch (Exception e) {
             asyncResult.fail(e);

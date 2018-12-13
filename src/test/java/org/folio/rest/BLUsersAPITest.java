@@ -44,6 +44,7 @@ public class BLUsersAPITest {
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String USER_ID_2 = "0bb4f26d-e073-4f93-afbc-dcc24fd88812";
   private static final String USER_ID_3 = "0bb4f26d-e073-4f93-afbc-dcc24fd88813";
+  private static final String USER_ID_4 = "0bb4f26d-e073-4f93-afbc-dcc24fd88814";
   private static final String FAKE_USER_ID = "f2216cfc-4abb-4f54-85bb-4945c9fd91cb";
   private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
 
@@ -118,6 +119,16 @@ public class BLUsersAPITest {
       .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
       .put("active", true)
       .put("personal", new JsonObject().put("email", "twin1@maxi.com").put("phone", "123-12-123"));
+    given().body(userPost.encode()).
+      when().post("http://localhost:" + okapiPort + "/users").
+      then().statusCode(201);
+
+    userPost = new JsonObject()
+      .put("username", "userinactive")
+      .put("id", USER_ID_4)
+      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
+      .put("active", false)
+      .put("personal", new JsonObject().put("email", "userinactive@maxi.com").put("phone", "123-12-123"));
     given().body(userPost.encode()).
       when().post("http://localhost:" + okapiPort + "/users").
       then().statusCode(201);
@@ -273,6 +284,18 @@ public class BLUsersAPITest {
       then().
       statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
       body("errors[0].code", equalTo("forgotten.password.found.multiple.users"));
+
+    //inactive
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "userinactive").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/password").
+      then().
+      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      body("errors[0].code", equalTo("forgotten.password.found.inactive"));
   }
 
   @Test
@@ -310,6 +333,18 @@ public class BLUsersAPITest {
       then().
       statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
       body("errors[0].code", equalTo("forgotten.username.found.multiple.users"));
+
+    //inactive
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", "userinactive@maxi.com").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/username").
+      then().
+      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      body("errors[0].code", equalTo("forgotten.password.found.inactive"));
   }
 
   @Test
