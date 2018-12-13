@@ -1,40 +1,51 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "ProxyFor Schema",
+  "description": "Proxy For Schema",
   "type": "object",
   "properties": {
     "userId": {
-      "type": "string"
+      "type": "string",
+      "description": "User Id"
     },
     "proxyUserId": {
-      "type": "string"
+      "type": "string",
+      "description": "Proxy User Id"
     },
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "Id"
     },
     "requestForSponsor": {
-      "type": "string"
+      "type": "string",
+      "description": "Request For Sponsor"
     },
     "createdDate": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Created Date"
     },
     "notificationsTo": {
-      "type": "string"
+      "type": "string",
+      "description": "Notifications To"
     },
     "accrueTo": {
-      "type": "string"
+      "type": "string",
+      "description": "Accrue To"
     },
     "status": {
-      "type": "string"
+      "type": "string",
+      "description": "Status"
     },
     "expirationDate": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Expiration Date"
     },
     "metadata" : {
       "$ref" : "raml-util/schemas/metadata.schema",
-      "readonly" : true
+      "readonly" : true,
+      "description": "Metadata"
     }
   },
   "additionalProperties": false

@@ -1,103 +1,131 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "User Schema",
+  "description": "User schema",
   "type": "object",
   "properties": {
     "username": {
-      "type": "string"
+      "type": "string",
+      "description": "Username"
     },
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "id"
     },
     "externalSystemId": {
-      "type": "string"
+      "type": "string",
+      "description": "External system id"
     },
     "barcode": {
-      "type": "string"
+      "type": "string",
+      "description": "Barcode"
     },
     "active": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "Is active"
     },
     "type": {
-      "type": "string"
+      "type": "string",
+      "description": "User type"
     },
     "patronGroup": {
-      "type": "string"
+      "type": "string",
+      "description": "User patron group"
     },
     "meta": {
-      "type": "object"
+      "type": "object",
+      "description": "Metadata object"
     },
     "proxyFor": {
       "description" : "Deprecated",
       "type": "array",
       "items": {
-      "type": "string"
+        "type": "string"
       }
     },
     "personal": {
       "type": "object",
+      "description": "Personal user data",
       "properties": {
         "lastName": {
-          "type": "string"
+          "type": "string",
+          "description": "Last name"
         },
         "firstName": {
-          "type": "string"
+          "type": "string",
+          "description": "First name"
         },
         "middleName": {
-          "type": "string"
+          "type": "string",
+          "description": "Middle name"
         },
         "email": {
-          "type": "string"
+          "type": "string",
+          "description": "Email"
         },
         "phone": {
-          "type": "string"
+          "type": "string",
+          "description": "Phone"
         },
         "mobilePhone": {
-          "type": "string"
+          "type": "string",
+          "description": "Mobile phone"
         },
         "dateOfBirth": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Date of birth"
         },
         "addresses": {
           "type": "array",
+          "description": "Addresses",
           "minItems": 0,
           "items": {
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Id"
               },
               "countryId": {
-                "type": "string"
+                "type": "string",
+                "description": "Country Id"
               },
               "addressLine1": {
-                "type": "string"
+                "type": "string",
+                "description": "Address line 1"
               },
               "addressLine2": {
-                "type": "string"
+                "type": "string",
+                "description": "Address line 2"
               },
               "city": {
-                "type": "string"
+                "type": "string",
+                "description": "City"
               },
               "region": {
-                "type": "string"
+                "type": "string",
+                "description": "Region"
               },
               "postalCode": {
-                "type": "string"
+                "type": "string",
+                "description": "Postal Code"
               },
               "addressTypeId": {
-                "type": "string"
+                "type": "string",
+                "description": "Address Type Id"
               },
               "primaryAddress": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Is primary address"
               }
             },
             "additionalProperties": false
           }
         },
         "preferredContactTypeId": {
-          "type": "string"
+          "type": "string",
+          "description": "Preferred contact type Id"
         }
       },
       "additionalProperties": false,
@@ -107,26 +135,32 @@
     },
     "enrollmentDate": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Enrollment date"
     },
     "expirationDate": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Expiration date"
     },
     "createdDate": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Created date"
     },
     "updatedDate": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Updated date"
     },
     "metadata": {
       "type": "object",
+      "description": "Metadata",
       "$ref": "raml-util/schemas/metadata.schema"
     },
     "tags": {
       "type": "object",
+      "description": "Tags",
       "$ref": "raml-util/schemas/tags.schema"
     }
   },

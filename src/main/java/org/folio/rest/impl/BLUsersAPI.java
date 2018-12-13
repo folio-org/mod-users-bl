@@ -21,6 +21,8 @@ import org.folio.rest.client.impl.ConfigurationClientImpl;
 import org.folio.rest.client.impl.NotificationClientImpl;
 import org.folio.rest.client.impl.PasswordResetActionClientImpl;
 import org.folio.rest.client.impl.UserModuleClientImpl;
+import org.folio.rest.exception.UnprocessableEntityException;
+import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.CompositeUser;
 import org.folio.rest.jaxrs.model.CompositeUserListObject;
 import org.folio.rest.jaxrs.model.Credentials;
@@ -56,6 +58,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +100,9 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String USERNAME_LOCATED_EVENT_CONFIG_NAME = "USERNAME_LOCATED_EVENT";
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
+
+  private static final String FORGOTTEN_USERNAME_ERROR_KEY = "forgotten.username.found.multiple.users";
+  private static final String FORGOTTEN_PASSWORD_ERROR_KEY = "forgotten.password.found.multiple.users";//NOSONAR
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
 
@@ -1069,7 +1075,7 @@ public class BLUsersAPI implements BlUsers {
    * @return
    */
   private io.vertx.core.Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
-                                                       java.util.Map<String, String> okapiHeaders) {
+                                                       java.util.Map<String, String> okapiHeaders, String errorKey) {
     io.vertx.core.Future<User> asyncResult = io.vertx.core.Future.future();
     getLocateUserFields(fieldAliasList, okapiHeaders).setHandler(locateUserFieldsAR -> {
       if (!locateUserFieldsAR.succeeded()) {
@@ -1098,8 +1104,13 @@ public class BLUsersAPI implements BlUsers {
 
           JsonArray users = userResponse.getBody().getJsonArray("users");
           int arraySize = users.size();
-          if (arraySize == 0 || arraySize > 1) {
+          if (arraySize == 0) {
             asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
+            return;
+          } else if (arraySize > 1) {
+            String message = String.format("Multiple users associated with '%s'", entity.getId());
+            UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(errorKey, message);
+            asyncResult.fail(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
             return;
           }
           try {
@@ -1130,7 +1141,7 @@ public class BLUsersAPI implements BlUsers {
   @Override
   public void postBlUsersForgottenPassword(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
-    locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
+    locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_PASSWORD_ERROR_KEY)
       .compose(user -> passwordResetLinkService.sendPasswordRestLink(user.getId(), connectionParams))
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
@@ -1141,7 +1152,7 @@ public class BLUsersAPI implements BlUsers {
   @Override
   public void postBlUsersForgottenUsername(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
-    locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders)
+    locateUserByAlias(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_USERNAME_ERROR_KEY)
       .compose(user -> {
         Notification notification = new Notification()
           .withEventConfigName(USERNAME_LOCATED_EVENT_CONFIG_NAME)

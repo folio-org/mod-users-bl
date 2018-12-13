@@ -1,37 +1,45 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
+  "description": "Service points expanded user",
   "properties": {
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "Id"
     },
     "userId": {
-      "type": "string"
+      "type": "string",
+      "description": "User Id"
     },
     "servicePointsIds": {
       "type": "array",
+      "description": "Service Points Ids",
       "items": {
         "type": "string"
       }
     },
     "servicePoints": {
       "type": "array",
+      "description": "Service Points",
       "items": {
         "type": "object",
         "$ref": "servicepoint.json"
       }
     },
     "defaultServicePointId": {
-      "type": "string"
+      "type": "string",
+      "description": "Default Service Point Id"
     },
     "defaultServicePoint": {
       "type": "object",
+      "description": "Default Service Point Object",
       "$ref": "servicepoint.json"
     },
     "metadata": {
       "type": "object",
       "$ref": "raml-util/schemas/metadata.schema",
-      "readonly": true
+      "readonly": true,
+      "description": "Metadata"
     }
   },
   "additionalProperties": false,

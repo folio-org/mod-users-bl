@@ -1,9 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
+  "description": "Notification",
   "properties": {
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "Id"
     }
   }
 }
