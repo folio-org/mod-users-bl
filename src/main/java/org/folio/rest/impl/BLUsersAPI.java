@@ -152,7 +152,7 @@ public class BLUsersAPI implements BlUsers {
     run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
-  Consumer<Response> handlePreviousResponse(boolean requireOneResult,
+ Consumer<Response> handlePreviousResponse(boolean requireOneResult,
       boolean requireOneOrMoreResults, boolean stopChainOnNoResults,
       boolean[] previousFailure, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
     return (response) -> {
