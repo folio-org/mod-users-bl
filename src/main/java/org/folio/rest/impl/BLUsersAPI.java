@@ -321,6 +321,7 @@ public class BLUsersAPI implements BlUsers {
         completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
       }
       else if(include.get(i).equals(GROUPS_INCLUDE)){
+        System.out.println("Getting groups...");
         CompletableFuture<Response> groupResponse = userIdResponse[0].thenCompose(
           client.chainedRequest("/groups/"+groupTemplate, okapiHeaders, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
