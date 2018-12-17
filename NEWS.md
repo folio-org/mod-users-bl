@@ -1,5 +1,7 @@
 ## 4.3.2 2018-12-14
- * Fix issue with logs dumping sensitive information
+ * Fix issue with logs dumping sensitive information (MODUSERBL-35)
+ * Don't populate tests until mock verticle has deployed (MODUSERBL-57)
+ * Upgrade to RMB 23.2.1 (MODUSERBL-59)
 
 ## 4.3.1 2018-12-04
  * Add functionality to provide links for creation and reset of user passwords (MODUSERBL50,51,52,53)
