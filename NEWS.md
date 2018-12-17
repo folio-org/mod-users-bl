@@ -1,3 +1,6 @@
+## 4.3.2 2018-12-14
+ * Fix issue with logs dumping sensitive information
+
 ## 4.3.1 2018-12-04
  * Add functionality to provide links for creation and reset of user passwords (MODUSERBL50,51,52,53)
  * Add endpoint POST /settings/myprofile/password for self-change of password (MODUSERBL-43)
