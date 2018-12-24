@@ -145,6 +145,9 @@ resourceTypes:
     post:
       description: Allow a new user to login and return an authtoken, along with a composite user record
       is: [permissionsExpandable, includeable]
+      headers:
+        User-Agent:
+        X-Forwarded-For:
       body:
         application/json:
           schema: loginCredentials
@@ -180,6 +183,9 @@ resourceTypes:
       /password:
         post:
           description: Allow change password for user
+          headers:
+            User-Agent:
+            X-Forwarded-For:
           body:
             application/json:
               type: updateCredentials
@@ -218,6 +224,9 @@ resourceTypes:
     /reset:
       post:
         description: "Reset password"
+        headers:
+          User-Agent:
+          X-Forwarded-For:
         body:
           application/json:
             type: passwordReset

@@ -4,6 +4,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -12,6 +13,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.folio.rest.RestVerticle;
+import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Error;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.util.OkapiConnectionParams;
@@ -19,6 +21,8 @@ import org.folio.rest.util.RestUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class UserPasswordServiceImpl implements UserPasswordService {
 
@@ -90,12 +94,19 @@ public class UserPasswordServiceImpl implements UserPasswordService {
   }
 
   @Override
-  public UserPasswordService updateUserCredential(JsonObject newPasswordObject, JsonObject okapiConnectionParams,
+  public UserPasswordService updateUserCredential(JsonObject newPasswordObject, JsonObject requestHeaders,
                                                   Handler<AsyncResult<Integer>> asyncResultHandler) {
     try {
-      OkapiConnectionParams params = okapiConnectionParams.mapTo(OkapiConnectionParams.class);
-      String url = params.getOkapiUrl() + UPDATE_URL;
-      RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), newPasswordObject.encode())
+      String url = requestHeaders.getString(BLUsersAPI.OKAPI_URL_HEADER) + UPDATE_URL;
+
+      CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+      headers.addAll(requestHeaders
+        .getMap()
+        .entrySet()
+        .stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue())));
+
+      RestUtil.doRequest(httpClient, url, HttpMethod.POST, headers, newPasswordObject.encode())
         .setHandler(h -> {
           if (h.failed()) {
             logger.error("Fail during sending request to update user's credentials", h.cause());
