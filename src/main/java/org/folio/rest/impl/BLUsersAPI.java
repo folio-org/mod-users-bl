@@ -715,7 +715,7 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
+  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
                                LoginCredentials entity, Map<String, String> okapiHeaders,
                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
@@ -1278,7 +1278,7 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersPasswordResetValidate(Map<String, String> okapiHeaders,
                                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                                Context vertxContext) {
-    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get("x-okapi-url"),
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get(BLUsersAPI.OKAPI_URL_HEADER),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT), okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN), "");
 
     passwordResetLinkService.validateLinkAndLoginUser(connectionParams)
