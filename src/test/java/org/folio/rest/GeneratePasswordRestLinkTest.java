@@ -210,29 +210,6 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
-  public void shouldReturn500WhenRequiredConfigNotFound() {
-    Map<String, String> emptyConfigToMock = new HashMap<>();
-    User mockUser = new User()
-      .withId(UUID.randomUUID().toString())
-      .withUsername(MOCK_USERNAME);
-
-    mockConfigModule(MODULE_NAME, emptyConfigToMock);
-    mockUserFound(mockUser.getId(), mockUser);
-
-    JsonObject requestBody = new JsonObject()
-      .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
-    RestAssured.given()
-      .spec(spec)
-      .header(mockUrlHeader)
-      .body(requestBody.encode())
-      .when()
-      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
-      .then()
-      .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-  }
-
-  @Test
   public void shouldReturn422WhenUserHasNoUsername() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
