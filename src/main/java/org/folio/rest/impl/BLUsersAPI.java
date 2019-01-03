@@ -97,7 +97,7 @@ public class BLUsersAPI implements BlUsers {
   public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
   public static final String LOCATE_USER_EMAIL = "email";
   private static final List<String> DEFAULT_FIELDS_TO_LOCATE_USER =
-    Arrays.asList("personal.email", "personal.phone", "personal.mobilePhone", "username");
+    Arrays.asList("personal.email", "personal.phone", "personal.mobilePhone", "username");//NOSONAR
 
   private static final String USERNAME_LOCATED_EVENT_CONFIG_NAME = "USERNAME_LOCATED_EVENT";
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
