@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -43,9 +42,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String UI_PATH_CONFIG_KEY = "RESET_PASSWORD_UI_PATH";
   private static final String LINK_EXPIRATION_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
-  private static final Set<String> GENERATE_LINK_REQUIRED_CONFIGURATION =
-    Collections.unmodifiableSet(new HashSet<>(Collections.singletonList(FOLIO_HOST_CONFIG_KEY)));
- private static final String LINK_EXPIRATION_TIME_DEFAULT = "86400000";
+  private static final Set<String> GENERATE_LINK_REQUIRED_CONFIGURATION = Collections.emptySet();
+  private static final String LINK_EXPIRATION_TIME_DEFAULT = "86400000";
+  private static final String FOLIO_HOST_DEFAULT = "http://localhost:3000";
 
   private static final String CREATE_PASSWORD_EVENT_CONFIG_NAME = "CREATE_PASSWORD_EVENT";//NOSONAR
   private static final String RESET_PASSWORD_EVENT_CONFIG_NAME = "RESET_PASSWORD_EVENT";//NOSONAR
@@ -124,7 +123,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         return authTokenClient.signToken(tokenPayload, connectionParams);
       })
       .compose(token -> {
-        String linkHost = configMapHolder.value.get(FOLIO_HOST_CONFIG_KEY);
+        String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
         String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
         String generatedLink = linkHost + linkPath + '/' + token;
         linkHolder.value = generatedLink;
