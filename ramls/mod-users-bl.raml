@@ -72,8 +72,8 @@ resourceTypes:
       422:
         description: "Unprocessable Entity"
         body:
-          text/plain:
-            example: "Bad request"
+          application/json:
+            type: errors
       500:
         description: "Internal server error"
         body:
@@ -163,8 +163,8 @@ resourceTypes:
         422:
           description: "Unprocessable Entity"
           body:
-            text/plain:
-              example: "Bad request"
+            application/json:
+              type: errors
         500:
           description: "Internal server error"
           body:

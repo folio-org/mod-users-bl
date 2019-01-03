@@ -4,7 +4,7 @@
   "provides": [
     {
       "id": "users-bl",
-      "version": "3.4",
+      "version": "3.5",
       "handlers": [
         {
           "methods": ["GET"],
@@ -186,7 +186,7 @@
     },
     {
       "id" : "login",
-      "version" : "4.4"
+      "version" : "4.8"
     },
     {
       "id" : "service-points",
