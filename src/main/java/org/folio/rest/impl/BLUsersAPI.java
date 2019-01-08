@@ -211,7 +211,7 @@ public class BLUsersAPI implements BlUsers {
         }
       } else {
         String message = "";
-        String errorMessage = "";
+        String errorMessage;
         Errors errors = null;
         if(response.getError() != null){
           statusCode = response.getError().getInteger("statusCode");
