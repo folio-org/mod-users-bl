@@ -211,11 +211,20 @@ public class BLUsersAPI implements BlUsers {
         }
       } else {
         String message = "";
+        String errorMessage;
+        Errors errors = null;
         if(response.getError() != null){
           statusCode = response.getError().getInteger("statusCode");
           message = response.getError().encodePrettily();
-        }
-        else{
+          try {
+            errorMessage = response.getError().getString("errorMessage");
+            if (StringUtils.isNotEmpty(errorMessage)) {
+              errors = (new JsonObject(errorMessage)).mapTo(Errors.class);
+            }
+          } catch (Exception e) {
+            logger.debug(e.getMessage(), e);
+          }
+        } else{
           Throwable e = response.getException();
           if(e != null){
             message = response.getException().getLocalizedMessage();
@@ -234,8 +243,13 @@ public class BLUsersAPI implements BlUsers {
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond400WithTextPlain(message)));
         } else if(statusCode == 422){
-          asyncResultHandler.handle(Future.succeededFuture(
-            GetBlUsersByIdByIdResponse.respond422WithTextPlain(message)));
+          if (errors != null) {
+            asyncResultHandler.handle(Future.succeededFuture(
+              GetBlUsersByIdByIdResponse.respond422WithApplicationJson(errors)));
+          } else {
+            asyncResultHandler.handle(Future.succeededFuture(
+              GetBlUsersByIdByIdResponse.respond400WithTextPlain(message)));
+          }
         } else if(statusCode == 403){
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond403WithTextPlain(message)));
