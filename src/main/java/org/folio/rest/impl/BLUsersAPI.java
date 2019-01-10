@@ -53,6 +53,7 @@ import org.folio.service.PasswordResetLinkServiceImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 
+import javax.ws.rs.core.HttpHeaders;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -63,6 +64,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -88,10 +90,11 @@ public class BLUsersAPI implements BlUsers {
   private static final String EXPANDED_SERVICEPOINTS_INCLUDE = "expanded_servicepoints";
   private final Logger logger = LoggerFactory.getLogger(BLUsersAPI.class);
 
-  public static final String OKAPI_URL_HEADER = "X-Okapi-URL";
+  public static final String OKAPI_URL_HEADER = "x-okapi-url";
   public static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
   public static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   public static final String OKAPI_USER_ID = "X-Okapi-User-Id";
+  public static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
 
   public static final String LOCATE_USER_USERNAME = "userName";
   public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
@@ -727,9 +730,9 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersLogin(boolean expandPerms, List<String> include,
-      LoginCredentials entity, Map<String, String> okapiHeaders,
-      Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
+                               LoginCredentials entity, Map<String, String> okapiHeaders,
+                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
 
     //works on single user, no joins needed , just aggregate
@@ -762,8 +765,12 @@ public class BLUsersAPI implements BlUsers {
       String userUrl = "/users?query=username=" + entity.getUsername();
       //run login
       try {
-        loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL,
-          okapiHeaders);
+        Map<String, String> headers = new HashMap<>(okapiHeaders);
+        Optional.ofNullable(userAgent)
+          .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
+        Optional.ofNullable(xForwardedFor)
+          .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
+        loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL, headers);
       } catch (Exception ex) {
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
@@ -1192,7 +1199,8 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersSettingsMyprofilePassword(UpdateCredentials entity, Map<String, String> okapiHeaders,
+  public void postBlUsersSettingsMyprofilePassword(String userAgent, String xForwardedFor, UpdateCredentials entity,
+                                                   Map<String, String> okapiHeaders,
                                                    Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                                    Context vertxContext) {
     try {
@@ -1210,7 +1218,13 @@ public class BLUsersAPI implements BlUsers {
           } else {
             Errors errors = h.result().mapTo(Errors.class);
             if (errors.getTotalRecords() == 0) {
-              userPasswordService.updateUserCredential(JsonObject.mapFrom(entity), JsonObject.mapFrom(connectionParams), r -> {
+              Map<String, String> requestHeaders = new HashMap<>(okapiHeaders);
+              Optional.ofNullable(userAgent)
+                .ifPresent(header -> requestHeaders.put(HttpHeaders.USER_AGENT, header));
+              Optional.ofNullable(xForwardedFor)
+                .ifPresent(header -> requestHeaders.put(X_FORWARDED_FOR_HEADER, header));
+
+              userPasswordService.updateUserCredential(JsonObject.mapFrom(entity), JsonObject.mapFrom(requestHeaders), r -> {
                 if (r.failed()) {
                   asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
                     .respond500WithTextPlain(r.cause().getMessage())));
@@ -1253,13 +1267,19 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersPasswordResetReset(PasswordReset entity, Map<String, String> okapiHeaders,
+  public void postBlUsersPasswordResetReset(String userAgent, String xForwardedFor, PasswordReset entity,
+                                            Map<String, String> okapiHeaders,
                                             Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                             Context vertxContext) {
-    OkapiConnectionParams okapiConnectionParams = new OkapiConnectionParams(okapiHeaders);
     JsonObject request = JsonObject.mapFrom(entity);
+    Map<String, String> requestHeaders = new HashMap<>(okapiHeaders);
+    Optional.ofNullable(userAgent)
+      .ifPresent(header -> requestHeaders.put(HttpHeaders.USER_AGENT, header));
+    Optional.ofNullable(xForwardedFor)
+      .ifPresent(header -> requestHeaders.put(X_FORWARDED_FOR_HEADER, header));
+
     passwordResetLinkService.resetPassword(request.getString("resetPasswordActionId"), request.getString("newPassword"),
-      okapiConnectionParams).setHandler(res -> {
+      requestHeaders).setHandler(res -> {
         if (res.succeeded()) {
           asyncResultHandler.handle(Future.succeededFuture(PostBlUsersPasswordResetResetResponse.respond204()));
         } else {
@@ -1273,7 +1293,7 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersPasswordResetValidate(Map<String, String> okapiHeaders,
                                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                                Context vertxContext) {
-    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get("x-okapi-url"),
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get(BLUsersAPI.OKAPI_URL_HEADER),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT), okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN), "");
 
     passwordResetLinkService.validateLinkAndLoginUser(connectionParams)

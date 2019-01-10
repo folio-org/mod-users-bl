@@ -4,6 +4,8 @@ import io.vertx.core.Future;
 import org.folio.rest.jaxrs.model.TokenResponse;
 import org.folio.rest.util.OkapiConnectionParams;
 
+import java.util.Map;
+
 /**
  * Service for password reset link functionality
  */
@@ -27,5 +29,5 @@ public interface PasswordResetLinkService {
   Future<TokenResponse> validateLinkAndLoginUser(OkapiConnectionParams okapiConnectionParams);
 
   Future<Void> resetPassword(String passwordResetActionId, String newPassword,
-                             OkapiConnectionParams okapiConnectionParams);
+                             Map<String, String> requestHeaders);
 }

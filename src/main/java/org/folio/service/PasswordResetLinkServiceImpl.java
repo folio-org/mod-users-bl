@@ -144,11 +144,14 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   @Override
-  public Future<Void> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
+  public Future<Void> resetPassword(String passwordResetActionId, String newPassword,
+                                    Map<String, String> requestHeaders) {
+    OkapiConnectionParams okapiConnectionParams = new OkapiConnectionParams(requestHeaders);
     Holder<User> userHolder = new Holder<>();
     Holder<String> userIdHolder = new Holder<>();
 
-    Future<PasswordResetAction> passwordResetActionFuture = passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
+    Future<PasswordResetAction> passwordResetActionFuture = passwordResetActionClient.getAction(
+      passwordResetActionId, okapiConnectionParams)
       .compose(checkPasswordResetActionPresence(passwordResetActionId));
 
     Future<PasswordResetAction> passwordResetActionExpirationFuture = passwordResetActionFuture
@@ -174,7 +177,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     return CompositeFuture.all(validatePassword(newPassword, okapiConnectionParams),
       passwordResetActionExpirationFuture, userFuture)
       .compose(res ->
-        passwordResetActionClient.resetPassword(passwordResetActionId, newPassword, okapiConnectionParams))
+        passwordResetActionClient.resetPassword(passwordResetActionId, newPassword, requestHeaders))
       .compose(isNewPassword -> {
         Notification notification = new Notification();
         notification.setRecipientId(userIdHolder.value);

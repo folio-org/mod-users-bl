@@ -1,6 +1,7 @@
 package org.folio.rest.client.impl;
 
 import io.vertx.core.Future;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -8,11 +9,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.PasswordResetActionClient;
 import org.folio.rest.exception.OkapiModuleClientException;
+import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.PasswordResetAction;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class PasswordResetActionClientImpl implements PasswordResetActionClient {
 
@@ -58,14 +62,19 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
   }
 
   @Override
-  public Future<Boolean> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
-    String requestUrl = okapiConnectionParams.getOkapiUrl() + PW_RESET_ENDPOINT;
+  public Future<Boolean> resetPassword(String passwordResetActionId, String newPassword, Map<String, String> requestHeaders) {
+    String requestUrl = requestHeaders.get(BLUsersAPI.OKAPI_URL_HEADER) + PW_RESET_ENDPOINT;
     JsonObject payload = new JsonObject()
       .put("passwordResetActionId", passwordResetActionId)
       .put("newPassword", newPassword);
 
-    return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST,
-      okapiConnectionParams.buildHeaders(), payload.encode())
+    CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+    headers.addAll(requestHeaders
+      .entrySet()
+      .stream()
+      .collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue())));
+
+    return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST, headers, payload.encode())
       .map(resp -> {
         if (resp.getCode() != HttpStatus.SC_CREATED) {
           throw new OkapiModuleClientException();

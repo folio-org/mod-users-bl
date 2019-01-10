@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import org.folio.rest.jaxrs.model.PasswordResetAction;
 import org.folio.rest.util.OkapiConnectionParams;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -34,9 +35,9 @@ public interface PasswordResetActionClient {
    *
    * @param passwordResetActionId password reset action id
    * @param newPassword           new password
-   * @param okapiConnectionParams connection params
+   * @param requestHeaders        http request headers
    * @return true if password is
    * @return succeeded future if password is reset, otherwise - failed future
    */
-  Future<Boolean> resetPassword(String passwordResetActionId, String newPassword, OkapiConnectionParams okapiConnectionParams);
+  Future<Boolean> resetPassword(String passwordResetActionId, String newPassword, Map<String, String> requestHeaders);
 }
