@@ -69,7 +69,6 @@
       "description": "Metadata"
     }
   },
-  "additionalProperties": false,
   "required": [
     "name",
     "code",
