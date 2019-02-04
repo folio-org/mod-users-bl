@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
 import io.vertx.core.json.JsonObject;
 
@@ -38,7 +37,7 @@ public class ServicePointTest {
   }
 
   @Test
-  public void cannotDeserializeFromJsonWithUnexpectedProperties() throws IOException {
+  public void canDeserializeFromJsonWithUnexpectedProperties() throws IOException {
     final ObjectMapper mapper = ObjectMapperTool.getMapper();
 
     final JsonObject servicePointJson = new JsonObject();
@@ -47,8 +46,16 @@ public class ServicePointTest {
     servicePointJson.put("code", "cpA");
     servicePointJson.put("foo", "bar");
 
-    expectedExceptions.expect(UnrecognizedPropertyException.class);
+    final JsonObject expiryPeriod = new JsonObject();
+    expiryPeriod.put("duration", "1");
+    expiryPeriod.put("intervalId", "Weeks");
 
-    mapper.readValue(servicePointJson.encode(), ServicePoint.class);
+    servicePointJson.put("holdShelfExpiryPeriod", expiryPeriod);
+
+    final ServicePoint servicePoint = mapper.readValue(servicePointJson.encode(),
+      ServicePoint.class);
+
+    assertThat(servicePoint.getName(), is("Collection Point A"));
+    assertThat(servicePoint.getCode(), is("cpA"));
   }
 }
