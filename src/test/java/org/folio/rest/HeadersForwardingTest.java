@@ -3,6 +3,8 @@ package org.folio.rest;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -29,11 +31,15 @@ import javax.ws.rs.core.HttpHeaders;
 import java.sql.Date;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import static junit.framework.TestCase.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
 public class HeadersForwardingTest {
 
   private static final String TENANT = "test";
+  private static final String TOKEN = UUID.randomUUID().toString();
   private static final String USERNAME = "maxi";
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String RESET_PASSWORD_ACTION_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
@@ -55,6 +61,7 @@ public class HeadersForwardingTest {
       .setContentType(ContentType.JSON)
       .setBaseUri("http://localhost:" + port)
       .addHeader(RestVerticle.OKAPI_HEADER_TENANT, TENANT)
+      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, TOKEN)
       .addHeader(BLUsersAPI.OKAPI_URL_HEADER, "http://localhost:" + mockServer.port())
       .build();
 
@@ -119,6 +126,10 @@ public class HeadersForwardingTest {
         .withHeader(HttpHeaders.USER_AGENT, WireMock.matching(".+"))
         .withHeader(BLUsersAPI.X_FORWARDED_FOR_HEADER, WireMock.equalTo(IP))
     );
+
+    WireMock.getAllServeEvents().stream()
+      .map(ServeEvent::getRequest)
+      .forEach(this::verifyHeaders);
   }
 
   @Test
@@ -155,6 +166,10 @@ public class HeadersForwardingTest {
         .withHeader(HttpHeaders.USER_AGENT, WireMock.matching(".+"))
         .withHeader(BLUsersAPI.X_FORWARDED_FOR_HEADER, WireMock.equalTo(IP))
     );
+
+    WireMock.getAllServeEvents().stream()
+      .map(ServeEvent::getRequest)
+      .forEach(this::verifyHeaders);
   }
 
   @Test
@@ -194,10 +209,11 @@ public class HeadersForwardingTest {
     entity.setNewPassword("Newpwd!10");
     entity.setResetPasswordActionId(RESET_PASSWORD_ACTION_ID);
 
+    String header = "x-forWarded-FOR";
     RestAssured
       .given()
       .spec(spec)
-      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .header(new Header(header, IP))
       .body(JsonObject.mapFrom(entity).encode())
       .when()
       .post("/bl-users/password-reset/reset")
@@ -209,5 +225,15 @@ public class HeadersForwardingTest {
         .withHeader(HttpHeaders.USER_AGENT, WireMock.matching(".+"))
         .withHeader(BLUsersAPI.X_FORWARDED_FOR_HEADER, WireMock.equalTo(IP))
     );
+
+    WireMock.getAllServeEvents().stream()
+      .map(ServeEvent::getRequest)
+      .forEach(this::verifyHeaders);
+  }
+
+  private void verifyHeaders(LoggedRequest request) {
+    com.github.tomakehurst.wiremock.http.HttpHeaders headers = request.getHeaders();
+    assertTrue(headers.getHeader(RestVerticle.OKAPI_HEADER_TENANT).containsValue(TENANT));
+    assertTrue(headers.getHeader(RestVerticle.OKAPI_HEADER_TOKEN).containsValue(TOKEN));
   }
 }
