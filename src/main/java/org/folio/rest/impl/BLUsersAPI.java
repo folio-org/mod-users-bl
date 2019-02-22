@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.client.ConfigurationsClient;
@@ -765,7 +766,7 @@ public class BLUsersAPI implements BlUsers {
       String userUrl = "/users?query=username=" + entity.getUsername();
       //run login
       try {
-        Map<String, String> headers = new HashMap<>(okapiHeaders);
+        Map<String, String> headers = new CaseInsensitiveMap<>(okapiHeaders);
         Optional.ofNullable(userAgent)
           .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
         Optional.ofNullable(xForwardedFor)
@@ -1218,7 +1219,7 @@ public class BLUsersAPI implements BlUsers {
           } else {
             Errors errors = h.result().mapTo(Errors.class);
             if (errors.getTotalRecords() == 0) {
-              Map<String, String> requestHeaders = new HashMap<>(okapiHeaders);
+              Map<String, String> requestHeaders = new CaseInsensitiveMap<>(okapiHeaders);
               Optional.ofNullable(userAgent)
                 .ifPresent(header -> requestHeaders.put(HttpHeaders.USER_AGENT, header));
               Optional.ofNullable(xForwardedFor)
@@ -1272,7 +1273,7 @@ public class BLUsersAPI implements BlUsers {
                                             Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                             Context vertxContext) {
     JsonObject request = JsonObject.mapFrom(entity);
-    Map<String, String> requestHeaders = new HashMap<>(okapiHeaders);
+    Map<String, String> requestHeaders = new CaseInsensitiveMap<>(okapiHeaders);
     Optional.ofNullable(userAgent)
       .ifPresent(header -> requestHeaders.put(HttpHeaders.USER_AGENT, header));
     Optional.ofNullable(xForwardedFor)
