@@ -1,3 +1,11 @@
+## 4.4.0 2019-03-15
+ * MODUSERBL-61	Forgot username/password - update default search fiels
+ * MODUSERBL-62	Security: handling HTTP 422 errors
+ * MODUSERBL-63	Forward request headers to mod-login
+ * MODUSERBL-64	Add staffSlips array to servicepoint.json
+ * MODUSERBL-66	Reset password by link does not work
+ * MODUSERBL-67	Temporarily Allow Additional Properties in Service Points
+
 ## 4.3.2 2018-12-14
  * Fix issue with logs dumping sensitive information (MODUSERBL-35)
  * Don't populate tests until mock verticle has deployed (MODUSERBL-57)
