@@ -266,7 +266,7 @@
     }
   ],
   "metadata": {
-    "containerMemory": "512",
+    "containerMemory": "256",
     "databaseConnection": "false"
   },
   "launchDescriptor": {
