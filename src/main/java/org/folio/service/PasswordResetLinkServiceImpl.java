@@ -1,6 +1,5 @@
 package org.folio.service;
 
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -150,15 +149,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     Holder<User> userHolder = new Holder<>();
     Holder<String> userIdHolder = new Holder<>();
 
-    Future<PasswordResetAction> passwordResetActionFuture = passwordResetActionClient.getAction(
-      passwordResetActionId, okapiConnectionParams)
-      .compose(checkPasswordResetActionPresence(passwordResetActionId));
-
-    Future<PasswordResetAction> passwordResetActionExpirationFuture = passwordResetActionFuture
-      .compose(checkPasswordResetActionExpirationTime(passwordResetActionId));
-
     Future<User> userFuture = passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
       .compose(checkPasswordResetActionPresence(passwordResetActionId))
+      .compose(checkPasswordResetActionExpirationTime(passwordResetActionId))
       .compose(passwordResetAction -> {
         userIdHolder.value = passwordResetAction.getUserId();
         return userModuleClient.lookupUserById(passwordResetAction.getUserId(), okapiConnectionParams);
@@ -174,8 +167,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
       });
 
-    return CompositeFuture.all(validatePassword(newPassword, okapiConnectionParams),
-      passwordResetActionExpirationFuture, userFuture)
+    return userFuture
+      .compose(r-> validatePassword(userHolder.value.getId(), newPassword, okapiConnectionParams))
       .compose(res ->
         passwordResetActionClient.resetPassword(passwordResetActionId, newPassword, requestHeaders))
       .compose(isNewPassword -> {
@@ -253,10 +246,10 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     };
   }
 
-  private Future<Void> validatePassword(String newPassword, OkapiConnectionParams okapiConnectionParams) {
+  private Future<Void> validatePassword(String userId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
     Future<Void> future = Future.future();
     userPasswordService
-      .validateNewPassword(new JsonObject().put("newPassword", newPassword), JsonObject.mapFrom(okapiConnectionParams),
+      .validateNewPassword(getUpdateCredentialsJson(userId, newPassword), JsonObject.mapFrom(okapiConnectionParams),
         res -> {
           if (res.succeeded()) {
             JsonObject pwdValidationResult = res.result();
@@ -274,5 +267,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           }
         });
     return future;
+  }
+
+  private JsonObject getUpdateCredentialsJson(String userId, String newPassword) {
+    return new JsonObject()
+      .put("newPassword", newPassword)
+      .put("userId", userId);
   }
 }

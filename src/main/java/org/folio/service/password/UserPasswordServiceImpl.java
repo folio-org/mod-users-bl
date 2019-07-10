@@ -59,9 +59,13 @@ public class UserPasswordServiceImpl implements UserPasswordService {
     try {
       OkapiConnectionParams params = okapiConnectionParams.mapTo(OkapiConnectionParams.class);
       String url = params.getOkapiUrl() + VALIDATE_URL;
-      JsonObject password = new JsonObject()
-        .put("password", updateCredentialsJson.getString("newPassword"));
-      RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), password.encode())
+      String newPassword = updateCredentialsJson.getString("newPassword");
+      String userId = updateCredentialsJson.getString("userId");
+      JsonObject passwordEntity = new JsonObject()
+        .put("password", newPassword)
+        .put("userId", userId);
+
+      RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), passwordEntity.encode())
         .setHandler(h -> {
           if (h.failed() || h.result().getCode() != 200) {
             logger.error("Fail during sending request to validate password", h.cause());
