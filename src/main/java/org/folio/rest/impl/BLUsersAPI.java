@@ -1211,7 +1211,7 @@ public class BLUsersAPI implements BlUsers {
           okapiHeaders.get(OKAPI_TENANT_HEADER),
           okapiHeaders.get(OKAPI_TOKEN_HEADER),
           entity.getUserId());
-        userPasswordService.validateNewPassword(JsonObject.mapFrom(entity), JsonObject.mapFrom(connectionParams), h -> {
+        userPasswordService.validateNewPassword(entity.getUserId(), entity.getNewPassword(), JsonObject.mapFrom(connectionParams), h -> {
           if (h.failed()) {
             logger.error("Error during validate new user's password", h.cause());
             Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse

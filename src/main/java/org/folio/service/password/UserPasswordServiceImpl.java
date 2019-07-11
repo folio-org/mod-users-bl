@@ -54,14 +54,13 @@ public class UserPasswordServiceImpl implements UserPasswordService {
   }
 
   @Override
-  public UserPasswordService validateNewPassword(JsonObject updateCredentialsJson, JsonObject okapiConnectionParams,
+  public UserPasswordService validateNewPassword(String userId, String newPassword, JsonObject okapiConnectionParams,
                                                  Handler<AsyncResult<JsonObject>> asyncResultHandler) {
     try {
       OkapiConnectionParams params = okapiConnectionParams.mapTo(OkapiConnectionParams.class);
       String url = params.getOkapiUrl() + VALIDATE_URL;
-      JsonObject password = new JsonObject()
-        .put("password", updateCredentialsJson.getString("newPassword"));
-      RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), password.encode())
+
+      RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), buildPasswordEntity(userId, newPassword))
         .setHandler(h -> {
           if (h.failed() || h.result().getCode() != 200) {
             logger.error("Fail during sending request to validate password", h.cause());
@@ -91,6 +90,13 @@ public class UserPasswordServiceImpl implements UserPasswordService {
       return this;
     }
     return this;
+  }
+
+  private String buildPasswordEntity(String userId, String newPassword) {
+    JsonObject passwordEntity = new JsonObject()
+      .put("password", newPassword)
+      .put("userId", userId);
+    return passwordEntity.encode();
   }
 
   @Override

@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import io.restassured.RestAssured;
@@ -22,6 +23,7 @@ import org.folio.rest.jaxrs.model.LoginCredentials;
 import org.folio.rest.jaxrs.model.PasswordReset;
 import org.folio.rest.jaxrs.model.PasswordResetAction;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
+import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,6 +43,7 @@ public class HeadersForwardingTest {
   private static final String TENANT = "test";
   private static final String TOKEN = "access_token";
   private static final String USERNAME = "maxi";
+  private static final String USER_PASSWORD = "Newpwd!10";
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String RESET_PASSWORD_ACTION_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String IP = "216.3.128.12";
@@ -135,7 +138,8 @@ public class HeadersForwardingTest {
     JsonObject valid = new JsonObject().put("result", "valid");
     WireMock.stubFor(
       WireMock.post("/password/validate")
-      .willReturn(WireMock.okJson(valid.encode()).withStatus(200))
+        .willReturn(WireMock.okJson(valid.encode()).withStatus(200))
+        .withRequestBody(passwordValidateRequestMatcher())
     );
 
     WireMock.stubFor(
@@ -147,7 +151,7 @@ public class HeadersForwardingTest {
     credentials.setUserId(USER_ID);
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
-    credentials.setNewPassword("Newpwd!10");
+    credentials.setNewPassword(USER_PASSWORD);
 
     RestAssured
       .given()
@@ -177,13 +181,14 @@ public class HeadersForwardingTest {
 
     WireMock.stubFor(
       WireMock.get("/users/" + USER_ID)
-        .willReturn(WireMock.okJson(new JsonObject().encode()))
+        .willReturn(WireMock.okJson(toJson(new User().withId(USER_ID))))
     );
 
     JsonObject valid = new JsonObject().put("result", "valid");
     WireMock.stubFor(
       WireMock.post("/password/validate")
         .willReturn(WireMock.okJson(valid.encode()).withStatus(200))
+        .withRequestBody(passwordValidateRequestMatcher())
     );
 
     JsonObject isNewPassword = new JsonObject().put("isNewPassword", false);
@@ -198,7 +203,7 @@ public class HeadersForwardingTest {
     );
 
     PasswordReset entity = new PasswordReset();
-    entity.setNewPassword("Newpwd!10");
+    entity.setNewPassword(USER_PASSWORD);
     entity.setResetPasswordActionId(RESET_PASSWORD_ACTION_ID);
 
     String header = "x-forWarded-FOR";
@@ -234,5 +239,16 @@ public class HeadersForwardingTest {
     return url.contains(URL_AUT_RESET_PASSWORD)
       || url.contains(URL_AUTH_UPDATE)
       || url.contains(URL_AUTH_LOGIN);
+  }
+
+  private StringValuePattern passwordValidateRequestMatcher() {
+    JsonObject passwordEntity = new JsonObject()
+      .put("password", USER_PASSWORD)
+      .put("userId", USER_ID);
+    return WireMock.equalToJson(passwordEntity.toString());
+  }
+
+  private String toJson(Object object) {
+    return JsonObject.mapFrom(object).toString();
   }
 }

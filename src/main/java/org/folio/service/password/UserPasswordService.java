@@ -32,15 +32,17 @@ public interface UserPasswordService {
   /**
    * Use password validator service for validating new user's password
    *
-   * @param updateCredentialsJson - {@link org.folio.rest.jaxrs.model.UpdateCredentialsJson}
-   *                              json mapped entity with new user's password
+   * @param userId - user Id
+   *
+   * @param newPassword - new user's password
+   *
    * @param okapiConnectionParams - {@link org.folio.rest.util.OkapiConnectionParams}
    *                              json mapped entity with okapi connections params for endpoint's calls
    * @param asyncResultHandler    - async result with {@link org.folio.rest.jaxrs.model.Errors} entity
    *                              mapped to json object. Errors object with list of errors codes if password is invalid
    */
   @Fluent
-  UserPasswordService validateNewPassword(JsonObject updateCredentialsJson, JsonObject okapiConnectionParams,
+  UserPasswordService validateNewPassword(String userId, String newPassword, JsonObject okapiConnectionParams,
                                           Handler<AsyncResult<JsonObject>> asyncResultHandler);
 
   /**
