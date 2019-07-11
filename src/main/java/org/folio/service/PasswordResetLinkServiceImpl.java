@@ -249,7 +249,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private Future<Void> validatePassword(String userId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
     Future<Void> future = Future.future();
     userPasswordService
-      .validateNewPassword(getUpdateCredentialsJson(userId, newPassword), JsonObject.mapFrom(okapiConnectionParams),
+      .validateNewPassword(userId, newPassword, JsonObject.mapFrom(okapiConnectionParams),
         res -> {
           if (res.succeeded()) {
             JsonObject pwdValidationResult = res.result();
@@ -267,11 +267,5 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           }
         });
     return future;
-  }
-
-  private JsonObject getUpdateCredentialsJson(String userId, String newPassword) {
-    return new JsonObject()
-      .put("newPassword", newPassword)
-      .put("userId", userId);
   }
 }
