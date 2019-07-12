@@ -542,6 +542,23 @@ public class BLUsersAPITest {
   }
 
   @Test
+  public void postPasswordResetWithIncorrectToken() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "77604a02-666c-44b6-b238-e81f379f1e77"))
+      .header(new Header("x-okapi-token", buildIncorrectToken(FAKE_PASSWORD_RESET_ACTION_ID_WITH_INCORRECT_USER_ID)))
+      .port(port)
+      .body(new JsonObject()
+        .put("newPassword", "1q2w3E!190").encode())
+      .accept("text/plain")
+      .contentType("application/json")
+      .when()
+      .post("/bl-users/password-reset/reset")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
+  @Test
   public void postPasswordResetInvalidPassword() {
     given()
       .spec(okapi)
@@ -595,6 +612,13 @@ public class BLUsersAPITest {
   private String buildToken(String passwordResetActionId) {
     JsonObject payload = new JsonObject()
       .put("sub", UNDEFINED_USER_NAME + passwordResetActionId);
+    byte[] bytes = payload.encode().getBytes(StandardCharsets.UTF_8);
+    return String.format(JWT_TOKEN_PATTERN, JWT_TOKEN, Base64.getEncoder().encodeToString(bytes), "sig");
+  }
+
+  private String buildIncorrectToken(String passwordResetActionId) {
+    JsonObject payload = new JsonObject()
+      .put("sub", "INCORRECT_\"" + passwordResetActionId);
     byte[] bytes = payload.encode().getBytes(StandardCharsets.UTF_8);
     return String.format(JWT_TOKEN_PATTERN, JWT_TOKEN, Base64.getEncoder().encodeToString(bytes), "sig");
   }
