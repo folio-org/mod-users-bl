@@ -40,6 +40,7 @@ public class BLUsersAPITest {
   private static final String EXPIRED_PASSWORD_RESET_ACTION_ID = "16423d10-f403-4de5-a6e9-8e0add61bf5b";
   private static final String NONEXISTENT_PASSWORD_RESET_ACTION_ID = "41a9a229-6492-46ae-b9fc-017ba1e2705d";
   private static final String FAKE_USER_ID_PASSWORD_RESET_ACTION_ID = "2a604a02-666c-44b6-b238-e81f379f1eb4";
+  private static final String FAKE_PASSWORD_RESET_ACTION_ID_WITH_INCORRECT_USER_ID = "2a604a02-666c-44b6-b238-e81f379f1e77";
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String USER_ID_2 = "0bb4f26d-e073-4f93-afbc-dcc24fd88812";
   private static final String USER_ID_3 = "0bb4f26d-e073-4f93-afbc-dcc24fd88813";
@@ -217,6 +218,14 @@ public class BLUsersAPITest {
       .put("id", FAKE_USER_ID_PASSWORD_RESET_ACTION_ID)
       .put("userId", FAKE_USER_ID)
       .put("expirationTime", Instant.now().minus(1, ChronoUnit.DAYS))
+      .encode())
+      .when().post("http://localhost:" + okapiPort + "/authn/password-reset-action")
+      .then().statusCode(201);
+
+    given().body(new JsonObject()
+      .put("id", FAKE_PASSWORD_RESET_ACTION_ID_WITH_INCORRECT_USER_ID)
+      .put("userId", "77604a02-666c-44b6-b238-e81f379f1e77")
+      .put("expirationTime", Instant.now().plus(1, ChronoUnit.DAYS))
       .encode())
       .when().post("http://localhost:" + okapiPort + "/authn/password-reset-action")
       .then().statusCode(201);
@@ -469,6 +478,19 @@ public class BLUsersAPITest {
   }
 
   @Test
+  public void postBlUsersPasswordResetValidateWithIncorrectUser() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-url", "http://localhost:" + okapiPort))
+      .header(new Header("x-okapi-token", buildToken(FAKE_PASSWORD_RESET_ACTION_ID_WITH_INCORRECT_USER_ID)))
+      .header(new Header("x-okapi-tenant", "supertenant"))
+      .when()
+      .post("/bl-users/password-reset/validate")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+  }
+
+  @Test
   public void postPasswordReset() {
     given()
       .spec(okapi)
@@ -483,6 +505,40 @@ public class BLUsersAPITest {
       .post("/bl-users/password-reset/reset")
       .then()
       .statusCode(HttpStatus.SC_NO_CONTENT);
+  }
+
+  @Test
+  public void postPasswordResetIncorrectPassword() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .header(new Header("x-okapi-token", buildToken(NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)))
+      .port(port)
+      .body(new JsonObject()
+        .put("newPassword", "1q2w3E!190ggggg").encode())
+      .accept("text/plain")
+      .contentType("application/json")
+      .when()
+      .post("/bl-users/password-reset/reset")
+      .then()
+      .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  public void postPasswordResetWithIncorrectUser() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "77604a02-666c-44b6-b238-e81f379f1e77"))
+      .header(new Header("x-okapi-token", buildToken(FAKE_PASSWORD_RESET_ACTION_ID_WITH_INCORRECT_USER_ID)))
+      .port(port)
+      .body(new JsonObject()
+        .put("newPassword", "1q2w3E!190").encode())
+      .accept("text/plain")
+      .contentType("application/json")
+      .when()
+      .post("/bl-users/password-reset/reset")
+      .then()
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
   }
 
   @Test

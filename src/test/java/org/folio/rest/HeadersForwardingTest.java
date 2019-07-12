@@ -139,6 +139,64 @@ public class HeadersForwardingTest {
   }
 
   @Test
+  public void testPostBlUsersLoginIncorrectPermissions() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(USERNAME);
+    credentials.setPassword("password");
+
+    JsonObject user = new JsonObject()
+      .put("username", USERNAME)
+      .put("id", USER_ID);
+
+    JsonObject users = new JsonObject()
+      .put("users", new JsonArray().add(user))
+      .put("totalRecords", 1);
+
+
+    WireMock.stubFor(
+      WireMock.get("/users?query=username=" + USERNAME)
+        .willReturn(WireMock.okJson(users.encode()))
+    );
+
+    WireMock.stubFor(
+      WireMock.post(URL_AUTH_LOGIN)
+        .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201))
+    );
+
+    JsonObject permsUsersPost = new JsonObject()
+      .put("permissionUsers", new JsonArray().add(new JsonObject()
+        .put("permissions", "INCORRECT")))
+      .put("totalRecords", 0);
+
+    WireMock.stubFor(
+      WireMock.get("/perms/users?query=userId==" + USER_ID)
+        .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(201))
+    );
+
+    JsonObject jsonObject = new JsonObject()
+      .put("servicePointsUsers", new JsonArray());
+
+    WireMock.stubFor(
+      WireMock.get("/service-points-users?query=userId==" + USER_ID)
+        .willReturn(WireMock.okJson(jsonObject.encode()).withStatus(201))
+    );
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(404);
+
+    WireMock.getAllServeEvents().stream()
+      .map(ServeEvent::getRequest)
+      .forEach(this::verifyHeaders);
+  }
+
+  @Test
   public void testPostBlUsersSettingsMyprofilePassword() {
     JsonObject valid = new JsonObject().put("result", "valid");
     WireMock.stubFor(
