@@ -16,7 +16,6 @@ import org.folio.rest.jaxrs.model.Context;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.jaxrs.model.Notification;
 import org.folio.rest.jaxrs.model.PasswordResetAction;
-import org.folio.rest.jaxrs.model.TokenResponse;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.password.UserPasswordService;
@@ -118,7 +117,10 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         JsonObject tokenPayload = new JsonObject()
           .put("sub", UNDEFINED_USER_NAME + passwordResetActionIdHolder.value)
           .put("dummy", true)
-          .put("extra_permissions", new JsonArray().add("users-bl.password-reset-link.validate"));
+          .put("extra_permissions", new JsonArray()
+            .add("users-bl.password-reset-link.validate")
+            .add("users-bl.password-reset-link.reset")
+          );
         return authTokenClient.signToken(tokenPayload, connectionParams);
       })
       .compose(token -> {
@@ -184,7 +186,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   @Override
-  public Future<TokenResponse> validateLinkAndLoginUser(OkapiConnectionParams okapiConnectionParams) {
+  public Future<Void> validateLinkAndLoginUser(OkapiConnectionParams okapiConnectionParams) {
     String token = okapiConnectionParams.getToken();
     JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
     String tokenSub = payload.getString("sub");
@@ -199,25 +201,15 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .compose(checkPasswordResetActionPresence(passwordResetActionId))
       .compose(checkPasswordResetActionExpirationTime(passwordResetActionId))
       .compose(pwdResetAction -> userModuleClient.lookupUserById(pwdResetAction.getUserId(), okapiConnectionParams)
-        .map(user -> {
+        .compose(user -> {
           if (user.isPresent()) {
-            return Future.succeededFuture(user.get());
+            return Future.succeededFuture(null);
           } else {
             UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE,
               String.format("User with id = %s in not found", pwdResetAction.getUserId()));
-            return Future.<User>failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
+            return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
           }
-        })).compose(user -> {
-        JsonObject tokenPayload = new JsonObject()
-          .put("sub", user.result().getUsername())
-          .put("user_id", user.result().getId());
-        return authTokenClient.signToken(tokenPayload, okapiConnectionParams).map(newToken -> {
-          TokenResponse response = new TokenResponse();
-          response.setResetPasswordActionId(passwordResetActionId);
-          response.setToken(newToken);
-          return response;
-        });
-      });
+        }));
   }
 
   private Function<PasswordResetAction, Future<PasswordResetAction>> checkPasswordResetActionExpirationTime(

@@ -5,6 +5,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -105,6 +106,9 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String USERNAME_LOCATED_EVENT_CONFIG_NAME = "USERNAME_LOCATED_EVENT";
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
+
+  private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
+  private static final String LINK_INVALID_STATUS_CODE = "link.invalid";
 
   private static final String FORGOTTEN_USERNAME_ERROR_KEY = "forgotten.username.found.multiple.users";
   private static final String FORGOTTEN_PASSWORD_ERROR_KEY = "forgotten.password.found.multiple.users";//NOSONAR
@@ -1279,7 +1283,17 @@ public class BLUsersAPI implements BlUsers {
     Optional.ofNullable(xForwardedFor)
       .ifPresent(header -> requestHeaders.put(X_FORWARDED_FOR_HEADER, header));
 
-    passwordResetLinkService.resetPassword(request.getString("resetPasswordActionId"), request.getString("newPassword"),
+    String tokenSub = getPayloadFromToken(okapiHeaders);
+    if (!tokenSub.startsWith(UNDEFINED_USER_NAME)) {
+      UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE,
+        "Invalid token.");
+      asyncResultHandler.handle(Future.succeededFuture(
+        ExceptionHelper.handleException(new UnprocessableEntityException(Collections.singletonList(message)))));
+      return;
+    }
+
+    String passwordResetActionId = tokenSub.substring(UNDEFINED_USER_NAME.length());
+    passwordResetLinkService.resetPassword(passwordResetActionId, request.getString("newPassword"),
       requestHeaders).setHandler(res -> {
         if (res.succeeded()) {
           asyncResultHandler.handle(Future.succeededFuture(PostBlUsersPasswordResetResetResponse.respond204()));
@@ -1301,10 +1315,16 @@ public class BLUsersAPI implements BlUsers {
       .setHandler(res -> {
         if (res.succeeded()) {
           asyncResultHandler.handle(Future.succeededFuture(
-            PostBlUsersPasswordResetValidateResponse.respond200WithApplicationJson(res.result())));
+            PostBlUsersPasswordResetValidateResponse.respond204()));
         } else {
           asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
         }
       });
+  }
+
+  private String getPayloadFromToken(Map<String, String> okapiHeaders) {
+    String token = new OkapiConnectionParams(okapiHeaders).getToken();
+    JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
+    return payload.getString("sub");
   }
 }

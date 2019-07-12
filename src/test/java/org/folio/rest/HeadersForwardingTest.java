@@ -30,9 +30,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 
 import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
 import static junit.framework.TestCase.assertTrue;
@@ -47,6 +49,9 @@ public class HeadersForwardingTest {
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String RESET_PASSWORD_ACTION_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
   private static final String IP = "216.3.128.12";
+
+  private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
+  private static final String JWT_TOKEN_PATTERN = "%s.%s.%s";
 
   private static final String URL_AUT_RESET_PASSWORD = "/authn/reset-password";
   private static final String URL_AUTH_UPDATE = "/authn/update";
@@ -94,7 +99,7 @@ public class HeadersForwardingTest {
 
     WireMock.stubFor(
       WireMock.get("/users?query=username=" + USERNAME)
-      .willReturn(WireMock.okJson(users.encode()))
+        .willReturn(WireMock.okJson(users.encode()))
     );
 
     WireMock.stubFor(
@@ -107,7 +112,7 @@ public class HeadersForwardingTest {
 
     WireMock.stubFor(
       WireMock.get("/perms/users?query=userId==" + USER_ID)
-      .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(201))
+        .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(201))
     );
 
     JsonObject jsonObject = new JsonObject()
@@ -115,7 +120,7 @@ public class HeadersForwardingTest {
 
     WireMock.stubFor(
       WireMock.get("/service-points-users?query=userId==" + USER_ID)
-      .willReturn(WireMock.okJson(jsonObject.encode()).withStatus(201))
+        .willReturn(WireMock.okJson(jsonObject.encode()).withStatus(201))
     );
 
     RestAssured
@@ -202,16 +207,13 @@ public class HeadersForwardingTest {
         .willReturn(WireMock.created())
     );
 
-    PasswordReset entity = new PasswordReset();
-    entity.setNewPassword(USER_PASSWORD);
-    entity.setResetPasswordActionId(RESET_PASSWORD_ACTION_ID);
-
     String header = "x-forWarded-FOR";
     RestAssured
       .given()
       .spec(spec)
       .header(new Header(header, IP))
-      .body(JsonObject.mapFrom(entity).encode())
+      .header(new Header("x-okapi-token", buildMockJwtToken()))
+      .body(JsonObject.mapFrom(new PasswordReset().withNewPassword(USER_PASSWORD)).encode())
       .when()
       .post("/bl-users/password-reset/reset")
       .then()
@@ -220,6 +222,13 @@ public class HeadersForwardingTest {
     WireMock.getAllServeEvents().stream()
       .map(ServeEvent::getRequest)
       .forEach(this::verifyHeaders);
+  }
+
+  private String buildMockJwtToken() {
+    JsonObject payload = new JsonObject()
+      .put("sub", UNDEFINED_USER_NAME + RESET_PASSWORD_ACTION_ID);
+    byte[] bytes = payload.encode().getBytes(StandardCharsets.UTF_8);
+    return String.format(JWT_TOKEN_PATTERN, TOKEN, Base64.getEncoder().encodeToString(bytes), "sig");
   }
 
   private void verifyHeaders(LoggedRequest request) {
@@ -232,7 +241,7 @@ public class HeadersForwardingTest {
     }
 
     assertTrue(headers.getHeader(RestVerticle.OKAPI_HEADER_TENANT).containsValue(TENANT));
-    assertTrue(headers.getHeader(RestVerticle.OKAPI_HEADER_TOKEN).containsValue(TOKEN));
+    assertTrue(headers.getHeader(RestVerticle.OKAPI_HEADER_TOKEN).hasValueMatching(WireMock.containing(TOKEN)));
   }
 
   private boolean isContainsSpecifiedUrls(String url) {

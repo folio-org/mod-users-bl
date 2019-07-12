@@ -25,17 +25,16 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 
 import static io.restassured.RestAssured.given;
-import io.vertx.ext.unit.Async;
 import static org.hamcrest.Matchers.equalTo;
 
 
 @RunWith(VertxUnitRunner.class)
 public class BLUsersAPITest {
   static Vertx vertx;
-  static RequestSpecification okapi;
-  static int okapiPort;
+  private static RequestSpecification okapi;
+  private static int okapiPort;
   /** port of BLUsersAPI */
-  static int port;
+  private static int port;
 
   private static final String NOT_EXPIRED_PASSWORD_RESET_ACTION_ID = "5ac3b82d-a7d4-43a0-8285-104e84e01274";
   private static final String EXPIRED_PASSWORD_RESET_ACTION_ID = "16423d10-f403-4de5-a6e9-8e0add61bf5b";
@@ -47,6 +46,8 @@ public class BLUsersAPITest {
   private static final String USER_ID_4 = "0bb4f26d-e073-4f93-afbc-dcc24fd88814";
   private static final String FAKE_USER_ID = "f2216cfc-4abb-4f54-85bb-4945c9fd91cb";
   private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
+  private static final String JWT_TOKEN_PATTERN = "%s.%s.%s";
+  private static final String JWT_TOKEN = "dummyJwt";
 
   @BeforeClass
   public static void before(TestContext context) {
@@ -425,7 +426,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/validate")
       .then()
-      .statusCode(HttpStatus.SC_OK);
+      .statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
   @Test
@@ -472,9 +473,9 @@ public class BLUsersAPITest {
     given()
       .spec(okapi)
       .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .header(new Header("x-okapi-token", buildToken(NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)))
       .port(port)
       .body(new JsonObject()
-        .put("resetPasswordActionId", NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)
         .put("newPassword", "1q2w3E!190").encode())
       .accept("text/plain")
       .contentType("application/json")
@@ -539,6 +540,6 @@ public class BLUsersAPITest {
     JsonObject payload = new JsonObject()
       .put("sub", UNDEFINED_USER_NAME + passwordResetActionId);
     byte[] bytes = payload.encode().getBytes(StandardCharsets.UTF_8);
-    return "dummyJwt." + Base64.getEncoder().encodeToString(bytes) + ".sig";
+    return String.format(JWT_TOKEN_PATTERN, JWT_TOKEN, Base64.getEncoder().encodeToString(bytes), "sig");
   }
 }
