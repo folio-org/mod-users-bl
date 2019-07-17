@@ -1213,8 +1213,7 @@ public class BLUsersAPI implements BlUsers {
         OkapiConnectionParams connectionParams = new OkapiConnectionParams(
           okapiHeaders.get(OKAPI_URL_HEADER),
           okapiHeaders.get(OKAPI_TENANT_HEADER),
-          okapiHeaders.get(OKAPI_TOKEN_HEADER),
-          entity.getUserId());
+          okapiHeaders.get(OKAPI_TOKEN_HEADER));
         userPasswordService.validateNewPassword(entity.getUserId(), entity.getNewPassword(), JsonObject.mapFrom(connectionParams), h -> {
           if (h.failed()) {
             logger.error("Error during validate new user's password", h.cause());
@@ -1296,8 +1295,7 @@ public class BLUsersAPI implements BlUsers {
                                                Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get(BLUsersAPI.OKAPI_URL_HEADER),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT),
-      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN),
-      "");
+      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN));
 
     passwordResetLinkService.validateLink(connectionParams)
       .map(PostBlUsersPasswordResetValidateResponse.respond204())
