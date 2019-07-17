@@ -1283,25 +1283,11 @@ public class BLUsersAPI implements BlUsers {
     Optional.ofNullable(xForwardedFor)
       .ifPresent(header -> requestHeaders.put(X_FORWARDED_FOR_HEADER, header));
 
-    String tokenSub = getPayloadFromToken(okapiHeaders);
-    if (!tokenSub.startsWith(UNDEFINED_USER_NAME)) {
-      UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE,
-        "Invalid token.");
-      asyncResultHandler.handle(Future.succeededFuture(
-        ExceptionHelper.handleException(new UnprocessableEntityException(Collections.singletonList(message)))));
-      return;
-    }
-
-    String passwordResetActionId = tokenSub.substring(UNDEFINED_USER_NAME.length());
-    passwordResetLinkService.resetPassword(passwordResetActionId, request.getString("newPassword"),
-      requestHeaders).setHandler(res -> {
-        if (res.succeeded()) {
-          asyncResultHandler.handle(Future.succeededFuture(PostBlUsersPasswordResetResetResponse.respond204()));
-        } else {
-          asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
-        }
-    });
-
+    passwordResetLinkService.resetPassword(request.getString("newPassword"), requestHeaders)
+      .map(PostBlUsersPasswordResetResetResponse.respond204())
+      .map(javax.ws.rs.core.Response.class::cast)
+      .otherwise(ExceptionHelper::handleException)
+      .setHandler(asyncResultHandler);
   }
 
   @Override
@@ -1309,22 +1295,14 @@ public class BLUsersAPI implements BlUsers {
                                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                                Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get(BLUsersAPI.OKAPI_URL_HEADER),
-      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT), okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN), "");
+      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT),
+      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN),
+      "");
 
-    passwordResetLinkService.validateLinkAndLoginUser(connectionParams)
-      .setHandler(res -> {
-        if (res.succeeded()) {
-          asyncResultHandler.handle(Future.succeededFuture(
-            PostBlUsersPasswordResetValidateResponse.respond204()));
-        } else {
-          asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
-        }
-      });
-  }
-
-  private String getPayloadFromToken(Map<String, String> okapiHeaders) {
-    String token = new OkapiConnectionParams(okapiHeaders).getToken();
-    JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
-    return payload.getString("sub");
+    passwordResetLinkService.validateLink(connectionParams)
+      .map(PostBlUsersPasswordResetValidateResponse.respond204())
+      .map(javax.ws.rs.core.Response.class::cast)
+      .otherwise(ExceptionHelper::handleException)
+      .setHandler(asyncResultHandler);
   }
 }

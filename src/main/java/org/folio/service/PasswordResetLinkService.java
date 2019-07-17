@@ -24,8 +24,13 @@ public interface PasswordResetLinkService {
    *
    * @param okapiConnectionParams connection params
    */
-  Future<Void> validateLinkAndLoginUser(OkapiConnectionParams okapiConnectionParams);
+  Future<Void> validateLink(OkapiConnectionParams okapiConnectionParams);
 
-  Future<Void> resetPassword(String passwordResetActionId, String newPassword,
-                             Map<String, String> requestHeaders);
+  /**
+   * Reset user password
+   *
+   * @param newPassword    a new user password
+   * @param requestHeaders request headers
+   */
+  Future<Void> resetPassword(String newPassword, Map<String, String> requestHeaders);
 }
