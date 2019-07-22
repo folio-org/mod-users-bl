@@ -16,7 +16,6 @@ import org.folio.rest.jaxrs.model.Context;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.jaxrs.model.Notification;
 import org.folio.rest.jaxrs.model.PasswordResetAction;
-import org.folio.rest.jaxrs.model.TokenResponse;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.password.UserPasswordService;
@@ -118,7 +117,10 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         JsonObject tokenPayload = new JsonObject()
           .put("sub", UNDEFINED_USER_NAME + passwordResetActionIdHolder.value)
           .put("dummy", true)
-          .put("extra_permissions", new JsonArray().add("users-bl.password-reset-link.validate"));
+          .put("extra_permissions", new JsonArray()
+            .add("users-bl.password-reset-link.validate")
+            .add("users-bl.password-reset-link.reset")
+          );
         return authTokenClient.signToken(tokenPayload, connectionParams);
       })
       .compose(token -> {
@@ -143,48 +145,96 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   @Override
-  public Future<Void> resetPassword(String passwordResetActionId, String newPassword,
-                                    Map<String, String> requestHeaders) {
+  public Future<Void> resetPassword(String newPassword, Map<String, String> requestHeaders) {
     OkapiConnectionParams okapiConnectionParams = new OkapiConnectionParams(requestHeaders);
     Holder<User> userHolder = new Holder<>();
     Holder<String> userIdHolder = new Holder<>();
 
-    Future<User> userFuture = passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
-      .compose(checkPasswordResetActionPresence(passwordResetActionId))
-      .compose(checkPasswordResetActionExpirationTime(passwordResetActionId))
-      .compose(passwordResetAction -> {
-        userIdHolder.value = passwordResetAction.getUserId();
-        return userModuleClient.lookupUserById(passwordResetAction.getUserId(), okapiConnectionParams);
-      })
-      .compose(optionalUser -> {
-        if (optionalUser.isPresent()) {
-          User user = optionalUser.get();
-          userHolder.value = user;
-          return Future.succeededFuture(user);
-        }
-        String message = String.format("User with id '%s' not found", userIdHolder.value);
-        UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
-        throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
-      });
-
-    return userFuture
-      .compose(r-> validatePassword(userHolder.value.getId(), newPassword, okapiConnectionParams))
-      .compose(res ->
-        passwordResetActionClient.resetPassword(passwordResetActionId, newPassword, requestHeaders))
-      .compose(isNewPassword -> {
-        Notification notification = new Notification();
-        notification.setRecipientId(userIdHolder.value);
-        notification.setLang("en");
-        notification.setText(StringUtils.EMPTY);
-        notification.setEventConfigName(isNewPassword ?
-          PASSWORD_CREATED_EVENT_CONFIG_NAME : PASSWORD_CHANGED_EVENT_CONFIG_NAME);
-        notification.setContext(new Context().withAdditionalProperty("user", userHolder.value));
-        return notificationClient.sendNotification(notification, okapiConnectionParams);
-      });
+    return getPasswordResetActionId(okapiConnectionParams)
+      .compose(passwordResetActionId ->
+        passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
+          .compose(checkPasswordResetActionPresence(passwordResetActionId))
+          .compose(checkPasswordResetActionExpirationTime(passwordResetActionId))
+          .compose(findUserByPasswordResetActionId(okapiConnectionParams, userIdHolder))
+          .compose(validateUser(userHolder, userIdHolder))
+          .compose(r -> validatePassword(userHolder.value.getId(), newPassword, okapiConnectionParams))
+          .compose(res -> passwordResetActionClient.resetPassword(passwordResetActionId, newPassword, requestHeaders))
+          .compose(sendPasswordChangeNotification(okapiConnectionParams, userHolder, userIdHolder))
+      );
   }
 
   @Override
-  public Future<TokenResponse> validateLinkAndLoginUser(OkapiConnectionParams okapiConnectionParams) {
+  public Future<Void> validateLink(OkapiConnectionParams okapiConnectionParams) {
+    return getPasswordResetActionId(okapiConnectionParams)
+      .compose(passwordResetActionId -> passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
+        .compose(checkPasswordResetActionPresence(passwordResetActionId))
+        .compose(checkPasswordResetActionExpirationTime(passwordResetActionId))
+        .compose(pwdResetAction -> userModuleClient.lookupUserById(pwdResetAction.getUserId(), okapiConnectionParams)
+          .compose(validatePasswordResetAction(pwdResetAction)))
+      );
+  }
+
+  private Function<Optional<User>, Future<User>> validateUser(Holder<User> userHolder, Holder<String> userIdHolder) {
+    return optionalUser -> {
+      if (optionalUser.isPresent()) {
+        User user = optionalUser.get();
+        userHolder.value = user;
+        return Future.succeededFuture(user);
+      }
+      String message = String.format("User with id '%s' not found", userIdHolder.value);
+      UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
+      throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+    };
+  }
+
+  private Function<Optional<User>, Future<Void>> validatePasswordResetAction(PasswordResetAction pwdResetAction) {
+    return user -> {
+      if (user.isPresent()) {
+        return Future.succeededFuture(null);
+      }
+
+      UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE,
+        String.format("User with id = %s in not found", pwdResetAction.getUserId()));
+      return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
+    };
+  }
+
+  private Function<PasswordResetAction, Future<Optional<User>>> findUserByPasswordResetActionId(OkapiConnectionParams okapiConnParams,
+                                                                                                Holder<String> userIdHolder) {
+    return passwordResetAction -> {
+      userIdHolder.value = passwordResetAction.getUserId();
+      return userModuleClient.lookupUserById(passwordResetAction.getUserId(), okapiConnParams);
+    };
+  }
+
+  private Function<Boolean, Future<Void>> sendPasswordChangeNotification(OkapiConnectionParams okapiConnectionParams,
+                                                                         Holder<User> userHolder,
+                                                                         Holder<String> userIdHolder) {
+    return isNewPassword -> {
+      Notification notification = createNotification(userHolder, userIdHolder, isNewPassword);
+      return notificationClient.sendNotification(notification, okapiConnectionParams);
+    };
+  }
+
+  private Notification createNotification(Holder<User> userHolder,
+                                          Holder<String> userIdHolder,
+                                          boolean isNewPassword) {
+    Context context = new Context()
+      .withAdditionalProperty("user", userHolder.value);
+
+    String eventConfigName = isNewPassword
+      ? PASSWORD_CREATED_EVENT_CONFIG_NAME
+      : PASSWORD_CHANGED_EVENT_CONFIG_NAME;
+
+    return new Notification()
+      .withRecipientId(userIdHolder.value)
+      .withLang("en")
+      .withText(StringUtils.EMPTY)
+      .withContext(context)
+      .withEventConfigName(eventConfigName);
+  }
+
+  private Future<String> getPasswordResetActionId(OkapiConnectionParams okapiConnectionParams) {
     String token = okapiConnectionParams.getToken();
     JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
     String tokenSub = payload.getString("sub");
@@ -193,31 +243,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         "Invalid token.");
       return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
     }
-    String passwordResetActionId = tokenSub.substring(UNDEFINED_USER_NAME.length());
-
-    return passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
-      .compose(checkPasswordResetActionPresence(passwordResetActionId))
-      .compose(checkPasswordResetActionExpirationTime(passwordResetActionId))
-      .compose(pwdResetAction -> userModuleClient.lookupUserById(pwdResetAction.getUserId(), okapiConnectionParams)
-        .map(user -> {
-          if (user.isPresent()) {
-            return Future.succeededFuture(user.get());
-          } else {
-            UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE,
-              String.format("User with id = %s in not found", pwdResetAction.getUserId()));
-            return Future.<User>failedFuture(new UnprocessableEntityException(Collections.singletonList(message)));
-          }
-        })).compose(user -> {
-        JsonObject tokenPayload = new JsonObject()
-          .put("sub", user.result().getUsername())
-          .put("user_id", user.result().getId());
-        return authTokenClient.signToken(tokenPayload, okapiConnectionParams).map(newToken -> {
-          TokenResponse response = new TokenResponse();
-          response.setResetPasswordActionId(passwordResetActionId);
-          response.setToken(newToken);
-          return response;
-        });
-      });
+    return Future.succeededFuture(tokenSub.substring(UNDEFINED_USER_NAME.length()));
   }
 
   private Function<PasswordResetAction, Future<PasswordResetAction>> checkPasswordResetActionExpirationTime(

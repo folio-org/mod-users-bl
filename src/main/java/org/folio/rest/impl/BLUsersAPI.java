@@ -5,6 +5,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -105,6 +106,9 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String USERNAME_LOCATED_EVENT_CONFIG_NAME = "USERNAME_LOCATED_EVENT";
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
+
+  private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
+  private static final String LINK_INVALID_STATUS_CODE = "link.invalid";
 
   private static final String FORGOTTEN_USERNAME_ERROR_KEY = "forgotten.username.found.multiple.users";
   private static final String FORGOTTEN_PASSWORD_ERROR_KEY = "forgotten.password.found.multiple.users";//NOSONAR
@@ -1209,8 +1213,7 @@ public class BLUsersAPI implements BlUsers {
         OkapiConnectionParams connectionParams = new OkapiConnectionParams(
           okapiHeaders.get(OKAPI_URL_HEADER),
           okapiHeaders.get(OKAPI_TENANT_HEADER),
-          okapiHeaders.get(OKAPI_TOKEN_HEADER),
-          entity.getUserId());
+          okapiHeaders.get(OKAPI_TOKEN_HEADER));
         userPasswordService.validateNewPassword(entity.getUserId(), entity.getNewPassword(), JsonObject.mapFrom(connectionParams), h -> {
           if (h.failed()) {
             logger.error("Error during validate new user's password", h.cause());
@@ -1279,15 +1282,11 @@ public class BLUsersAPI implements BlUsers {
     Optional.ofNullable(xForwardedFor)
       .ifPresent(header -> requestHeaders.put(X_FORWARDED_FOR_HEADER, header));
 
-    passwordResetLinkService.resetPassword(request.getString("resetPasswordActionId"), request.getString("newPassword"),
-      requestHeaders).setHandler(res -> {
-        if (res.succeeded()) {
-          asyncResultHandler.handle(Future.succeededFuture(PostBlUsersPasswordResetResetResponse.respond204()));
-        } else {
-          asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
-        }
-    });
-
+    passwordResetLinkService.resetPassword(request.getString("newPassword"), requestHeaders)
+      .map(PostBlUsersPasswordResetResetResponse.respond204())
+      .map(javax.ws.rs.core.Response.class::cast)
+      .otherwise(ExceptionHelper::handleException)
+      .setHandler(asyncResultHandler);
   }
 
   @Override
@@ -1295,16 +1294,13 @@ public class BLUsersAPI implements BlUsers {
                                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                                Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get(BLUsersAPI.OKAPI_URL_HEADER),
-      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT), okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN), "");
+      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT),
+      okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN));
 
-    passwordResetLinkService.validateLinkAndLoginUser(connectionParams)
-      .setHandler(res -> {
-        if (res.succeeded()) {
-          asyncResultHandler.handle(Future.succeededFuture(
-            PostBlUsersPasswordResetValidateResponse.respond200WithApplicationJson(res.result())));
-        } else {
-          asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.handleException(res.cause())));
-        }
-      });
+    passwordResetLinkService.validateLink(connectionParams)
+      .map(PostBlUsersPasswordResetValidateResponse.respond204())
+      .map(javax.ws.rs.core.Response.class::cast)
+      .otherwise(ExceptionHelper::handleException)
+      .setHandler(asyncResultHandler);
   }
 }

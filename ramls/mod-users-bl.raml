@@ -24,7 +24,6 @@ types:
   passwordResetAction: !include passwordResetAction.json
   passwordReset: !include passwordReset.json
   notification : !include notification.json
-  tokenResponse: !include tokenResponse.json
 
 traits:
   orderable: !include raml-util/traits/orderable.raml
@@ -246,11 +245,8 @@ resourceTypes:
     /validate:
       post:
         responses:
-          200:
-            description: "Successfully signed token"
-            body:
-              application/json:
-                type: tokenResponse
+          204:
+            description: "Successful link validation"
           422:
             description: "Unprocessable Entity"
             body:
