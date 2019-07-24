@@ -1,3 +1,9 @@
+## 5.0.0 2019-07-24
+ * MODUSERBL-73 Update API contract to implement a user password reset by link
+ * MODUSERBL-72 Local Password Management
+ * FOLIO-473 add links to README additional info
+ * FOLIO-2003 initial module metadata, use containerMemory as for folio-ansible
+
 ## 4.4.0 2019-03-15
  * MODUSERBL-61	Forgot username/password - update default search fiels
  * MODUSERBL-62	Security: handling HTTP 422 errors
