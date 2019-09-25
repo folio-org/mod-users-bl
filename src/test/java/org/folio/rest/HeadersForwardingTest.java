@@ -35,6 +35,7 @@ import java.sql.Date;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.UUID;
 
 import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
 import static junit.framework.TestCase.assertTrue;
@@ -98,8 +99,21 @@ public class HeadersForwardingTest {
 
 
     WireMock.stubFor(
-      WireMock.get("/users?query=username=" + USERNAME)
+      WireMock.get("/users?query=username==" + USERNAME)
         .willReturn(WireMock.okJson(users.encode()))
+    );
+
+    String incorrectUserName = USERNAME + "_one";
+    JsonObject incorrectUser = new JsonObject()
+      .put("username", incorrectUserName)
+      .put("id", UUID.randomUUID().toString());
+
+    WireMock.stubFor(
+      WireMock.get("/users?query=username==" + incorrectUserName)
+        .willReturn(WireMock.okJson( new JsonObject()
+          .put("users", new JsonArray().add(incorrectUser))
+          .put("totalRecords", 1)
+          .encode()))
     );
 
     WireMock.stubFor(
@@ -154,7 +168,7 @@ public class HeadersForwardingTest {
 
 
     WireMock.stubFor(
-      WireMock.get("/users?query=username=" + USERNAME)
+      WireMock.get("/users?query=username==" + USERNAME)
         .willReturn(WireMock.okJson(users.encode()))
     );
 
