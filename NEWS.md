@@ -1,3 +1,8 @@
+## 5.1.0 2019-09-25
+ * MODUSERBL-75 Update raml-util submodule making metadata.createdByUserId
+   optional
+ * MODUSERBL-79 Update to RMB 25.0.2 (FOLIO-2282)
+
 ## 5.0.0 2019-07-24
  * MODUSERBL-73 Update API contract to implement a user password reset by link
  * MODUSERBL-72 Local Password Management
