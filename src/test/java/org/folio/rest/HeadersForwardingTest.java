@@ -36,6 +36,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
 import static junit.framework.TestCase.assertTrue;
 
@@ -97,8 +99,9 @@ public class HeadersForwardingTest {
       .put("totalRecords", 1);
 
 
+    String mockUsersUrl = "/users?query=username==" + USERNAME;
     WireMock.stubFor(
-      WireMock.get("/users?query=username=" + USERNAME)
+      WireMock.get(mockUsersUrl)
         .willReturn(WireMock.okJson(users.encode()))
     );
 
@@ -133,6 +136,8 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(201);
 
+    WireMock.verify(1, getRequestedFor(urlEqualTo(mockUsersUrl)));
+
     WireMock.getAllServeEvents().stream()
       .map(ServeEvent::getRequest)
       .forEach(this::verifyHeaders);
@@ -154,7 +159,7 @@ public class HeadersForwardingTest {
 
 
     WireMock.stubFor(
-      WireMock.get("/users?query=username=" + USERNAME)
+      WireMock.get("/users?query=username==" + USERNAME)
         .willReturn(WireMock.okJson(users.encode()))
     );
 

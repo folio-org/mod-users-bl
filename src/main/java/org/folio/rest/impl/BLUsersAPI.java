@@ -767,7 +767,7 @@ public class BLUsersAPI implements BlUsers {
       String moduleURL = "/authn/login";
       logger.debug("Requesting login from " + moduleURL);
       //can only be one user with this username - so only one result expected
-      String userUrl = "/users?query=username=" + entity.getUsername();
+      String userUrl = "/users?query=username==" + entity.getUsername();
       //run login
       try {
         Map<String, String> headers = new CaseInsensitiveMap<>(okapiHeaders);
