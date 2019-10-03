@@ -5,7 +5,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -13,6 +12,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+
+import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.folio.rest.RestVerticle;
@@ -95,20 +96,16 @@ public class BLUsersAPI implements BlUsers {
   public static final String OKAPI_URL_HEADER = "x-okapi-url";
   public static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
   public static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
-  public static final String OKAPI_USER_ID = "X-Okapi-User-Id";
   public static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
 
-  public static final String LOCATE_USER_USERNAME = "userName";
-  public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
-  public static final String LOCATE_USER_EMAIL = "email";
+  private static final String LOCATE_USER_USERNAME = "userName";
+  private static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
+  private static final String LOCATE_USER_EMAIL = "email";
   private static final List<String> DEFAULT_FIELDS_TO_LOCATE_USER =
     Arrays.asList("personal.email", "personal.phone", "personal.mobilePhone", "username");//NOSONAR
 
   private static final String USERNAME_LOCATED_EVENT_CONFIG_NAME = "USERNAME_LOCATED_EVENT";
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
-
-  private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
-  private static final String LINK_INVALID_STATUS_CODE = "link.invalid";
 
   private static final String FORGOTTEN_USERNAME_ERROR_KEY = "forgotten.username.found.multiple.users";
   private static final String FORGOTTEN_PASSWORD_ERROR_KEY = "forgotten.password.found.multiple.users";//NOSONAR
@@ -767,9 +764,10 @@ public class BLUsersAPI implements BlUsers {
       String moduleURL = "/authn/login";
       logger.debug("Requesting login from " + moduleURL);
       //can only be one user with this username - so only one result expected
-      String userUrl = "/users?query=username==" + entity.getUsername();
+      String userUrl = "/users?query=username==%s";
       //run login
       try {
+        userUrl = String.format(userUrl, new URLCodec().encode(entity.getUsername()));
         Map<String, String> headers = new CaseInsensitiveMap<>(okapiHeaders);
         Optional.ofNullable(userAgent)
           .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
