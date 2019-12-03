@@ -265,10 +265,6 @@
       "visible" : false
     }
   ],
-  "metadata": {
-    "containerMemory": "256",
-    "databaseConnection": "false"
-  },
   "launchDescriptor": {
     "dockerImage": "${artifactId}:${version}",
     "dockerPull": false,
@@ -280,7 +276,7 @@
     },
     "env": [
       { "name": "JAVA_OPTIONS",
-        "value": "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+        "value": "-XX:MaxRAMPercentage=66.0"
       }
     ]
   }
