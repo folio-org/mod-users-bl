@@ -1,3 +1,8 @@
+## 5.2.0 2019-12-04
+ * [MODUSERBL-77](https://issues.folio.org/browse/MODUSERBL-77) #83 #86 Username with "\_" or space is treated incorrectly
+ * [FOLIO-2321](https://issues.folio.org/browse/FOLIO-2321) #88 Remove old ModuleDescriptor "metadata" section for each back-end module
+ * [FOLIO-2358](https://issues.folio.org/browse/FOLIO-2358) #89 Use JVM features (UseContainerSupport, MaxRAMPercentage) to manage container memory, switch to alpine-jre-openjdk8 Docker container
+
 ## 5.1.0 2019-09-25
  * MODUSERBL-75 Update raml-util submodule making metadata.createdByUserId
    optional
