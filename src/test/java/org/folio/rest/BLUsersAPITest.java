@@ -364,7 +364,7 @@ public class BLUsersAPITest {
       body(new JsonObject().put("username", "superuser")
         .put("password", "12345")
         .put("newPassword", "123456")
-        .put("userId", "99999999-9999-9999-9999-999999999999")
+        .put("userId", "99999999-9999-4999-9999-999999999999")
         .encode()).
       accept("text/plain").
       contentType("application/json").
@@ -381,7 +381,7 @@ public class BLUsersAPITest {
       body(new JsonObject().put("username", "superuser")
         .put("password", "123456")
         .put("newPassword", "1q2w3E!190")
-        .put("userId", "99999999-9999-9999-9999-999999999999")
+        .put("userId", "99999999-9999-4999-9999-999999999999")
         .encode()).
       accept("text/plain").
       contentType("application/json").
@@ -398,7 +398,7 @@ public class BLUsersAPITest {
       body(new JsonObject().put("username", "superuser")
         .put("password", "12345")
         .put("newPassword", "1q2w3E!190")
-        .put("userId", "99999999-9999-9999-9999-999999999999")
+        .put("userId", "99999999-9999-4999-9999-999999999999")
         .encode()).
       accept("text/plain").
       contentType("application/json").
@@ -415,7 +415,7 @@ public class BLUsersAPITest {
       body(new JsonObject().put("username", "superuser")
         .put("password", "12345")
         .put("newPassword", "1q2w3E!190")
-        .put("userId", "99999999-9999-9999-9999-999999999991")
+        .put("userId", "99999999-9999-4999-9999-999999999991")
         .encode()).
       accept("text/plain").
       contentType("application/json").
@@ -494,7 +494,7 @@ public class BLUsersAPITest {
   public void postPasswordReset() {
     given()
       .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
       .header(new Header("x-okapi-token", buildToken(NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)))
       .port(port)
       .body(new JsonObject()
@@ -511,7 +511,7 @@ public class BLUsersAPITest {
   public void postPasswordResetIncorrectPassword() {
     given()
       .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
       .header(new Header("x-okapi-token", buildToken(NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)))
       .port(port)
       .body(new JsonObject()
@@ -562,7 +562,7 @@ public class BLUsersAPITest {
   public void postPasswordResetInvalidPassword() {
     given()
       .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
       .port(port)
       .body(new JsonObject()
         .put("resetPasswordActionId", NOT_EXPIRED_PASSWORD_RESET_ACTION_ID)
@@ -579,7 +579,7 @@ public class BLUsersAPITest {
   public void postPasswordResetNonexistentAction() {
     given()
       .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
       .port(port)
       .body(new JsonObject()
         .put("resetPasswordActionId", NONEXISTENT_PASSWORD_RESET_ACTION_ID)
@@ -596,7 +596,7 @@ public class BLUsersAPITest {
   public void postPasswordResetExpiredAction() {
     given()
       .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-9999-9999-999999999999"))
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
       .port(port)
       .body(new JsonObject()
         .put("resetPasswordActionId", EXPIRED_PASSWORD_RESET_ACTION_ID)

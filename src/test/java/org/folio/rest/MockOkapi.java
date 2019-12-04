@@ -352,11 +352,11 @@ public class MockOkapi extends AbstractVerticle {
       UpdateCredentials updateCredentialsJson = object.mapTo(UpdateCredentials.class);
       if (updateCredentialsJson.getPassword().equals("123456")) {
         return new MockResponse(401, "Invalid password");
-      } else if (updateCredentialsJson.getUserId().equals("99999999-9999-9999-9999-999999999991")) {
+      } else if (updateCredentialsJson.getUserId().equals("99999999-9999-4999-9999-999999999991")) {
         return new MockResponse(400, "user not found");
       } else if (updateCredentialsJson.getPassword().equals("12345")
         && updateCredentialsJson.getNewPassword().equals("1q2w3E!190")
-        && updateCredentialsJson.getUserId().equals("99999999-9999-9999-9999-999999999999")) {
+        && updateCredentialsJson.getUserId().equals("99999999-9999-4999-9999-999999999999")) {
         return new MockResponse(204, "");
       }
       return new MockResponse(500, "");
