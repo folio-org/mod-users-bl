@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -40,9 +41,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String UI_PATH_CONFIG_KEY = "RESET_PASSWORD_UI_PATH";
   private static final String LINK_EXPIRATION_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
+  private static final String LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME";
   private static final Set<String> GENERATE_LINK_REQUIRED_CONFIGURATION = Collections.emptySet();
   private static final String LINK_EXPIRATION_TIME_DEFAULT = "86400000";
   private static final String FOLIO_HOST_DEFAULT = "http://localhost:3000";
+  private static final String INK_EXPIRATION_UNIT_OF_TIME_DEFAULT = "hours";
 
   private static final String CREATE_PASSWORD_EVENT_CONFIG_NAME = "CREATE_PASSWORD_EVENT";//NOSONAR
   private static final String RESET_PASSWORD_EVENT_CONFIG_NAME = "RESET_PASSWORD_EVENT";//NOSONAR
@@ -129,6 +132,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         String generatedLink = linkHost + linkPath + '/' + token;
         linkHolder.value = generatedLink;
 
+        long expirationTimeFromConfig = Long.parseLong(
+          configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT));
+        String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
+          LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, INK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
+
         String eventConfigName = passwordExistsHolder.value ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
         Notification notification = new Notification()
           .withEventConfigName(eventConfigName)
@@ -136,7 +144,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           .withContext(
             new Context()
               .withAdditionalProperty("user", JsonObject.mapFrom(userHolder.value))
-              .withAdditionalProperty("link", generatedLink))
+              .withAdditionalProperty("link", generatedLink)
+              .withAdditionalProperty("expirationTime", TimeUnit.MILLISECONDS.toHours(expirationTimeFromConfig))
+              .withAdditionalProperty("expirationUnitOfTime", expirationUnitOfTimeFromConfig))
           .withText(StringUtils.EMPTY)
           .withLang(DEFAULT_NOTIFICATION_LANG);
         return notificationClient.sendNotification(notification, connectionParams);

@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RunWith(VertxUnitRunner.class)
@@ -49,7 +50,8 @@ public class GeneratePasswordRestLinkTest {
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
   private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";
-
+  private static final long EXPIRATION_TIME = 86400000;
+  private static final String EXPIRATION_UNIT_OF_TIME = "hours";
 
   private static final String MOCK_FOLIO_UI_HOST = "http://localhost:3000";
   private static final String DEFAULT_UI_URL = "/reset-password";
@@ -132,7 +134,9 @@ public class GeneratePasswordRestLinkTest {
       .withContext(
         new Context()
           .withAdditionalProperty("user", mockUser)
-          .withAdditionalProperty("link", expectedLink))
+          .withAdditionalProperty("link", expectedLink)
+          .withAdditionalProperty("expirationTime", TimeUnit.MILLISECONDS.toHours(EXPIRATION_TIME))
+          .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME))
       .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
@@ -177,7 +181,9 @@ public class GeneratePasswordRestLinkTest {
       .withContext(
         new Context()
           .withAdditionalProperty("user", mockUser)
-          .withAdditionalProperty("link", expectedLink))
+          .withAdditionalProperty("link", expectedLink)
+          .withAdditionalProperty("expirationTime", TimeUnit.MILLISECONDS.toHours(EXPIRATION_TIME))
+          .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME))
       .withLang("en")
       .withRecipientId(mockUser.getId())
       .withText(StringUtils.EMPTY);
