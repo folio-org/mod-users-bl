@@ -50,7 +50,7 @@ public class GeneratePasswordRestLinkTest {
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
   private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";
-  private static final long EXPIRATION_TIME = 86400000;
+  private static final String EXPIRATION_TIME = "24";
   private static final String EXPIRATION_UNIT_OF_TIME = "hours";
 
   private static final String MOCK_FOLIO_UI_HOST = "http://localhost:3000";
@@ -135,7 +135,7 @@ public class GeneratePasswordRestLinkTest {
         new Context()
           .withAdditionalProperty("user", mockUser)
           .withAdditionalProperty("link", expectedLink)
-          .withAdditionalProperty("expirationTime", TimeUnit.MILLISECONDS.toHours(EXPIRATION_TIME))
+          .withAdditionalProperty("expirationTime", EXPIRATION_TIME)
           .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME))
       .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
@@ -182,7 +182,7 @@ public class GeneratePasswordRestLinkTest {
         new Context()
           .withAdditionalProperty("user", mockUser)
           .withAdditionalProperty("link", expectedLink)
-          .withAdditionalProperty("expirationTime", TimeUnit.MILLISECONDS.toHours(EXPIRATION_TIME))
+          .withAdditionalProperty("expirationTime", EXPIRATION_TIME)
           .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME))
       .withLang("en")
       .withRecipientId(mockUser.getId())
