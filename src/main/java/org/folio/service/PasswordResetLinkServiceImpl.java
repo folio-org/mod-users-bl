@@ -171,7 +171,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         return TimeUnit.DAYS.toMillis(expirationTime);
       case "WEEKS":
         return TimeUnit.DAYS.toMillis(expirationTime) * 7;
-      default: throw new IllegalStateException("Can't convert date to milliseconds");
+      default: throw new IllegalStateException("Can't convert time period to milliseconds");
     }
   }
 
