@@ -1,4 +1,9 @@
+## 5.3.0 2020-03-11
+
+* Upgrades to RAML Module Builder 29.3.0 (MODUSERBL-83, MODUSERBL-84)
+
 ## 5.2.0 2019-12-04
+
  * [MODUSERBL-77](https://issues.folio.org/browse/MODUSERBL-77) [#83](https://github.com/folio-org/mod-users-bl/pull/83) [#86](https://github.com/folio-org/mod-users-bl/pull/86) Username with "\_" or space is treated incorrectly
  * [FOLIO-2321](https://issues.folio.org/browse/FOLIO-2321) [#88](https://github.com/folio-org/mod-users-bl/pull/88) Remove old ModuleDescriptor "metadata" section for each back-end module
  * [FOLIO-2358](https://issues.folio.org/browse/FOLIO-2358) [#89](https://github.com/folio-org/mod-users-bl/pull/89) Use JVM features (UseContainerSupport, MaxRAMPercentage) to manage container memory, switch to alpine-jre-openjdk8 Docker container
