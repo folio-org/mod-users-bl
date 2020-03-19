@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>5.2.1-SNAPSHOT</version>
+  <version>5.4.0-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -49,36 +49,6 @@
       <groupId>org.folio</groupId>
       <artifactId>domain-models-runtime</artifactId>
       <version>${raml-module-builder.version}</version>
-    </dependency>
-    <!-- logging see http://www.slf4j.org/legacy.html -->
-    <!-- we use SLF4J for our logging interface -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.7.18</version>
-    </dependency>
-    <!-- we use log4j as our logging implementation -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>1.7.13</version>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.17</version>
-    </dependency>
-    <!-- include slf4j bridges to proxy all logging from library deps to our logging impl -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>jcl-over-slf4j</artifactId>
-      <version>1.7.18</version>
-    </dependency>
-    <dependency>
-      <groupId>org.z3950.zing</groupId>
-      <artifactId>cql-java</artifactId>
-      <version>1.13</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -270,12 +240,12 @@
           <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjrt</artifactId>
-            <version>1.8.9</version>
+            <version>1.9.4</version>
           </dependency>
           <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjtools</artifactId>
-            <version>1.8.9</version>
+            <version>1.9.4</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -416,13 +386,10 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <raml-module-builder.version>25.0.2</raml-module-builder.version>
+    <raml-module-builder.version>29.3.0</raml-module-builder.version>
     <mod-configuration-client.version>5.0.1</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <vertx-version>3.5.4</vertx-version>
-    <rest-assured.version>3.1.1</rest-assured.version>
-    <!-- Postgres port for Jenkins CI build environment https://issues.folio.org/browse/METADATA-10 -->
-    <postgres.port>5433</postgres.port>
+    <vertx-version>3.8.5</vertx-version>
   </properties>
     <repositories>
     <repository>
