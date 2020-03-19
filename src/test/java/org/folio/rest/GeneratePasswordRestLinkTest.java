@@ -1,7 +1,8 @@
 package org.folio.rest;
-import static org.junit.Assert.*;
-
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
@@ -17,6 +18,11 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -28,19 +34,11 @@ import org.folio.rest.jaxrs.model.Notification;
 import org.folio.rest.jaxrs.model.PasswordResetAction;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.tools.utils.NetworkUtils;
-import org.hamcrest.Matchers;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RunWith(VertxUnitRunner.class)
 public class GeneratePasswordRestLinkTest {
@@ -172,17 +170,21 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenExpirationTimeIsDefault() {
-    generateAndSendResetPasswordNotificationWhenPasswordExistsWith("TEST",
-      EXPIRATION_UNIT_OF_TIME_MINUTES);
+  public void shouldGenerateAndSendPasswordNotificationWhenExpirationTimeIsIncorrect() {
+    shouldHandleExceptionWhenConvertTime("TEST", EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
 
   @Test
-  public void shouldGenerateAndSendResetPasswordNotificationWhenPasswordExistsWithIncorrectTime() {
+  public void shouldGenerateAndSendPasswordNotificationWhenExpirationOfUnitTimeIsIncorrect() {
+    shouldHandleExceptionWhenConvertTime(EXPIRATION_TIME_WEEKS, EXPIRATION_UNIT_OF_TIME_INCORRECT);
+  }
+
+  public void shouldHandleExceptionWhenConvertTime(
+    String expirationTime, String expirationTimeOfUnit){
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, EXPIRATION_TIME_WEEKS);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, EXPIRATION_UNIT_OF_TIME_INCORRECT);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);

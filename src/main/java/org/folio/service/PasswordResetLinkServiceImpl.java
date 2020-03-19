@@ -165,7 +165,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     try {
       expirationTime = Long.parseLong(expirationTimeDefault);
     } catch (NumberFormatException e) {
-      expirationTime = Long.parseLong(LINK_EXPIRATION_TIME_DEFAULT);
+      String message = "Can't convert time period to milliseconds";
+      UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
+      throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
     }
     switch (expirationUnitOfTime) {
       case "MINUTES":
