@@ -161,7 +161,12 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   private long convertDateToMilliseconds(String expirationTimeDefault, String expirationUnitOfTime) {
-    long expirationTime = Long.parseLong(expirationTimeDefault);
+    long expirationTime;
+    try {
+      expirationTime = Long.parseLong(expirationTimeDefault);
+    } catch (NumberFormatException e) {
+      expirationTime = Long.parseLong(LINK_EXPIRATION_TIME_DEFAULT);
+    }
     switch (expirationUnitOfTime) {
       case "MINUTES":
         return TimeUnit.MINUTES.toMillis(expirationTime);
@@ -171,7 +176,10 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         return TimeUnit.DAYS.toMillis(expirationTime);
       case "WEEKS":
         return TimeUnit.DAYS.toMillis(expirationTime) * 7;
-      default: throw new IllegalStateException("Can't convert time period to milliseconds");
+      default:
+        String message = "Can't convert time period to milliseconds";
+        UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
+        throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
     }
   }
 

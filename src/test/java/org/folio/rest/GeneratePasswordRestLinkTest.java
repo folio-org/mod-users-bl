@@ -1,5 +1,8 @@
 package org.folio.rest;
 
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -14,8 +17,10 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Config;
 import org.folio.rest.jaxrs.model.Configurations;
@@ -105,7 +110,7 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
-  public void shouldGenerateAndSendResetPasswordNotificationWhenPasswordExistsWithDefaultExpirationTime() {
+  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithDefaultExpirationTime() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
@@ -130,12 +135,12 @@ public class GeneratePasswordRestLinkTest {
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
       .statusCode(HttpStatus.SC_OK)
-      .body("link", Matchers.is(expectedLink));
+      .body("link", is(expectedLink));
 
     List<PasswordResetAction> requestBodyByUrl =
       getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
-    Assert.assertThat(requestBodyByUrl, Matchers.hasSize(1));
-    Assert.assertThat(requestBodyByUrl.get(0).getUserId(), Matchers.is(mockUser.getId()));
+    assertThat(requestBodyByUrl, hasSize(1));
+    assertThat(requestBodyByUrl.get(0).getUserId(), is(mockUser.getId()));
 
     Notification expectedNotification = new Notification()
       .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
@@ -151,24 +156,30 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
-  public void shouldGenerateAndSendResetPasswordNotificationWhenPasswordExistsWithMinutesOfExpirationTime() {
+  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTime() {
     generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_MINUTES,
       EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
 
   @Test
-  public void shouldGenerateAndSendResetPasswordNotificationWhenPasswordExistsWithDaysOfExpirationTime() {
+  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithDaysOfExpirationTime() {
     generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_DAYS,
       EXPIRATION_UNIT_OF_TIME_DAYS);
   }
 
   @Test
-  public void shouldGenerateAndSendResetPasswordNotificationWhenPasswordExistsWithWeeksOfExpirationTime() {
+  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithWeeksOfExpirationTime() {
     generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_WEEKS,
       EXPIRATION_UNIT_OF_TIME_WEEKS);
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
+  public void shouldGenerateAndSendPasswordNotificationWhenExpirationTimeIsDefault() {
+    generateAndSendResetPasswordNotificationWhenPasswordExistsWith("TEST",
+      EXPIRATION_UNIT_OF_TIME_MINUTES);
+  }
+
+  @Test
   public void shouldGenerateAndSendResetPasswordNotificationWhenPasswordExistsWithIncorrectTime() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
@@ -187,16 +198,19 @@ public class GeneratePasswordRestLinkTest {
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
-    RestAssured.given()
+    String actual = RestAssured.given()
       .spec(spec)
       .header(mockUrlHeader)
       .body(requestBody.encode())
       .when()
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
-      .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
-      .body("link", Matchers.is(expectedLink));
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+      .contentType(MediaType.APPLICATION_JSON)
+      .extract()
+      .asString();
+
+    assertThat(actual, containsString("Can't convert time period to milliseconds"));
   }
 
   public void generateAndSendResetPasswordNotificationWhenPasswordExistsWith(
@@ -227,12 +241,12 @@ public class GeneratePasswordRestLinkTest {
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
       .statusCode(HttpStatus.SC_OK)
-      .body("link", Matchers.is(expectedLink));
+      .body("link", is(expectedLink));
 
     List<PasswordResetAction> requestBodyByUrl =
       getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
-    Assert.assertThat(requestBodyByUrl, Matchers.hasSize(1));
-    Assert.assertThat(requestBodyByUrl.get(0).getUserId(), Matchers.is(mockUser.getId()));
+    assertThat(requestBodyByUrl, hasSize(1));
+    assertThat(requestBodyByUrl.get(0).getUserId(), is(mockUser.getId()));
 
     Notification expectedNotification = new Notification()
       .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
@@ -273,13 +287,12 @@ public class GeneratePasswordRestLinkTest {
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
       .statusCode(HttpStatus.SC_OK)
-      .body("link", Matchers.is(expectedLink));
-
+      .body("link", is(expectedLink));
 
     List<PasswordResetAction> requestBodyByUrl =
       getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
-    Assert.assertThat(requestBodyByUrl, Matchers.hasSize(1));
-    Assert.assertThat(requestBodyByUrl.get(0).getUserId(), Matchers.is(mockUser.getId()));
+    assertThat(requestBodyByUrl, hasSize(1));
+    assertThat(requestBodyByUrl.get(0).getUserId(), is(mockUser.getId()));
 
     Notification expectedNotification = new Notification()
       .withEventConfigName(CREATE_PASSWORD_EVENT_CONFIG_ID)
