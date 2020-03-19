@@ -1,7 +1,7 @@
 package org.folio.rest;
+import static org.junit.Assert.*;
 
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
@@ -20,7 +20,6 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
-import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Config;
 import org.folio.rest.jaxrs.model.Configurations;
@@ -217,8 +216,6 @@ public class GeneratePasswordRestLinkTest {
     String expirationTime, String expirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
