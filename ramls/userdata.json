@@ -164,7 +164,7 @@
       "$ref": "raml-util/schemas/tags.schema"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": [
     "id"
   ]
