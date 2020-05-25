@@ -54,28 +54,36 @@ public class TestUtil {
 
   public Future<WrappedResponse> doRequest(Vertx vertx, String url,
           HttpMethod method, MultiMap headers, String payload) {
+
     System.out.println(String.format("Sending %s request to endpoint %s with payload %s\n",
             method.toString(), url, payload));
-    Promise<WrappedResponse> promise = Promise.promise();
+
+    final Promise<WrappedResponse> promise = Promise.promise();
+    final Future<WrappedResponse> future = promise.future();
+
     boolean addPayLoad = false;
     HttpClient client = vertx.createHttpClient();
     HttpClientRequest request = client.requestAbs(method, url);
+
     //Add standard headers
     request.putHeader("X-Okapi-Tenant", "diku")
             .putHeader("content-type", "application/json")
             .putHeader("accept", "application/json");
+
     if(headers != null) {
-      for(Map.Entry entry : headers.entries()) {
-        request.putHeader((String)entry.getKey(), (String)entry.getValue());
+      for(Map.Entry<String, String> entry : headers.entries()) {
+        request.putHeader(entry.getKey(), entry.getValue());
       }
     }
+
     //standard exception handler
     request.exceptionHandler(e -> {
       System.out.println(String.format("Request for url %s failed: %s", url,
               e.getLocalizedMessage()));
       promise.fail(e);
     });
-    request.handler( req -> {
+
+    request.handler(req -> {
       //System.out.println("Entering doRequest request handler");
       req.bodyHandler(buf -> {
         //System.out.println("Entering doRequest body handler");
@@ -87,7 +95,7 @@ public class TestUtil {
           System.out.println(String.format(
                   "Got new WrappedResponse object with values code %s, body %s",
                   wr.getCode(), wr.getBody()));
-          if(!promise.future().isComplete() && !promise.future().failed()) {
+          if(!future.isComplete() && !future.failed()) {
             //System.out.println("Future is not yet completed");
             if(!promise.tryComplete(wr)) {
               System.out.println("Failed to complete future");
@@ -112,7 +120,7 @@ public class TestUtil {
     } else {
       request.end();
     }
-    return promise.future();
+    return future;
   }
 }
 

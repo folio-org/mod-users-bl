@@ -63,30 +63,35 @@ public class RestUtil {
    * @param payload - body of request
    * @return - async http response
    */
-  public static Future<WrappedResponse> doRequest(HttpClient client, String url, HttpMethod method,
-                                                  MultiMap headers, String payload) {
+  public static Future<WrappedResponse> doRequest(HttpClient client, String url,
+    HttpMethod method, MultiMap headers, String payload) {
+
     Promise<WrappedResponse> promise = Promise.promise();
     try {
       HttpClientRequest request = client.requestAbs(method, url);
       if (headers != null) {
         headers.add("Content-type", "application/json")
           .add("Accept", "application/json, text/plain");
-        for (Map.Entry entry : headers.entries()) {
+
+        for (Map.Entry<String, String> entry : headers.entries()) {
           if (entry.getValue() != null) {
-            request.putHeader((String) entry.getKey(), (String) entry.getValue());
+            request.putHeader(entry.getKey(), entry.getValue());
           }
         }
       }
+
       request.exceptionHandler(promise::fail);
       request.handler(req -> req.bodyHandler(buf -> {
         WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
         promise.complete(wr);
       }));
+
       if (method == HttpMethod.PUT || method == HttpMethod.POST) {
         request.end(payload);
       } else {
         request.end();
       }
+
       return promise.future();
     } catch (Exception e) {
       promise.fail(e);
