@@ -1,6 +1,8 @@
 package org.folio.rest.util;
 
-import io.vertx.core.http.CaseInsensitiveHeaders;
+import static io.vertx.core.MultiMap.caseInsensitiveMultiMap;
+
+import io.vertx.core.MultiMap;
 import org.folio.rest.impl.BLUsersAPI;
 
 import java.util.Map;
@@ -41,8 +43,8 @@ public class OkapiConnectionParams {
     return token;
   }
 
-  public CaseInsensitiveHeaders buildHeaders() {
-    return (CaseInsensitiveHeaders) new CaseInsensitiveHeaders()
+  public MultiMap buildHeaders() {
+    return caseInsensitiveMultiMap()
       .add(BLUsersAPI.OKAPI_URL_HEADER, okapiUrl)
       .add(BLUsersAPI.OKAPI_TENANT_HEADER, tenantId)
       .add(BLUsersAPI.OKAPI_TOKEN_HEADER, token);

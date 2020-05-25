@@ -1,7 +1,7 @@
 package org.folio.rest;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
@@ -14,7 +14,9 @@ import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.z3950.zing.cql.CQLParseException;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,10 +54,10 @@ public class MockOkapi extends AbstractVerticle {
   private static final String SIGN_TOKEN_ENDPOINT = "/token";
   private static final String RESET_PASSWORD_ENDPOINT = "/authn/reset-password";
   private static final String NOTIFY_ENDPOINT = "/notify";
-
+  private static final String ADMIN_USER_ID = UUID.randomUUID().toString();
 
   @Override
-  public void start(Future<Void> future) {
+  public void start(Promise<Void> future) {
     final int port = context.config().getInteger("http.port");
     Router router = Router.router(vertx);
     HttpServer server = vertx.createHttpServer();
@@ -63,7 +65,7 @@ public class MockOkapi extends AbstractVerticle {
     router.route("/*").handler(BodyHandler.create());
     router.route("/*").handler(this::handleRequest);
     System.out.println("Running MockOkapi on port " + port);
-    server.requestHandler(router::accept).listen(port, result -> {
+    server.requestHandler(router).listen(port, result -> {
       if(result.failed()) {
         future.fail(result.cause());
       }
@@ -634,6 +636,14 @@ public class MockOkapi extends AbstractVerticle {
     }
     return newList;
   }
+
+  public static String getToken() {
+    final String payload = new JsonObject()
+      .put("user_id", ADMIN_USER_ID)
+      .put("sub", "admin")
+      .put("tenant", "diku")
+      .toString();
+
+    return "header." + Base64.getEncoder().encodeToString(payload.getBytes()) + ".verify";
+  }
 }
-
-

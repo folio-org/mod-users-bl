@@ -3,8 +3,8 @@ package org.folio.service.password;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -61,7 +61,7 @@ public class UserPasswordServiceImpl implements UserPasswordService {
       String url = params.getOkapiUrl() + VALIDATE_URL;
 
       RestUtil.doRequest(httpClient, url, HttpMethod.POST, params.buildHeaders(), buildPasswordEntity(userId, newPassword))
-        .setHandler(h -> {
+        .onComplete(h -> {
           if (h.failed() || h.result().getCode() != 200) {
             logger.error("Fail during sending request to validate password", h.cause());
             asyncResultHandler.handle(Future.failedFuture(h.cause()));
@@ -105,7 +105,7 @@ public class UserPasswordServiceImpl implements UserPasswordService {
     try {
       String url = requestHeaders.getString(BLUsersAPI.OKAPI_URL_HEADER) + UPDATE_URL;
 
-      CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+      MultiMap headers = MultiMap.caseInsensitiveMultiMap();
       headers.addAll(requestHeaders
         .getMap()
         .entrySet()
@@ -113,7 +113,7 @@ public class UserPasswordServiceImpl implements UserPasswordService {
         .collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue())));
 
       RestUtil.doRequest(httpClient, url, HttpMethod.POST, headers, newPasswordObject.encode())
-        .setHandler(h -> {
+        .onComplete(h -> {
           if (h.failed()) {
             logger.error("Fail during sending request to update user's credentials", h.cause());
             asyncResultHandler.handle(Future.failedFuture(h.cause()));

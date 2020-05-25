@@ -1,7 +1,8 @@
 package org.folio.rest.util;
 
 import io.vertx.core.Future;
-import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
@@ -62,34 +63,39 @@ public class RestUtil {
    * @param payload - body of request
    * @return - async http response
    */
-  public static Future<WrappedResponse> doRequest(HttpClient client, String url, HttpMethod method,
-                                                  CaseInsensitiveHeaders headers, String payload) {
-    Future<WrappedResponse> future = Future.future();
+  public static Future<WrappedResponse> doRequest(HttpClient client, String url,
+    HttpMethod method, MultiMap headers, String payload) {
+
+    Promise<WrappedResponse> promise = Promise.promise();
     try {
       HttpClientRequest request = client.requestAbs(method, url);
       if (headers != null) {
         headers.add("Content-type", "application/json")
           .add("Accept", "application/json, text/plain");
-        for (Map.Entry entry : headers.entries()) {
+
+        for (Map.Entry<String, String> entry : headers.entries()) {
           if (entry.getValue() != null) {
-            request.putHeader((String) entry.getKey(), (String) entry.getValue());
+            request.putHeader(entry.getKey(), entry.getValue());
           }
         }
       }
-      request.exceptionHandler(future::fail);
+
+      request.exceptionHandler(promise::fail);
       request.handler(req -> req.bodyHandler(buf -> {
         WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
-        future.complete(wr);
+        promise.complete(wr);
       }));
+
       if (method == HttpMethod.PUT || method == HttpMethod.POST) {
         request.end(payload);
       } else {
         request.end();
       }
-      return future;
+
+      return promise.future();
     } catch (Exception e) {
-      future.fail(e);
-      return future;
+      promise.fail(e);
+      return promise.future();
     }
   }
 }

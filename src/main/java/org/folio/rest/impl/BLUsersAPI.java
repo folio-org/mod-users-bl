@@ -4,6 +4,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -1053,7 +1054,7 @@ public class BLUsersAPI implements BlUsers {
     if (!matcher.find()) {
       return io.vertx.core.Future.failedFuture("Could not parse okapiURL: " + okapiURL);
     }
-    io.vertx.core.Future<List<String>> future = io.vertx.core.Future.future();
+    Promise<List<String>> promise = Promise.promise();
 
     String host = matcher.group(1);
     String port = matcher.group(2);
@@ -1069,27 +1070,27 @@ public class BLUsersAPI implements BlUsers {
       configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null, response ->
         response.bodyHandler(body -> {
           if (response.statusCode() != 200) {
-            future.fail("Expected status code 200, got '" + response.statusCode() +
+            promise.fail("Expected status code 200, got '" + response.statusCode() +
               "' :" + body.toString());
             return;
           }
           JsonObject entries = body.toJsonObject();
 
           if (!entries.getJsonArray("configs").isEmpty()) {
-            future.complete(
+            promise.complete(
               entries.getJsonArray("configs").stream()
                 .map(o -> ((JsonObject) o).getString("value"))
                 .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
                 .collect(Collectors.toList()));
           } else {
-            future.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
+            promise.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
           }
         })
       );
     } catch (UnsupportedEncodingException e) {
-      future.fail(e);
+      promise.fail(e);
     }
-    return future;
+    return promise.future();
   }
 
 
@@ -1102,8 +1103,8 @@ public class BLUsersAPI implements BlUsers {
    */
   private io.vertx.core.Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
                                                        java.util.Map<String, String> okapiHeaders, String errorKey) {
-    io.vertx.core.Future<User> asyncResult = io.vertx.core.Future.future();
-    getLocateUserFields(fieldAliasList, okapiHeaders).setHandler(locateUserFieldsAR -> {
+    Promise<User> asyncResult = Promise.promise();
+    getLocateUserFields(fieldAliasList, okapiHeaders).onComplete(locateUserFieldsAR -> {
       if (!locateUserFieldsAR.succeeded()) {
         asyncResult.fail(locateUserFieldsAR.cause());
         return;
@@ -1157,7 +1158,7 @@ public class BLUsersAPI implements BlUsers {
       }
     });
 
-    return asyncResult;
+    return asyncResult.future();
   }
 
   /*
@@ -1177,7 +1178,7 @@ public class BLUsersAPI implements BlUsers {
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
-      .setHandler(asyncResultHandler);
+      .onComplete(asyncResultHandler);
   }
 
   @Override
@@ -1198,7 +1199,7 @@ public class BLUsersAPI implements BlUsers {
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
-      .setHandler(asyncResultHandler);
+      .onComplete(asyncResultHandler);
   }
 
   @Override
@@ -1265,7 +1266,7 @@ public class BLUsersAPI implements BlUsers {
           new GenerateLinkResponse().withLink(link)))
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
-      .setHandler(asyncResultHandler);
+      .onComplete(asyncResultHandler);
   }
 
   @Override
@@ -1284,7 +1285,7 @@ public class BLUsersAPI implements BlUsers {
       .map(PostBlUsersPasswordResetResetResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
-      .setHandler(asyncResultHandler);
+      .onComplete(asyncResultHandler);
   }
 
   @Override
@@ -1299,6 +1300,6 @@ public class BLUsersAPI implements BlUsers {
       .map(PostBlUsersPasswordResetValidateResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
-      .setHandler(asyncResultHandler);
+      .onComplete(asyncResultHandler);
   }
 }

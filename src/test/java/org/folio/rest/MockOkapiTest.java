@@ -3,8 +3,9 @@ package org.folio.rest;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -27,6 +28,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 
+import static io.vertx.core.MultiMap.caseInsensitiveMultiMap;
+import static io.vertx.core.Promise.promise;
 import static io.vertx.core.http.HttpMethod.GET;
 import static io.vertx.core.http.HttpMethod.POST;
 import static org.folio.rest.MockOkapi.CONFIGURATIONS_ENTRIES_ENDPOINT;
@@ -161,7 +164,7 @@ public class MockOkapiTest {
             .put("permissionName", "gamma.b")
             .put("subPermissions", new JsonArray())
           );
-  
+
   JsonArray servicePointList = new JsonArray()
       .add(new JsonObject()
         .put("id", sp1Id)
@@ -181,7 +184,7 @@ public class MockOkapiTest {
         .put("name", "ServicePoint3")
         .put("discoveryDisplayName", "service point three")
       );
-  
+
   JsonArray servicePointsUserList = new JsonArray()
       .add(new JsonObject()
         .put("id", bfrederiSPId)
@@ -346,7 +349,7 @@ public class MockOkapiTest {
       return getConfigurationsEntires(context);
     });
 
-    startFuture.setHandler(res -> {
+    startFuture.onComplete(res -> {
       if(res.succeeded()) {
         async.complete();
       } else {
@@ -362,79 +365,79 @@ public class MockOkapiTest {
 
   private Future<WrappedResponse> getEmptyUsers(TestContext context) {
     System.out.println("Getting an empty user set\n");
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = "http://localhost:" + mockOkapiPort + "/users";
     Future<WrappedResponse> futureResponse = testUtil.doRequest(vertx, url,
             HttpMethod.GET, null, null);
-    futureResponse.setHandler(res -> {
+    futureResponse.onComplete(res -> {
       if(res.failed()) {
-        future.fail(res.cause());
+        promise.fail(res.cause());
       } else {
         context.assertEquals(res.result().getCode(), 200);
         context.assertNotNull(res.result().getJson());
         context.assertEquals(res.result().getJson().getJsonArray("users").size(), 0);
         context.assertEquals(res.result().getJson().getInteger("totalRecords"), 0);
-        future.complete(res.result());
+        promise.complete(res.result());
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> postNewUser(TestContext context) {
     System.out.println("Adding a new user\n");
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = "http://localhost:" + mockOkapiPort + "/users";
     JsonObject userPost = new JsonObject().put("username", "bongo")
             .put("id", "0bb4f26d-e073-4f93-afbc-dcc24fd88810")
             .put("active", true);
     Future<WrappedResponse> futureResponse = testUtil.doRequest(vertx, url,
             HttpMethod.POST, null, userPost.encode());
-    futureResponse.setHandler(res -> {
+    futureResponse.onComplete(res -> {
       if(res.failed()) {
-        future.fail(res.cause());
+        promise.fail(res.cause());
       } else {
         context.assertEquals(res.result().getCode(), 201);
-        future.complete(res.result());
+        promise.complete(res.result());
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> getNewUser(TestContext context, String id) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = "http://localhost:" + mockOkapiPort + "/users/" + id;
-    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
-      if(res.failed()) { future.fail(res.cause()); } else {
+    testUtil.doRequest(vertx, url, GET, null, null).onComplete(res -> {
+      if(res.failed()) { promise.fail(res.cause()); } else {
         context.assertEquals(res.result().getCode(), 200);
-        future.complete(res.result());
+        promise.complete(res.result());
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> getEmptyPermsUsers(TestContext context) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = "http://localhost:" + mockOkapiPort + "/perms/users";
     Future<WrappedResponse> futureResponse = testUtil.doRequest(vertx, url,
             HttpMethod.GET, null, null);
-    futureResponse.setHandler(res -> {
+    futureResponse.onComplete(res -> {
       if(res.failed()) {
-        future.fail(res.cause());
+        promise.fail(res.cause());
       } else {
         context.assertEquals(res.result().getCode(), 200);
         context.assertNotNull(res.result().getJson());
         context.assertEquals(res.result().getJson().getJsonArray("permissionUsers").size(), 0);
         context.assertEquals(res.result().getJson().getInteger("totalRecords"), 0);
-        future.complete(res.result());
+        promise.complete(res.result());
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> loadDataArray(TestContext context, String url,
           JsonArray dataList) {
     System.out.println("Adding data to endpoint " + url + "\n");
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     //String url = "http://localhost:" + mockOkapiPort + "/users";
     List<Future> futureList = new ArrayList<>();
     for(Object ob : dataList) {
@@ -443,39 +446,41 @@ public class MockOkapiTest {
       futureList.add(responseFuture);
     }
     CompositeFuture compositeFuture = CompositeFuture.all(futureList);
-    compositeFuture.setHandler(res -> {
-      if(res.failed()) { future.fail(res.cause()); } else {
+    compositeFuture.onComplete(res -> {
+      if (res.failed()) {
+        promise.fail(res.cause());
+      } else {
         boolean failed = false;
-        for(Future fut : futureList) {
-          if(fut.failed()) {
-            future.fail(fut.cause());
+        for (Future fut : futureList) {
+          if (fut.failed()) {
+            promise.fail(fut.cause());
             failed = true;
             break;
-          } else if( ((WrappedResponse)fut.result()).getCode() != 201 ) {
-            future.fail(String.format("Expected 201, got '%s': %s",
-                    ((WrappedResponse)fut.result()).getCode(),
-                    ((WrappedResponse)fut.result()).getBody()));
+          } else if (((WrappedResponse) fut.result()).getCode() != 201) {
+            promise.fail(String.format("Expected 201, got '%s': %s",
+              ((WrappedResponse) fut.result()).getCode(),
+              ((WrappedResponse) fut.result()).getBody()));
             failed = true;
             break;
           }
         }
-        if(!failed) {
-          future.complete();
+        if (!failed) {
+          promise.complete();
         }
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> getUserPerms(TestContext context,
           String permUserId, JsonArray expectedPerms) {
     System.out.println("Retrieving perms for perm user id " + permUserId + "\n");
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = String.format("http://localhost:%s/perms/users/%s/permissions?expanded=true",
             mockOkapiPort, permUserId);
-    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
+    testUtil.doRequest(vertx, url, GET, null, null).onComplete(res -> {
       if(res.failed()) {
-        future.fail(res.cause());
+        promise.fail(res.cause());
       } else {
         JsonArray permissions = null;
         boolean failed = false;
@@ -483,12 +488,12 @@ public class MockOkapiTest {
           permissions = res.result().getJson().getJsonArray("permissionNames");
         } catch(Exception e) {
           failed = true;
-          future.fail("No 'permissionNames' field in " + res.result().getBody());
+          promise.fail("No 'permissionNames' field in " + res.result().getBody());
         }
         if(permissions != null) {
           for(Object perm : expectedPerms) {
             if(!permissions.contains(perm)) {
-              future.fail(String.format("Expected perm '%s', but not present", perm));
+              promise.fail(String.format("Expected perm '%s', but not present", perm));
               failed = true;
               break;
             }
@@ -496,86 +501,86 @@ public class MockOkapiTest {
         } else {
           if(!failed) {
             failed = true;
-            future.fail("permissions array is null");
+            promise.fail("permissions array is null");
           }
         }
         if(!failed) {
-          future.complete(res.result());
+          promise.complete(res.result());
         }
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> getBLUserList(TestContext context) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = String.format("http://localhost:%s/bl-users", mockUsersBLPort);
-    CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+    MultiMap headers = caseInsensitiveMultiMap();
     headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
-    testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+    testUtil.doRequest(vertx, url, GET, headers, null).onComplete(res -> {
       if(res.failed()) {
-        future.fail(res.cause());
+        promise.fail(res.cause());
       } else if(res.result().getCode() != 200) {
-        future.fail("Expected 200, got code " + res.result().getCode());
+        promise.fail("Expected 200, got code " + res.result().getCode());
       } else {
-        future.complete(res.result());
+        promise.complete(res.result());
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> getConfigurationsEntires(TestContext context) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = String.format("http://localhost:%s/configurations/entries", mockOkapiPort);
-    CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+    MultiMap headers = caseInsensitiveMultiMap();
     headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
-    testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+    testUtil.doRequest(vertx, url, GET, headers, null).onComplete(res -> {
       if(res.failed()) {
-        future.fail(res.cause());
+        promise.fail(res.cause());
       } else if(res.result().getCode() != 200) {
-        future.fail("Expected 200, got code " + res.result().getCode());
+        promise.fail("Expected 200, got code " + res.result().getCode());
       } else {
-        future.complete(res.result());
+        promise.complete(res.result());
       }
     });
-    return future;
+    return promise.future();
   }
 
   private Future<WrappedResponse> getSingleBLUser(TestContext context,
           String userId) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
      String url = String.format("http://localhost:%s/bl-users/by-id/%s",
              mockUsersBLPort, userId);
-     CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+     MultiMap headers = caseInsensitiveMultiMap();
      headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
-     testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+     testUtil.doRequest(vertx, url, GET, headers, null).onComplete(res -> {
        if(res.failed()) {
-         future.fail(res.cause());
+         promise.fail(res.cause());
        } else {
          if(res.result().getCode() != 200) {
-           future.fail("Expected 200, got code " + res.result().getCode());
+           promise.fail("Expected 200, got code " + res.result().getCode());
          } else {
-           future.complete(res.result());
+           promise.complete(res.result());
          }
        }
      });
-     return future;
+     return promise.future();
   }
 
   private Future<WrappedResponse> getSingleBLUserExpandedPerms(TestContext context,
           String userId, List<String> expectedPerms) {
-    Future<WrappedResponse> future = Future.future();
+     Promise<WrappedResponse> promise = promise();
      String url = String.format(
              "http://localhost:%s/bl-users/by-id/%s?include=perms&expandPermissions=true",
              mockUsersBLPort, userId);
-     CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+     MultiMap headers = caseInsensitiveMultiMap();
      headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
-     testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+     testUtil.doRequest(vertx, url, GET, headers, null).onComplete(res -> {
        if(res.failed()) {
-         future.fail(res.cause());
+         promise.fail(res.cause());
        } else {
          if(res.result().getCode() != 200) {
-           future.fail("Expected 200, got code " + res.result().getCode());
+           promise.fail("Expected 200, got code " + res.result().getCode());
          } else {
            String missingPerm = null;
            for(String perm : expectedPerms) {
@@ -594,41 +599,41 @@ public class MockOkapiTest {
              }
            }
            if(missingPerm != null) {
-             future.fail(String.format("Could not find expected permission '%s'",
+             promise.fail(String.format("Could not find expected permission '%s'",
                      missingPerm));
            } else {
-            future.complete(res.result());
+            promise.complete(res.result());
            }
          }
        }
      });
-     return future;
+     return promise.future();
   }
-  
+
   private Future<WrappedResponse> getSingleBLUserWithServicePoints(TestContext context,
           String userId, List<String> expectedServicePointIds) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
      String url = String.format(
              "http://localhost:%s/bl-users/by-id/%s?include=servicepoints",
              mockUsersBLPort, userId);
-     CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+     MultiMap headers = caseInsensitiveMultiMap();
      headers.add("X-Okapi-URL", "http://localhost:" + mockOkapiPort);
-     testUtil.doRequest(vertx, url, GET, headers, null).setHandler(res -> {
+     testUtil.doRequest(vertx, url, GET, headers, null).onComplete(res -> {
        if(res.failed()) {
-         future.fail(res.cause());
+         promise.fail(res.cause());
        } else {
          if(res.result().getCode() != 200) {
-           future.fail("Expected 200, got code " + res.result().getCode());
+           promise.fail("Expected 200, got code " + res.result().getCode());
          } else {
            JsonObject cuJson = res.result().getJson();
            JsonObject spUserJson = cuJson.getJsonObject("servicePointsUser");
            if(spUserJson == null) {
-             future.fail("No service points user info found");
+             promise.fail("No service points user info found");
              return;
            }
            JsonArray spArray = spUserJson.getJsonArray("servicePoints");
            if(spArray == null) {
-             future.fail("No service points array found");
+             promise.fail("No service points array found");
              return;
            }
            boolean foundAll = true;
@@ -649,58 +654,58 @@ public class MockOkapiTest {
              }
            }
            if(!foundAll) {
-             future.fail(error);
+             promise.fail(error);
            } else {
-             future.complete(res.result());
+             promise.complete(res.result());
            }
          }
        }
      });
-     return future;
+     return promise.future();
   }
 
   private Future<WrappedResponse> getUserByQuery(TestContext context, String username) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = String.format("http://localhost:%s/users?query=username==%s",
             mockOkapiPort, username);
-    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
+    testUtil.doRequest(vertx, url, GET, null, null).onComplete(res -> {
       if(res.failed()) {
-        future.fail(res.cause());
+        promise.fail(res.cause());
       } else {
         if(res.result().getCode() != 200) {
-          future.fail(String.format("Expected code 200, got %s: %s",
+          promise.fail(String.format("Expected code 200, got %s: %s",
                   res.result().getCode(), res.result().getBody()));
         } else {
           if(res.result().getJson() == null) {
-            future.fail(String.format("%s returned null json", res.result().getBody()));
+            promise.fail(String.format("%s returned null json", res.result().getBody()));
           } else if(res.result().getJson().getInteger("totalRecords") != 1) {
-            future.fail(String.format("Expected 1 result, got %s",
+            promise.fail(String.format("Expected 1 result, got %s",
                     res.result().getJson().getInteger("totalRecords")));
           } else if(!res.result().getJson().getJsonArray("users")
                   .getJsonObject(0).getString("username").equals(username)) {
-            future.fail(String.format("Username does not equal %s", username));
+            promise.fail(String.format("Username does not equal %s", username));
           } else {
-            future.complete(res.result());
+            promise.complete(res.result());
           }
         }
       }
     });
-    return future;
+    return promise.future();
   }
-  
+
   private Future<WrappedResponse> getServicePointUser(TestContext context,
       String userId, String expectedDefaultSP, JsonArray expectedSPIds) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     String url = String.format("http://localhost:%s/service-points-users?query=userId==%s",
         mockOkapiPort, userId);
-    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
+    testUtil.doRequest(vertx, url, GET, null, null).onComplete(res -> {
       if(res.result().getCode() != 200) {
-        future.fail(String.format("Expected code 200, got %s: %s",
+        promise.fail(String.format("Expected code 200, got %s: %s",
             res.result().getCode(), res.result().getBody()));
       } else if(res.result().getJson() == null) {
-          future.fail(String.format("%s returned null json", res.result().getBody()));
+          promise.fail(String.format("%s returned null json", res.result().getBody()));
       } else if(res.result().getJson().getInteger("totalRecords") != 1) {
-        future.fail(String.format("Expected 1 result, got %s",
+        promise.fail(String.format("Expected 1 result, got %s",
            res.result().getJson().getInteger("totalRecords")));
       } else {
         JsonObject spuJson = res.result().getJson().getJsonArray("servicePointsUsers")
@@ -711,18 +716,18 @@ public class MockOkapiTest {
           for(Object ob : expectedSPIds) {
             assertTrue(servicePointIds.contains(ob));
           }
-          future.complete(res.result());
+          promise.complete(res.result());
         } catch(Exception e) {
-          future.fail("Unable to find expected results: " + e.getLocalizedMessage());
+          promise.fail("Unable to find expected results: " + e.getLocalizedMessage());
         }
       }
     });
-    return future;
+    return promise.future();
   }
-  
+
   private Future<WrappedResponse> getServicePointsByQuery(TestContext context,
       List<String> idList) {
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = promise();
     List<String> queryList = new ArrayList<>();
     for(String id: idList) {
       queryList.add(String.format("id==\"%s\"", id));
@@ -735,10 +740,10 @@ public class MockOkapiTest {
     } catch(Exception e) {
       return Future.failedFuture(e);
     }
-    testUtil.doRequest(vertx, url, GET, null, null).setHandler(res -> {
-      if(res.failed()) { future.fail(res.cause()); }
+    testUtil.doRequest(vertx, url, GET, null, null).onComplete(res -> {
+      if(res.failed()) { promise.fail(res.cause()); }
       else if(res.result().getCode() != 200) {
-        future.fail(String.format("Expected code 200, got %s: %s",
+        promise.fail(String.format("Expected code 200, got %s: %s",
             res.result().getCode(), res.result().getBody()));
       } else {
         try {
@@ -751,7 +756,7 @@ public class MockOkapiTest {
               if(((JsonObject)ob).getString("id").equals(id)) {
                 found = true;
                 break;
-              }              
+              }
             }
             if(!found) {
                 foundAll = false;
@@ -760,16 +765,16 @@ public class MockOkapiTest {
             }
           }
           if(!foundAll) {
-            future.fail(error);
+            promise.fail(error);
           } else {
-            future.complete(res.result());
+            promise.complete(res.result());
           }
         } catch(Exception e) {
-          future.fail("Unable to find expected results: " + e.getLocalizedMessage());
+          promise.fail("Unable to find expected results: " + e.getLocalizedMessage());
         }
       }
     });
-    return future;
+    return promise.future();
   }
 }
 
