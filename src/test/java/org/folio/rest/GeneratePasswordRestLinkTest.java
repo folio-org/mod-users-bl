@@ -1,4 +1,6 @@
 package org.folio.rest;
+
+import static org.folio.rest.MockOkapi.getToken;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -92,12 +94,12 @@ public class GeneratePasswordRestLinkTest {
       .setContentType(ContentType.JSON)
       .setBaseUri("http://localhost:" + port)
       .addHeader(RestVerticle.OKAPI_HEADER_TENANT, TENANT)
-      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, "test_token")
+      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, getToken())
       .build();
   }
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     mockUrlHeader = new Header(BLUsersAPI.OKAPI_URL_HEADER, "http://localhost:" + mockServer.port());
   }
 

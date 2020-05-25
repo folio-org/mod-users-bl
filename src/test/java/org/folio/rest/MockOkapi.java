@@ -14,7 +14,9 @@ import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.z3950.zing.cql.CQLParseException;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,7 +54,7 @@ public class MockOkapi extends AbstractVerticle {
   private static final String SIGN_TOKEN_ENDPOINT = "/token";
   private static final String RESET_PASSWORD_ENDPOINT = "/authn/reset-password";
   private static final String NOTIFY_ENDPOINT = "/notify";
-
+  private static final String ADMIN_USER_ID = UUID.randomUUID().toString();
 
   @Override
   public void start(Promise<Void> future) {
@@ -634,6 +636,14 @@ public class MockOkapi extends AbstractVerticle {
     }
     return newList;
   }
+
+  public static String getToken() {
+    final String payload = new JsonObject()
+      .put("user_id", ADMIN_USER_ID)
+      .put("sub", "admin")
+      .put("tenant", "diku")
+      .toString();
+
+    return "header." + Base64.getEncoder().encodeToString(payload.getBytes()) + ".verify";
+  }
 }
-
-
