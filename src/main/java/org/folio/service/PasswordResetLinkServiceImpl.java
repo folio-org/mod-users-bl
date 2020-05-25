@@ -1,6 +1,7 @@
 package org.folio.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -314,7 +315,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   private Future<Void> validatePassword(String userId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
-    Future<Void> future = Future.future();
+    Promise<Void> promise = Promise.promise();
     userPasswordService
       .validateNewPassword(userId, newPassword, JsonObject.mapFrom(okapiConnectionParams),
         res -> {
@@ -322,17 +323,17 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
             JsonObject pwdValidationResult = res.result();
             Errors errors = pwdValidationResult.mapTo(Errors.class);
             if (errors.getTotalRecords() == 0) {
-              future.complete();
+              promise.complete();
             } else {
               Exception exception = new UnprocessableEntityException(errors.getErrors().stream()
                 .map(error -> new UnprocessableEntityMessage(error.getCode(), error.getMessage()))
                 .collect(Collectors.toList()));
-              future.fail(exception);
+              promise.fail(exception);
             }
           } else {
-            future.fail(res.cause());
+            promise.fail(res.cause());
           }
         });
-    return future;
+    return promise.future();
   }
 }

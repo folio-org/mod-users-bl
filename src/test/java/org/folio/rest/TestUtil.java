@@ -2,6 +2,7 @@ package org.folio.rest;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
@@ -55,7 +56,7 @@ public class TestUtil {
           HttpMethod method, MultiMap headers, String payload) {
     System.out.println(String.format("Sending %s request to endpoint %s with payload %s\n",
             method.toString(), url, payload));
-    Future<WrappedResponse> future = Future.future();
+    Promise<WrappedResponse> promise = Promise.promise();
     boolean addPayLoad = false;
     HttpClient client = vertx.createHttpClient();
     HttpClientRequest request = client.requestAbs(method, url);
@@ -72,7 +73,7 @@ public class TestUtil {
     request.exceptionHandler(e -> {
       System.out.println(String.format("Request for url %s failed: %s", url,
               e.getLocalizedMessage()));
-      future.fail(e);
+      promise.fail(e);
     });
     request.handler( req -> {
       //System.out.println("Entering doRequest request handler");
@@ -86,9 +87,9 @@ public class TestUtil {
           System.out.println(String.format(
                   "Got new WrappedResponse object with values code %s, body %s",
                   wr.getCode(), wr.getBody()));
-          if(!future.isComplete() && !future.failed()) {
+          if(!promise.future().isComplete() && !promise.future().failed()) {
             //System.out.println("Future is not yet completed");
-            if(!future.tryComplete(wr)) {
+            if(!promise.tryComplete(wr)) {
               System.out.println("Failed to complete future");
             };
           } else {
@@ -97,7 +98,7 @@ public class TestUtil {
           //System.out.println(String.format(
           //        "WrappedResponse Future for request at url %s is completed", url));
         } catch(Exception e) {
-          if(!future.tryFail(e)) {
+          if(!promise.tryFail(e)) {
             System.out.println(String.format(
                     "Got exception %s, but future already complete: %s",
                     e, e.getLocalizedMessage()));
@@ -111,7 +112,7 @@ public class TestUtil {
     } else {
       request.end();
     }
-    return future;
+    return promise.future();
   }
 }
 

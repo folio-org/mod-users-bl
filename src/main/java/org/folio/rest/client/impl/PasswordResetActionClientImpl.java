@@ -1,7 +1,7 @@
 package org.folio.rest.client.impl;
 
 import io.vertx.core.Future;
-import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -68,7 +68,7 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
       .put("passwordResetActionId", passwordResetActionId)
       .put("newPassword", newPassword);
 
-    CaseInsensitiveHeaders headers = new CaseInsensitiveHeaders();
+    MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.addAll(requestHeaders
       .entrySet()
       .stream()

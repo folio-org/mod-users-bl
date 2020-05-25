@@ -1,7 +1,7 @@
 package org.folio.rest;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
@@ -55,7 +55,7 @@ public class MockOkapi extends AbstractVerticle {
 
 
   @Override
-  public void start(Future<Void> future) {
+  public void start(Promise<Void> future) {
     final int port = context.config().getInteger("http.port");
     Router router = Router.router(vertx);
     HttpServer server = vertx.createHttpServer();
@@ -63,7 +63,7 @@ public class MockOkapi extends AbstractVerticle {
     router.route("/*").handler(BodyHandler.create());
     router.route("/*").handler(this::handleRequest);
     System.out.println("Running MockOkapi on port " + port);
-    server.requestHandler(router::accept).listen(port, result -> {
+    server.requestHandler(router).listen(port, result -> {
       if(result.failed()) {
         future.fail(result.cause());
       }

@@ -1,7 +1,8 @@
 package org.folio.rest.util;
 
 import io.vertx.core.Future;
-import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
@@ -63,8 +64,8 @@ public class RestUtil {
    * @return - async http response
    */
   public static Future<WrappedResponse> doRequest(HttpClient client, String url, HttpMethod method,
-                                                  CaseInsensitiveHeaders headers, String payload) {
-    Future<WrappedResponse> future = Future.future();
+                                                  MultiMap headers, String payload) {
+    Promise<WrappedResponse> promise = Promise.promise();
     try {
       HttpClientRequest request = client.requestAbs(method, url);
       if (headers != null) {
@@ -76,20 +77,20 @@ public class RestUtil {
           }
         }
       }
-      request.exceptionHandler(future::fail);
+      request.exceptionHandler(promise::fail);
       request.handler(req -> req.bodyHandler(buf -> {
         WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
-        future.complete(wr);
+        promise.complete(wr);
       }));
       if (method == HttpMethod.PUT || method == HttpMethod.POST) {
         request.end(payload);
       } else {
         request.end();
       }
-      return future;
+      return promise.future();
     } catch (Exception e) {
-      future.fail(e);
-      return future;
+      promise.fail(e);
+      return promise.future();
     }
   }
 }
