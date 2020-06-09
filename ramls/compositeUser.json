@@ -18,11 +18,6 @@
       "description": "Permissions object",
       "$ref": "permissionUser.json"
     },
-    "credentials": {
-      "type": "object",
-      "description": "Credentials object",
-      "$ref": "credentials.json"
-    },
     "proxiesFor": {
       "type": "array",
       "description": "Proxies for, array",

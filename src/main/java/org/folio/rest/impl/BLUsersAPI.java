@@ -29,7 +29,6 @@ import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.CompositeUser;
 import org.folio.rest.jaxrs.model.CompositeUserListObject;
-import org.folio.rest.jaxrs.model.Credentials;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.jaxrs.model.GenerateLinkRequest;
 import org.folio.rest.jaxrs.model.GenerateLinkResponse;
@@ -84,7 +83,6 @@ import java.util.stream.Stream;
  */
 public class BLUsersAPI implements BlUsers {
 
-  private static final String CREDENTIALS_INCLUDE = "credentials";
   private static final String GROUPS_INCLUDE = "groups";
   private static final String PERMISSIONS_INCLUDE = "perms";
   private static final String PROXIESFOR_INCLUDE = "proxiesfor";
@@ -323,16 +321,7 @@ public class BLUsersAPI implements BlUsers {
 
     for (int i = 0; i < includeCount; i++) {
 
-      if(include.get(i).equals(CREDENTIALS_INCLUDE)){
-        //call credentials once the /users?query=username={username} completes
-        CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-            client.chainedRequest("/authn/credentials?query=userId=="+userTemplate,
-            okapiHeaders, null, handlePreviousResponse(true, false, true,
-            aRequestHasFailed, asyncResultHandler)));
-        requestedIncludes.add(credResponse);
-        completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
-      }
-      else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
+      if (include.get(i).equals(PERMISSIONS_INCLUDE)){
         //call perms once the /users?query=username={username} (same as creds) completes
         CompletableFuture<Response> permResponse = userIdResponse[0].thenCompose(
               client.chainedRequest("/perms/users?query=userId=="+userTemplate,
@@ -424,11 +413,7 @@ public class BLUsersAPI implements BlUsers {
             cu.setUser((User)Response.convertToPojo(userResponse.getBody().getJsonArray("users").getJsonObject(0), User.class));
           }
         }
-        CompletableFuture<Response> cf = completedLookup.get(CREDENTIALS_INCLUDE);
-        if(cf != null && cf.get().getBody() != null){
-          cu.setCredentials((Credentials)Response.convertToPojo(cf.get().getBody(), Credentials.class));
-        }
-        cf = completedLookup.get(GROUPS_INCLUDE);
+        CompletableFuture<Response> cf = completedLookup.get(GROUPS_INCLUDE);
         if(cf != null && cf.get().getBody() != null){
           cu.setPatronGroup((PatronGroup)cf.get().convertToPojo(PatronGroup.class) );
         }
@@ -571,17 +556,7 @@ public class BLUsersAPI implements BlUsers {
 
     for (int i = 0; i < includeCount; i++) {
 
-      if(include.get(i).equals(CREDENTIALS_INCLUDE)){
-        //call credentials once the /users?query=username={username} completes
-        CompletableFuture<Response> credResponse = userIdResponse[0].thenCompose(
-            client.chainedRequest("/authn/credentials", okapiHeaders,
-            new BuildCQL(null, "users[*].id", "userId"),
-            handlePreviousResponse(false, true, true, aRequestHasFailed,
-            asyncResultHandler)));
-        requestedIncludes.add(credResponse);
-        completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
-      }
-      else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
+      if (include.get(i).equals(PERMISSIONS_INCLUDE)){
         //call perms once the /users?query=username={username} (same as creds) completes
         CompletableFuture<Response> permResponse = userIdResponse[0].thenCompose(
               client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
@@ -643,15 +618,6 @@ public class BLUsersAPI implements BlUsers {
             //join into the compositeUser array groups joining on id and patronGroup field values. assume only one group per user
             //hence the usergroup[0] field to push into ../../groups otherwise (if many) leave out the [0] and pass in "usergroups"
             composite.joinOn("compositeUser[*].users.patronGroup", groupResponse, "usergroups[*].id", "../", "../../groups", false);
-          }
-        }
-        cf = completedLookup.get(CREDENTIALS_INCLUDE);
-        if(cf != null){
-          credsResponse = cf.get();
-          //check for errors
-          handleResponse(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
-          if(!aRequestHasFailed[0]){
-            composite.joinOn("compositeUser[*].users.id", credsResponse, "credentials[*].userId", "../", "../../credentials", false);
           }
         }
         cf = completedLookup.get(PERMISSIONS_INCLUDE);
@@ -795,17 +761,7 @@ public class BLUsersAPI implements BlUsers {
 
       for (int i = 0; i < includeCount; i++) {
 
-        if(include.get(i).equals(CREDENTIALS_INCLUDE)){
-          //call credentials once the /users?query=username={username} completes
-          CompletableFuture<Response> credResponse = userResponse[0]
-              .thenCompose(client.chainedRequest("/authn/credentials",
-              okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
-              handlePreviousResponse(false, true, true, aRequestHasFailed,
-              asyncResultHandler)));
-          requestedIncludes.add(credResponse);
-          completedLookup.put(CREDENTIALS_INCLUDE, credResponse);
-        }
-        else if(include.get(i).equals(PERMISSIONS_INCLUDE)){
+        if (include.get(i).equals(PERMISSIONS_INCLUDE)){
           //call perms once the /users?query=username={username} (same as creds) completes
           CompletableFuture<Response> permResponse = userResponse[0].thenCompose(
                 client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
@@ -880,15 +836,6 @@ public class BLUsersAPI implements BlUsers {
             handleResponse(groupResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0] && groupResponse.getBody() != null){
               cu.setPatronGroup((PatronGroup)Response.convertToPojo(groupResponse.getBody(), PatronGroup.class));
-            }
-          }
-          cf = completedLookup.get(CREDENTIALS_INCLUDE);
-          if(cf != null){
-            Response credsResponse = cf.get();
-            handleResponse(credsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
-            if(!aRequestHasFailed[0] && credsResponse.getBody() != null){
-              cu.setCredentials((Credentials)Response.convertToPojo(
-                credsResponse.getBody().getJsonArray("credentials").getJsonObject(0), Credentials.class));
             }
           }
           cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
