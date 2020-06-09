@@ -81,6 +81,8 @@ import java.util.stream.Stream;
  * @author shale
  *
  */
+@SuppressWarnings("java:S1192")
+// String literals should not be duplicated ("/perms/users", and "userId")
 public class BLUsersAPI implements BlUsers {
 
   private static final String GROUPS_INCLUDE = "groups";
@@ -605,10 +607,8 @@ public class BLUsersAPI implements BlUsers {
           return;
         }
         Response groupResponse = null;
-        Response credsResponse = null;
         Response permsResponse = null;
         Response proxiesforResponse = null;
-        Response servicePointsUserResponse = null;
         CompletableFuture<Response> cf = completedLookup.get(GROUPS_INCLUDE);
         if(cf != null){
           groupResponse = cf.get();
