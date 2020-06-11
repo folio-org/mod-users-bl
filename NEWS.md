@@ -1,3 +1,12 @@
+## 6.0.0 2020-06-11
+
+* Includes link expiration in password reset e-mail (MODUSERBL-78)
+* Removes the ability to retrieve user credentials (MODUSERBL-97)
+* Allows additional properties in users JSON representation (MODUSERBL-89)
+* Upgrades to RAML Module Builder 30.0.0 (MODUSERBL-90)
+* Provides `users-bl 6.0`
+* Requires `login 6.0 or 7.0`
+
 ## 5.3.0 2020-03-11
 
 * Upgrades to RAML Module Builder 29.3.0 (MODUSERBL-83, MODUSERBL-84)
