@@ -58,6 +58,7 @@ public class HeadersForwardingTest {
   private static final String URL_AUT_RESET_PASSWORD = "/authn/reset-password";
   private static final String URL_AUTH_UPDATE = "/authn/update";
   private static final String URL_AUTH_LOGIN = "/authn/login";
+  private static final String QUERY_LIMIT = "&limit=1000";
 
   private RequestSpecification spec;
 
@@ -122,7 +123,7 @@ public class HeadersForwardingTest {
       .put("servicePointsUsers", new JsonArray());
 
     WireMock.stubFor(
-      WireMock.get("/service-points-users?query=userId==" + USER_ID)
+      WireMock.get("/service-points-users?query=userId==" + USER_ID + QUERY_LIMIT)
         .willReturn(WireMock.okJson(jsonObject.encode()).withStatus(201))
     );
 
@@ -182,7 +183,7 @@ public class HeadersForwardingTest {
       .put("servicePointsUsers", new JsonArray());
 
     WireMock.stubFor(
-      WireMock.get("/service-points-users?query=userId==" + USER_ID)
+      WireMock.get("/service-points-users?query=userId==" + USER_ID + QUERY_LIMIT)
         .willReturn(WireMock.okJson(jsonObject.encode()).withStatus(201))
     );
 
