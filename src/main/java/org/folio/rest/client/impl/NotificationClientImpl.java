@@ -1,18 +1,21 @@
 package org.folio.rest.client.impl;
 
-import io.vertx.core.Future;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.json.JsonObject;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.NotificationClient;
-import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.jaxrs.model.Notification;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 
+import io.vertx.core.Future;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+
 public class NotificationClientImpl implements NotificationClient {
 
+  private static final Logger LOG = LoggerFactory.getLogger("mod-users-bl");
   private HttpClient httpClient;
 
   public NotificationClientImpl(HttpClient httpClient) {
@@ -26,9 +29,8 @@ public class NotificationClientImpl implements NotificationClient {
       okapiConnectionParams.buildHeaders(), JsonObject.mapFrom(notification).encode())
       .map(response -> {
         if (response.getCode() != HttpStatus.SC_CREATED) {
-          String logMessage =
-            String.format("Error sending notification. Status: %d, body: %s", response.getCode(), response.getBody());
-          throw new OkapiModuleClientException(logMessage);
+          LOG.error(String.format("Error sending notification. Status: %d, body: %s",
+            response.getCode(), response.getBody()));
         }
         return null;
       });

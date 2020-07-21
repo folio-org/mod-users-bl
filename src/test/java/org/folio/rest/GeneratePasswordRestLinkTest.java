@@ -359,6 +359,34 @@ public class GeneratePasswordRestLinkTest {
       .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
   }
 
+  @Test
+  public void shouldGenerateLinkWhenSendNotificationFailed() {
+    Map<String, String> configToMock = new HashMap<>();
+    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
+    User mockUser = new User()
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
+
+    mockUserFound(mockUser.getId(), mockUser);
+    mockConfigModule(MODULE_NAME, configToMock);
+    mockSignAuthToken(MOCK_TOKEN);
+    mockPostPasswordResetAction(true);
+    mockNotificationModuleWithServerError();
+
+    JsonObject requestBody = new JsonObject()
+      .put("userId", mockUser.getId());
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
+    RestAssured.given()
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_OK)
+      .body("link", is(expectedLink));
+  }
+
   private String toJson(Object object) {
     return JsonObject.mapFrom(object).toString();
   }
@@ -397,8 +425,13 @@ public class GeneratePasswordRestLinkTest {
   }
 
   private void mockNotificationModule() {
-    WireMock.stubFor(WireMock.post("/notify")
+    WireMock.stubFor(WireMock.post(NOTIFY_PATH)
       .willReturn(WireMock.created()));
+  }
+
+  private void mockNotificationModuleWithServerError() {
+    WireMock.stubFor(WireMock.post(NOTIFY_PATH)
+      .willReturn(WireMock.serverError()));
   }
 
   private <T> List<T> getRequestBodyByUrl(String url, Class<T> clazz) {
