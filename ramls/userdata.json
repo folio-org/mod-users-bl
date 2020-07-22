@@ -120,7 +120,7 @@
                 "description": "Is primary address"
               }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "preferredContactTypeId": {
@@ -128,7 +128,7 @@
           "description": "Preferred contact type Id"
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": [
         "lastName"
       ]
