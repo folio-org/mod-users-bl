@@ -128,7 +128,7 @@
           "description": "Preferred contact type Id"
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": [
         "lastName"
       ]
