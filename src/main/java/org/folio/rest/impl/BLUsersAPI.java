@@ -112,6 +112,8 @@ public class BLUsersAPI implements BlUsers {
   private static final String FORGOTTEN_PASSWORD_ERROR_KEY = "forgotten.password.found.multiple.users";//NOSONAR
   private static final String FORGOTTEN_PASSWORD_FOUND_INACTIVE = "forgotten.password.found.inactive";//NOSONAR
 
+  private static final String QUERY_LIMIT = "&limit=1000";
+
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
 
   private static final int DEFAULT_PORT = 9030;
@@ -349,7 +351,7 @@ public class BLUsersAPI implements BlUsers {
       }
       else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
         CompletableFuture<Response> servicePointsResponse = userIdResponse[0].thenCompose(
-          client.chainedRequest("/service-points-users?query=userId==" + userTemplate,
+          client.chainedRequest("/service-points-users?query=userId==" + userTemplate + QUERY_LIMIT,
               okapiHeaders, null, handlePreviousResponse(false, false, false,
               aRequestHasFailed, asyncResultHandler))
         );
@@ -778,7 +780,7 @@ public class BLUsersAPI implements BlUsers {
         }
         else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
           CompletableFuture<Response> servicePointsResponse = userResponse[0].thenCompose(
-            client.chainedRequest("/service-points-users?query=userId=={users[0].id}",
+            client.chainedRequest("/service-points-users?query=userId=={users[0].id}" + QUERY_LIMIT,
                 okapiHeaders, null, handlePreviousResponse(false, false, false,
                 aRequestHasFailed, asyncResultHandler))
           );
@@ -965,7 +967,7 @@ public class BLUsersAPI implements BlUsers {
         java.util.logging.Logger.getLogger(BLUsersAPI.class.getName()).log(Level.SEVERE, null, ex);
       }
       CompletableFuture<Response> expandSPUResponse = spuResponseFuture
-          .thenCompose(client.chainedRequest("/service-points?query="+ idQuery,
+          .thenCompose(client.chainedRequest("/service-points?query="+ idQuery + QUERY_LIMIT,
           okapiHeaders, true, null, handlePreviousResponse(false, false, false,
           aRequestHasFailed, asyncResultHandler)));
 
