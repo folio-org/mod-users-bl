@@ -58,6 +58,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String LINK_EXPIRED_STATUS_CODE = "link.expired";
   private static final String LINK_USED_STATUS_CODE = "link.used";
 
+  private static final int MAXIMUM_EXPIRATION_TIME_IN_WEEKS = 4;
+  private static final long MAXIMUM_EXPIRATION_TIME = TimeUnit.DAYS.toMillis(7) * MAXIMUM_EXPIRATION_TIME_IN_WEEKS;
+
   private ConfigurationClient configurationClient;
   private AuthTokenClient authTokenClient;
   private NotificationClient notificationClient;
@@ -109,8 +112,12 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
           LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
 
-        long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig,
-          expirationUnitOfTimeFromConfig.toUpperCase());
+        long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig, expirationUnitOfTimeFromConfig);
+        if (expirationTime > MAXIMUM_EXPIRATION_TIME) {
+          expirationTime = MAXIMUM_EXPIRATION_TIME;
+          configMapHolder.value.put(LINK_EXPIRATION_TIME_CONFIG_KEY, String.valueOf(MAXIMUM_EXPIRATION_TIME_IN_WEEKS));
+          configMapHolder.value.put(LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, ExpirationTimeUnit.WEEKS.name().toLowerCase());
+        }
 
         passwordResetActionIdHolder.value = UUID.randomUUID().toString();
         PasswordResetAction actionToCreate = new PasswordResetAction()
@@ -161,29 +168,28 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .map(v -> linkHolder.value);
   }
 
-  private long convertDateToMilliseconds(String expirationTimeDefault, String expirationUnitOfTime) {
+  private long convertDateToMilliseconds(String expirationTimeString, String expirationUnitOfTime) {
     long expirationTime;
     try {
-      expirationTime = Long.parseLong(expirationTimeDefault);
+      expirationTime = Long.parseLong(expirationTimeString);
     } catch (NumberFormatException e) {
       String message = "Can't convert time period to milliseconds";
       UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
       throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
     }
-    switch (expirationUnitOfTime) {
-      case "MINUTES":
-        return TimeUnit.MINUTES.toMillis(expirationTime);
-      case "HOURS":
-        return TimeUnit.HOURS.toMillis(expirationTime);
-      case "DAYS":
-        return TimeUnit.DAYS.toMillis(expirationTime);
-      case "WEEKS":
-        return TimeUnit.DAYS.toMillis(expirationTime) * 7;
-      default:
-        String message = "Can't convert time period to milliseconds";
-        UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
-        throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+    ExpirationTimeUnit timeUnit = ExpirationTimeUnit.of(expirationUnitOfTime);
+    if (timeUnit == ExpirationTimeUnit.MINUTES) {
+      return TimeUnit.MINUTES.toMillis(expirationTime);
+    } else if (timeUnit == ExpirationTimeUnit.HOURS) {
+      return TimeUnit.HOURS.toMillis(expirationTime);
+    } else if (timeUnit == ExpirationTimeUnit.DAYS) {
+      return TimeUnit.DAYS.toMillis(expirationTime);
+    } else if (timeUnit == ExpirationTimeUnit.WEEKS) {
+      return TimeUnit.DAYS.toMillis(7) * expirationTime;
     }
+    String message = "Can't convert time period to milliseconds";
+    UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(LINK_INVALID_STATUS_CODE, message);
+    throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
   }
 
   @Override
@@ -335,5 +341,17 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           }
         });
     return promise.future();
+  }
+
+  private enum ExpirationTimeUnit {
+    MINUTES, HOURS, DAYS, WEEKS;
+
+    static ExpirationTimeUnit of(String timeUnit) {
+      try {
+        return valueOf(timeUnit.toUpperCase());
+      } catch (IllegalArgumentException e) {
+        return null;
+      }
+    }
   }
 }

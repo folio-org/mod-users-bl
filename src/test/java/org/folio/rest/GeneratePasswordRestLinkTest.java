@@ -69,6 +69,7 @@ public class GeneratePasswordRestLinkTest {
   private static final String MOCK_TOKEN = "mockToken";
   private static final String MOCK_USERNAME = "username";
   private static final String PASSWORD_RESET_ACTION_PATH = "/authn/password-reset-action";
+  private static final String EXPIRATION_TIME_WEEKS_MAX = "4";
 
   private static Vertx vertx;
   private static int port;
@@ -157,19 +158,25 @@ public class GeneratePasswordRestLinkTest {
   @Test
   public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTime() {
     generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_MINUTES,
-      EXPIRATION_UNIT_OF_TIME_MINUTES);
+      EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
 
   @Test
   public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithDaysOfExpirationTime() {
     generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_DAYS,
-      EXPIRATION_UNIT_OF_TIME_DAYS);
+      EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
   }
 
   @Test
   public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithWeeksOfExpirationTime() {
     generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_WEEKS,
-      EXPIRATION_UNIT_OF_TIME_WEEKS);
+      EXPIRATION_UNIT_OF_TIME_WEEKS, EXPIRATION_TIME_WEEKS, EXPIRATION_UNIT_OF_TIME_WEEKS);
+  }
+
+  @Test
+  public void shouldGenerateAndSendPasswordNotificationWhenExpirationTimeIsBiggerThanMax() {
+    generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_WEEKS,
+      EXPIRATION_TIME_WEEKS_MAX, EXPIRATION_UNIT_OF_TIME_WEEKS);
   }
 
   @Test
@@ -217,7 +224,8 @@ public class GeneratePasswordRestLinkTest {
   }
 
   public void generateAndSendResetPasswordNotificationWhenPasswordExistsWith(
-    String expirationTime, String expirationTimeOfUnit) {
+    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+    String expectedExpirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
@@ -257,8 +265,8 @@ public class GeneratePasswordRestLinkTest {
         new Context()
           .withAdditionalProperty("user", mockUser)
           .withAdditionalProperty("link", expectedLink)
-          .withAdditionalProperty("expirationTime", expirationTime)
-          .withAdditionalProperty("expirationUnitOfTime", expirationTimeOfUnit))
+          .withAdditionalProperty("expirationTime", expectedExpirationTime)
+          .withAdditionalProperty("expirationUnitOfTime", expectedExpirationTimeOfUnit))
       .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
