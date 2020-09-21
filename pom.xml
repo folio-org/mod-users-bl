@@ -396,7 +396,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <raml-module-builder.version>31.0.0</raml-module-builder.version>
+    <raml-module-builder.version>31.1.0</raml-module-builder.version>
     <mod-configuration-client.version>5.0.1</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <vertx-version>3.9.2</vertx-version>
