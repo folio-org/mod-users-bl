@@ -5,6 +5,11 @@ Copyright (C) 2017-2019 The Open Library Foundation
 This software is distributed under the terms of the Apache License,
 Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 
+## Prerequisites
+
+* Java 11 JDK
+* Maven 3.3.9
+
 ## Introduction
 
 Business logic "join" module to provide simple access to all user-centric data.
