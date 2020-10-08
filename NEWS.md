@@ -1,3 +1,12 @@
+## 6.1.0 2020-10-07
+
+* Password reset links cannot expire more than 4 weeks in the future (MODUSERBL-99)
+* Password reset request succeeds even when sending email fails (MODUSERBL-100)
+* Allows additional properties in user representation (MODUSERBL-101)
+* Responds with up to 1000 service desks (MODUSERBL-95)
+* Requires JDK 11 (MODUSERBL-106)
+* Upgraded to RAML Module Builder 31.1.0 (MODUSERBL-104)
+
 ## 6.0.0 2020-06-11
 
 * Includes link expiration in password reset e-mail (MODUSERBL-78)
