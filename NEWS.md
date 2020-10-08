@@ -1,3 +1,7 @@
+## 6.1.1 2020-10-08
+
+* Fixes broken logging following RAML Module Builder upgrade (MODUSERBL-109)
+
 ## 6.1.0 2020-10-07
 
 * Password reset links cannot expire more than 4 weeks in the future (MODUSERBL-99)
