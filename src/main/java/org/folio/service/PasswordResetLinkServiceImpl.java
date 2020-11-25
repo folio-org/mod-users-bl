@@ -269,12 +269,15 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
                                           Holder<String> userIdHolder,
                                           boolean isNewPassword) {
     Context context = new Context()
-      .withAdditionalProperty("user", userHolder.value)
-      .withAdditionalProperty("detailedDateTime", OffsetDateTime.now().toString());
+      .withAdditionalProperty("user", userHolder.value);
 
-    String eventConfigName = isNewPassword
-      ? PASSWORD_CREATED_EVENT_CONFIG_NAME
-      : PASSWORD_CHANGED_EVENT_CONFIG_NAME;
+    String eventConfigName;
+    if (isNewPassword) {
+      eventConfigName = PASSWORD_CREATED_EVENT_CONFIG_NAME;
+    } else {
+      eventConfigName = PASSWORD_CHANGED_EVENT_CONFIG_NAME;
+      context.withAdditionalProperty("detailedDateTime", OffsetDateTime.now().toString());
+    }
 
     return new Notification()
       .withRecipientId(userIdHolder.value)
