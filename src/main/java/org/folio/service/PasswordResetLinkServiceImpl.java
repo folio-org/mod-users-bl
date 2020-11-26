@@ -23,6 +23,7 @@ import org.folio.service.password.UserPasswordService;
 
 import javax.xml.ws.Holder;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
@@ -270,9 +271,13 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     Context context = new Context()
       .withAdditionalProperty("user", userHolder.value);
 
-    String eventConfigName = isNewPassword
-      ? PASSWORD_CREATED_EVENT_CONFIG_NAME
-      : PASSWORD_CHANGED_EVENT_CONFIG_NAME;
+    String eventConfigName;
+    if (isNewPassword) {
+      eventConfigName = PASSWORD_CREATED_EVENT_CONFIG_NAME;
+    } else {
+      eventConfigName = PASSWORD_CHANGED_EVENT_CONFIG_NAME;
+      context.withAdditionalProperty("detailedDateTime", OffsetDateTime.now().toString());
+    }
 
     return new Notification()
       .withRecipientId(userIdHolder.value)
