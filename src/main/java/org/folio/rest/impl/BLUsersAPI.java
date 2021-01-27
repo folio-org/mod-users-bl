@@ -11,8 +11,8 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -92,7 +92,7 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String EXPANDED_PERMISSIONS_INCLUDE = "expanded_perms";
   private static final String EXPANDED_SERVICEPOINTS_INCLUDE = "expanded_servicepoints";
-  private final Logger logger = LoggerFactory.getLogger(BLUsersAPI.class);
+  private static final Logger logger = LogManager.getLogger(BLUsersAPI.class);
 
   public static final String OKAPI_URL_HEADER = "x-okapi-url";
   public static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
