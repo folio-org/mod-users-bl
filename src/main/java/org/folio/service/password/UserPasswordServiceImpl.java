@@ -10,8 +10,8 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Error;
@@ -37,7 +37,7 @@ public class UserPasswordServiceImpl implements UserPasswordService {
   // Http client to call programmatic rules as internal OKAPI endpoints
   private HttpClient httpClient;
 
-  private final Logger logger = LoggerFactory.getLogger(UserPasswordServiceImpl.class);
+  private static final Logger logger = LogManager.getLogger(UserPasswordServiceImpl.class);
 
   private void initHttpClient(final Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions();

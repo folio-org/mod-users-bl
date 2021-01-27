@@ -10,12 +10,12 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class NotificationClientImpl implements NotificationClient {
 
-  private static final Logger LOG = LoggerFactory.getLogger("mod-users-bl");
+  private static final Logger logger = LogManager.getLogger(NotificationClientImpl.class); 
   private HttpClient httpClient;
 
   public NotificationClientImpl(HttpClient httpClient) {

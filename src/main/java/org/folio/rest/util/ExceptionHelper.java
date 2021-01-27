@@ -1,7 +1,7 @@
 package org.folio.rest.util;
 
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.http.HttpStatus;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.jaxrs.model.Error;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public final class ExceptionHelper {
 
-  private static final Logger LOG = LoggerFactory.getLogger("mod-users-bl");
+  private static final Logger LOG = LogManager.getLogger(ExceptionHelper.class); 
 
   private ExceptionHelper() {
   }
