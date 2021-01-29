@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 public class NotificationClientImpl implements NotificationClient {
 
-  private static final Logger logger = LogManager.getLogger(NotificationClientImpl.class); 
+  private static final Logger LOG = LogManager.getLogger(NotificationClientImpl.class); 
   private HttpClient httpClient;
 
   public NotificationClientImpl(HttpClient httpClient) {
