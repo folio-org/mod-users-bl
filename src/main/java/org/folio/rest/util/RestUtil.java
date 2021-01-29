@@ -3,11 +3,14 @@ package org.folio.rest.util;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.HttpRequest;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.HttpResponse;
+
 
 import java.util.Map;
 
@@ -19,10 +22,10 @@ public class RestUtil {
     private int code;
     private String body;
     private JsonObject json;
-    private HttpClientResponse response;
+    private HttpResponse<Buffer> response;
 
     WrappedResponse(int code, String body,
-                    HttpClientResponse response) {
+                    HttpResponse<Buffer> response) {
       this.code = code;
       this.body = body;
       this.response = response;
@@ -41,7 +44,7 @@ public class RestUtil {
       return body;
     }
 
-    public HttpClientResponse getResponse() {
+    public HttpResponse<Buffer> getResponse() {
       return response;
     }
 
@@ -65,37 +68,30 @@ public class RestUtil {
    */
   public static Future<WrappedResponse> doRequest(HttpClient client, String url,
     HttpMethod method, MultiMap headers, String payload) {
+      
+    WebClient webClient = WebClient.wrap(client);
 
     Promise<WrappedResponse> promise = Promise.promise();
-    try {
-      HttpClientRequest request = client.requestAbs(method, url);
-      if (headers != null) {
-        headers.add("Content-type", "application/json")
-          .add("Accept", "application/json, text/plain");
+    
+    HttpRequest<Buffer> request = webClient.requestAbs(method, url);
+    if (headers != null) {
+      headers.add("Content-type", "application/json")
+        .add("Accept", "application/json, text/plain");
 
-        for (Map.Entry<String, String> entry : headers.entries()) {
-          if (entry.getValue() != null) {
-            request.putHeader(entry.getKey(), entry.getValue());
-          }
+      for (Map.Entry<String, String> entry : headers.entries()) {
+        if (entry.getValue() != null) {
+          request.putHeader(entry.getKey(), entry.getValue());
         }
       }
-
-      request.exceptionHandler(promise::fail);
-      request.handler(req -> req.bodyHandler(buf -> {
-        WrappedResponse wr = new WrappedResponse(req.statusCode(), buf.toString(), req);
-        promise.complete(wr);
-      }));
-
-      if (method == HttpMethod.PUT || method == HttpMethod.POST) {
-        request.end(payload);
-      } else {
-        request.end();
-      }
-
-      return promise.future();
-    } catch (Exception e) {
-      promise.fail(e);
-      return promise.future();
     }
+
+    request.send(res -> {
+      if (res.failed()) { promise.fail(res.cause());}
+
+      WrappedResponse wr = new WrappedResponse(res.result().statusCode(), res.result().bodyAsString(), res.result());
+        promise.complete(wr);
+    });
+
+    return promise.future();
   }
 }
