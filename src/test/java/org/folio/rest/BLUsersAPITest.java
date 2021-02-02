@@ -353,7 +353,6 @@ public class BLUsersAPITest {
 
   @Test
   public void postBlUsersUpdatePasswordFail(TestContext context) {
-    logger.info("are we getting here?");
     given().
       spec(okapi).port(port).
       body(new JsonObject().put("username", "superuser")
