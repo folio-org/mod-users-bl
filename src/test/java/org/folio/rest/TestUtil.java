@@ -16,6 +16,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
+/**	
+ *	
+ * @author kurt	
+ */
 public class TestUtil {
 
   private static final Logger log = LogManager.getLogger(TestUtil.class);

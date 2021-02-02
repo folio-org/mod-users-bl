@@ -450,14 +450,6 @@ public class GeneratePasswordRestLinkTest {
   }
 
   private <T> List<T> getRequestBodyByUrl(String url, Class<T> clazz) {
-    /*
-    log.info("filter URL:" + url);
-    List<ServeEvent> temp = WireMock.getAllServeEvents();
-    for (ServeEvent serv : temp) {
-      log.info("event URL:" + serv.getRequest().getUrl());
-      log.info("request body:" + serv.getRequest().getBodyAsString());
-    }*/
-
     return WireMock.getAllServeEvents().stream()
       .filter(request -> request.getStubMapping().getRequest().getUrl().equals(url))
       .map(request -> request.getRequest().getBodyAsString())
