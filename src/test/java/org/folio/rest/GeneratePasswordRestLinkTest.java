@@ -6,10 +6,15 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -45,6 +50,8 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class GeneratePasswordRestLinkTest {
 
+  private static final Logger log = LogManager.getLogger(GeneratePasswordRestLinkTest.class); 
+
   private static final String TENANT = "diku";
   private static final String GENERATE_PASSWORD_RESET_LINK_PATH = "/bl-users/password-reset/link";
   private static final String NOTIFY_PATH = "/notify";
@@ -72,7 +79,7 @@ public class GeneratePasswordRestLinkTest {
   private static final String EXPIRATION_TIME_WEEKS_MAX = "4";
 
   private static Vertx vertx;
-  private static int port;
+  private static int port = NetworkUtils.nextFreePort();;
   private static RequestSpecification spec;
 
   @org.junit.Rule
@@ -443,6 +450,14 @@ public class GeneratePasswordRestLinkTest {
   }
 
   private <T> List<T> getRequestBodyByUrl(String url, Class<T> clazz) {
+    /*
+    log.info("filter URL:" + url);
+    List<ServeEvent> temp = WireMock.getAllServeEvents();
+    for (ServeEvent serv : temp) {
+      log.info("event URL:" + serv.getRequest().getUrl());
+      log.info("request body:" + serv.getRequest().getBodyAsString());
+    }*/
+
     return WireMock.getAllServeEvents().stream()
       .filter(request -> request.getStubMapping().getRequest().getUrl().equals(url))
       .map(request -> request.getRequest().getBodyAsString())

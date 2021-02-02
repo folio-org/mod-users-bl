@@ -90,12 +90,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <version>4.0.3</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.folio</groupId>
       <artifactId>mod-configuration-client</artifactId>
       <version>${mod-configuration-client.version}</version>
@@ -411,7 +405,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <raml-module-builder.version>32.1.0</raml-module-builder.version>
-    <mod-configuration-client.version>5.0.1</mod-configuration-client.version>
+    <mod-configuration-client.version>5.6.0</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <vertx.version>4.0.0</vertx.version>
   </properties>

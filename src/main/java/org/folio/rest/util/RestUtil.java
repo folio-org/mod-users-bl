@@ -84,13 +84,20 @@ public class RestUtil {
         }
       }
     }
+    Future<HttpResponse<Buffer>> response;
 
-    request.send(res -> {
-      if (res.failed()) { promise.fail(res.cause());}
+    if (payload != "" && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+      Buffer buffer = Buffer.buffer(payload);
+      response = request.sendBuffer(buffer);
+    } else {
+      response = request.send();
+    }
 
-      WrappedResponse wr = new WrappedResponse(res.result().statusCode(), res.result().bodyAsString(), res.result());
-        promise.complete(wr);
+    response.onSuccess(res -> {
+      WrappedResponse wr = new WrappedResponse(res.statusCode(), res.bodyAsString(), res);
+      promise.complete(wr);
     });
+    response.onFailure(err -> {promise.fail(err);});
 
     return promise.future();
   }

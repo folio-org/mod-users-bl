@@ -6,11 +6,14 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.HttpResponse;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -1005,10 +1008,10 @@ public class BLUsersAPI implements BlUsers {
     }
     Promise<List<String>> promise = Promise.promise();
 
-    String host = matcher.group(1);
-    String port = matcher.group(2);
+    //String host = matcher.group(1);
+    //String port = matcher.group(2);
 
-    ConfigurationsClient configurationsClient = new ConfigurationsClient(host, StringUtils.isNotBlank(port) ? Integer.valueOf(port) : DEFAULT_PORT, tenant, token);
+    ConfigurationsClient configurationsClient = new ConfigurationsClient(okapiURL, tenant, token);
     StringBuilder query = new StringBuilder("module==USERSBL AND (")
       .append(fieldAliasList.stream()
                             .map(f -> new StringBuilder("code==\"").append(f).append("\"").toString())
@@ -1016,26 +1019,27 @@ public class BLUsersAPI implements BlUsers {
       .append(")");
 
     try {
-      configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null, response ->
-        response.bodyHandler(body -> {
-          if (response.statusCode() != 200) {
-            promise.fail("Expected status code 200, got '" + response.statusCode() +
-              "' :" + body.toString());
-            return;
-          }
-          JsonObject entries = body.toJsonObject();
+      configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null, response -> {
+        HttpResponse<Buffer> result = response.result();
+        if (result.statusCode() != 200) {
+          promise.fail("Expected status code 200, got '" + result.statusCode() +
+            "' :" + result.bodyAsString() );
+          return;
+        }
 
-          if (!entries.getJsonArray("configs").isEmpty()) {
-            promise.complete(
-              entries.getJsonArray("configs").stream()
-                .map(o -> ((JsonObject) o).getString("value"))
-                .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
-                .collect(Collectors.toList()));
-          } else {
-            promise.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
-          }
-        })
-      );
+        JsonObject entries = result.bodyAsJsonObject();
+
+        if (!entries.getJsonArray("configs").isEmpty()) {
+          promise.complete(
+            entries.getJsonArray("configs").stream()
+              .map(o -> ((JsonObject) o).getString("value"))
+              .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
+              .collect(Collectors.toList()));
+        } else {
+          promise.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
+        }
+      });
+      
     } catch (UnsupportedEncodingException e) {
       promise.fail(e);
     }

@@ -12,7 +12,6 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.http.HttpStatus;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.z3950.zing.cql.CQLParseException;
-import org.folio.rest.JsonStore;
 
 import java.util.ArrayList;
 import java.util.Base64;
