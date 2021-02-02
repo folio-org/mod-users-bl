@@ -88,23 +88,19 @@ public class TestUtil {
       response = request.send();
     }
 
-    if (response.failed()) {
-      log.info(String.format("Request for url %s failed: %s", url,
-              response.cause().getLocalizedMessage()));
-      promise.fail(response.cause());
-    } else {
-      HttpResponse<Buffer> result = response.result();
-      WrappedResponse wr = new WrappedResponse(result.statusCode(), result.bodyAsString(), result);
-      log.info(String.format(
-                  "Got new WrappedResponse object with values code %s, body %s",
-                  wr.getCode(), wr.getBody()));
+    response.onFailure(err -> {
+      log.info(String.format("Request for url %s failed: %s", url, 
+        err.getLocalizedMessage()));
+      promise.fail(err);
+    });
 
-      if(!future.isComplete() && !future.failed()) {            
-        if(!promise.tryComplete(wr)) {
-          System.out.println("Failed to complete future");
-        };
-      } 
-    }
+    response.onSuccess(res -> {
+      WrappedResponse wr = new WrappedResponse(res.statusCode(), res.bodyAsString(), res);
+      log.info(String.format("Got new WrappedResponse object with values code %s, body %s",
+        wr.getCode(), wr.getBody()));
+      promise.complete(wr);
+    });
+
   return future;
   }
 }
