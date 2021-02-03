@@ -18,7 +18,6 @@ import org.apache.http.HttpStatus;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -229,7 +228,7 @@ public class BLUsersAPITest {
   public static void after(TestContext context) {
     vertx.close(context.asyncAssertSuccess());
   }
-  
+
   @Test
   public void getBlUsers(TestContext context) {
     given().
