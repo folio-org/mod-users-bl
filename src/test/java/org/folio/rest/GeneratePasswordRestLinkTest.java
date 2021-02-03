@@ -13,7 +13,6 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
@@ -79,7 +78,7 @@ public class GeneratePasswordRestLinkTest {
   private static final String EXPIRATION_TIME_WEEKS_MAX = "4";
 
   private static Vertx vertx;
-  private static int port = NetworkUtils.nextFreePort();;
+  private static int port;
   private static RequestSpecification spec;
 
   @org.junit.Rule
