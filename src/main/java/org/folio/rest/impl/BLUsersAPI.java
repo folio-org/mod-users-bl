@@ -1008,9 +1008,6 @@ public class BLUsersAPI implements BlUsers {
     }
     Promise<List<String>> promise = Promise.promise();
 
-    //String host = matcher.group(1);
-    //String port = matcher.group(2);
-
     ConfigurationsClient configurationsClient = new ConfigurationsClient(okapiURL, tenant, token);
     StringBuilder query = new StringBuilder("module==USERSBL AND (")
       .append(fieldAliasList.stream()
