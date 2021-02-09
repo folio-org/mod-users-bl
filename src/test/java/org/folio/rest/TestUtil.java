@@ -21,7 +21,6 @@ import java.util.Map;
  * @author kurt
  */
 public class TestUtil {
-
   private static final Logger log = LogManager.getLogger(TestUtil.class);
 
   class WrappedResponse {
@@ -85,7 +84,7 @@ public class TestUtil {
     
     Future<HttpResponse<Buffer>> response;
 
-    if (payload != null && (method == HttpMethod.PUT || method == HttpMethod.POST)){
+    if (payload != null && (method == HttpMethod.PUT || method == HttpMethod.POST)) {
       Buffer buffer = Buffer.buffer(payload);
       response = request.sendBuffer(buffer);
     } else {
