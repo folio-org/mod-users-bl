@@ -6,9 +6,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -48,8 +45,6 @@ import org.junit.runner.RunWith;
 
 @RunWith(VertxUnitRunner.class)
 public class GeneratePasswordRestLinkTest {
-
-  private static final Logger log = LogManager.getLogger(GeneratePasswordRestLinkTest.class); 
 
   private static final String TENANT = "diku";
   private static final String GENERATE_PASSWORD_RESET_LINK_PATH = "/bl-users/password-reset/link";
