@@ -1,3 +1,7 @@
+## ## 6.2.0 IN-PROGRESS
+
+* Upgraded to RAML-Module-Builder 32.x (MODUSERBL-112)
+
 ## 6.1.0 2020-10-07
 
 * Password reset links cannot expire more than 4 weeks in the future (MODUSERBL-99)

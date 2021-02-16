@@ -8,9 +8,12 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.apache.http.HttpStatus;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
@@ -36,6 +39,8 @@ public class BLUsersAPITest {
   /** port of BLUsersAPI */
   private static int port;
 
+  private static final Logger logger = LogManager.getLogger(BLUsersAPITest.class);
+
   private static final String NOT_EXPIRED_PASSWORD_RESET_ACTION_ID = "5ac3b82d-a7d4-43a0-8285-104e84e01274";
   private static final String EXPIRED_PASSWORD_RESET_ACTION_ID = "16423d10-f403-4de5-a6e9-8e0add61bf5b";
   private static final String NONEXISTENT_PASSWORD_RESET_ACTION_ID = "41a9a229-6492-46ae-b9fc-017ba1e2705d";
@@ -52,38 +57,26 @@ public class BLUsersAPITest {
 
   @BeforeClass
   public static void before(TestContext context) {
-    Async async = context.async();
     vertx = Vertx.vertx();
     vertx.exceptionHandler(context.exceptionHandler());
 
     okapiPort = NetworkUtils.nextFreePort();
     DeploymentOptions okapiOptions = new DeploymentOptions()
         .setConfig(new JsonObject().put("http.port", okapiPort));
-    vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions, res -> {
-      if(res.failed()) {
-        context.fail(res.cause());
-      } else {
-        insertData();
-        port = NetworkUtils.nextFreePort();
-        DeploymentOptions usersBLOptions = new DeploymentOptions()
-          .setConfig(new JsonObject().put("http.port", port).putNull(HttpClientMock2.MOCK_MODE));
-        vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions,
-          res2 -> {
-            if(res2.failed()) {
-              context.fail(res2.cause());
-            } else {
-              RestAssured.port = port;
-              RequestSpecBuilder builder = new RequestSpecBuilder();
-              builder.addHeader("X-Okapi-URL", "http://localhost:" + okapiPort);
-              builder.addHeader("X-Okapi-Tenant", "supertenant");
-              builder.addHeader("X-Okapi-Token", token("supertenant", "maxi"));
-              okapi = builder.build();
-              async.complete();
-            }
-          });
-      }
-    });
-
+    vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions, context.asyncAssertSuccess());
+    
+    port = NetworkUtils.nextFreePort();
+    DeploymentOptions usersBLOptions = new DeploymentOptions()
+      .setConfig(new JsonObject().put("http.port", port).putNull(HttpClientMock2.MOCK_MODE));
+    vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions, context.asyncAssertSuccess());
+      
+    RestAssured.port = port;
+    RequestSpecBuilder builder = new RequestSpecBuilder();
+    builder.addHeader("X-Okapi-URL", "http://localhost:" + okapiPort);
+    builder.addHeader("X-Okapi-Tenant", "supertenant");
+    builder.addHeader("X-Okapi-Token", token("supertenant", "maxi"));
+    okapi = builder.build();
+    insertData();
   }
 
   private static String token(String tenant, String user) {
