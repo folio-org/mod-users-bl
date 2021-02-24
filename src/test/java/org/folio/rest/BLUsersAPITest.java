@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.http.HttpStatus;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
+import org.folio.util.StringUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,12 +65,12 @@ public class BLUsersAPITest {
     DeploymentOptions okapiOptions = new DeploymentOptions()
         .setConfig(new JsonObject().put("http.port", okapiPort));
     vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions, context.asyncAssertSuccess());
-    
+
     port = NetworkUtils.nextFreePort();
     DeploymentOptions usersBLOptions = new DeploymentOptions()
       .setConfig(new JsonObject().put("http.port", port).putNull(HttpClientMock2.MOCK_MODE));
     vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions, context.asyncAssertSuccess());
-      
+
     RestAssured.port = port;
     RequestSpecBuilder builder = new RequestSpecBuilder();
     builder.addHeader("X-Okapi-URL", "http://localhost:" + okapiPort);
@@ -237,7 +238,20 @@ public class BLUsersAPITest {
             get("/bl-users").
     then().
             statusCode(200).
-            body("compositeUsers[0].users.username", equalTo("maxi"));
+            body("compositeUsers.size()", equalTo(4),
+                 "compositeUsers[0].users.username", equalTo("maxi"));
+  }
+
+  @Test
+  public void getBlUsersCql(TestContext context) {
+    given().
+      spec(okapi).port(port).
+    when().
+      get("/bl-users?query=" + StringUtil.urlEncode("username==minni OR username==maxi")).
+    then().
+      statusCode(200).
+      body("compositeUsers.size()", equalTo(1),
+           "compositeUsers[0].users.username", equalTo("maxi"));
   }
 
   @Test

@@ -58,7 +58,7 @@ import org.folio.service.PasswordResetLinkService;
 import org.folio.service.PasswordResetLinkServiceImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
-
+import org.folio.util.StringUtil;
 import javax.ws.rs.core.HttpHeaders;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -74,7 +74,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -545,7 +544,7 @@ public class BLUsersAPI implements BlUsers {
 
     StringBuffer userUrl = new StringBuffer("/users?");
     if(query != null){
-      userUrl.append("query=").append(query).append("&");
+      userUrl.append("query=").append(StringUtil.urlEncode(query)).append("&");
     }
     userUrl.append("offset=").append(offset).append("&limit=").append(limit);
 
@@ -963,12 +962,7 @@ public class BLUsersAPI implements BlUsers {
       if(servicePointIdQueryList.isEmpty()) {
         return CompletableFuture.completedFuture(null);
       }
-      String idQuery = null;
-      try {
-        idQuery = URLEncoder.encode(String.join(" or ", servicePointIdQueryList), "UTF-8");
-      } catch (UnsupportedEncodingException ex) {
-        java.util.logging.Logger.getLogger(BLUsersAPI.class.getName()).log(Level.SEVERE, null, ex);
-      }
+      String idQuery = StringUtil.urlEncode(String.join(" or ", servicePointIdQueryList));
       CompletableFuture<Response> expandSPUResponse = spuResponseFuture
           .thenCompose(client.chainedRequest("/service-points?query="+ idQuery + QUERY_LIMIT,
           okapiHeaders, true, null, handlePreviousResponse(false, false, false,
@@ -1036,7 +1030,7 @@ public class BLUsersAPI implements BlUsers {
           promise.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
         }
       });
-      
+
     } catch (UnsupportedEncodingException e) {
       promise.fail(e);
     }

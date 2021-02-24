@@ -11,6 +11,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.http.HttpStatus;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
+import org.folio.util.StringUtil;
 import org.z3950.zing.cql.CQLParseException;
 
 import java.util.ArrayList;
@@ -551,14 +552,21 @@ public class MockOkapi extends AbstractVerticle {
 
   List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore,
           RoutingContext context) throws CQLParseException {
-    List<JsonObject> result;
     String query = context.request().params().get("query");
     int offset = Integer.parseInt(getParamDefault(context, "offset", "0"));
     int limit = Integer.parseInt(getParamDefault(context, "limit", "30"));
     System.out.println(String.format("Params for request: query: %s, offset %s, limit %s",
             query, offset, limit));
     QuerySet qs = null;
-    if(query != null) {
+    if (query != null) {
+      if (query.contains(" ")) {
+        Exception e = new IllegalArgumentException(
+            "Space must be URL encoded as %20 but found: " + query);
+        e.printStackTrace();
+        // TODO when RMB's HttpClientInterface#chainedRequest correctly urlencodes CQL:
+        // throw e;
+      }
+      query = StringUtil.urlDecode(query);
       qs = QuerySet.fromCQL(query);
     }
     return jsonStore.getCollection(offset, limit, qs);
