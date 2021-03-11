@@ -1,6 +1,7 @@
-## ## 6.2.0 IN-PROGRESS
+## 6.2.0 2021-03-11
 
-* Upgraded to RAML-Module-Builder 32.x (MODUSERBL-112)
+* Upgrades to RAML-Module-Builder 32.1.0 (MODUSERBL-112)
+* Upgrades to Vert.x 4.0.0 (MODUSERBL-112)
 
 ## 6.1.0 2020-10-07
 
