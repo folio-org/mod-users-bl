@@ -95,6 +95,18 @@
           ]
         },
         {
+          "methods": ["GET"],
+          "pathPattern": "/bl-users/by-username/{name}/open-transactions",
+          "permissionsRequired": [],
+          "modulePermissions": [
+            "circulation-storage.loans.collection.get",
+            "circulation-storage.requests.collection.get",
+            "accounts.collection.get",
+            "manualblocks.collection.get",
+            "proxiesfor.collection.get"
+          ]
+        },
+        {
           "methods": ["POST"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.item.post"],

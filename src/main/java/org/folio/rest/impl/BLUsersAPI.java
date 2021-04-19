@@ -158,7 +158,7 @@ public class BLUsersAPI implements BlUsers {
     run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
- Consumer<Response> handlePreviousResponse(boolean requireOneResult,
+  Consumer<Response> handlePreviousResponse(boolean requireOneResult,
       boolean requireOneOrMoreResults, boolean stopChainOnNoResults,
       boolean[] previousFailure, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
     return (response) -> {
@@ -273,18 +273,34 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void getBlUsersByIdOpenTransactionsById(String id, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
-    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
-    String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-    // okapiURL = "http://localhost:9130";
-    // okapiHeaders.remove(OKAPI_URL_HEADER);
-    HttpClientInterface httpClient = HttpClientFactory.getHttpClient(okapiURL, tenant);
-    // okapiHeaders.put(OKAPI_URL_HEADER, "http://localhost:9130");
+  public void getBlUsersByUsernameOpenTransactionsByUsername(String username, Map<String, String> okapiHeaders,
+                                                             Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                                             Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    userClient.lookupUserByUserName(username, connectionParams)
+      .onSuccess(user -> {
+        if (user.isPresent()) {
+          User u = user.get();
+          openTransactionsService.getTransactionsByUserId(u.getId(), connectionParams)
+            .onSuccess(userTransactions ->
+              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond200WithApplicationJson(userTransactions))))
+            .onFailure(error ->
+              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+        } else {
+          String msg = String.format("Users with username '%s' not found", username);
+          asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond404WithTextPlain(msg)));
+        }
+      })
+      .onFailure(error -> {
+        asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage())));
+      });
+  }
 
-    // DONE: Check if user exists? -> yes, return 404 if user not found
-    // DONE: Korrekte responses und messages in clients
-
+  @Override
+  public void getBlUsersByIdOpenTransactionsById(String id, Map<String, String> okapiHeaders,
+                                                 Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                                 Context vertxContext) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     userClient.lookupUserById(id, connectionParams)
       .onSuccess(user -> {
         if (user.isPresent()) {

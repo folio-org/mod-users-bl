@@ -23,5 +23,14 @@ public interface UserModuleClient {
    */
   Future<Optional<User>> lookupUserById(String userId, OkapiConnectionParams connectionParams);
 
+  /**
+   * Searches for user by given username.
+   *
+   * @param userName         the user name
+   * @param connectionParams connection params
+   * @return future with optional user
+   */
+  Future<Optional<User>> lookupUserByUserName(String userName, OkapiConnectionParams connectionParams);
+
   Future<Optional<List<ProxiesFor>>> lookUpProxiesByUserId(String userId, OkapiConnectionParams connectionParams);
 }

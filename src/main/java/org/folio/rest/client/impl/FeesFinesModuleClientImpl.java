@@ -31,7 +31,7 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
   @Override
   public Future<Optional<List<Account>>> lookupOpenAccountsByUserId(String userId, OkapiConnectionParams connectionParams) {
     String query = URLEncoder.encode("(userId==" + userId + " AND status.name=\"Open\")", StandardCharsets.UTF_8);
-    query = StringUtil.urlEncode(query).replace("+", "%20");
+    // query = StringUtil.urlEncode(query).replace("+", "%20");
     String requestUrl = connectionParams.getOkapiUrl() + "/accounts?query=" + query;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,

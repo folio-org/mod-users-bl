@@ -14,7 +14,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,6 +35,7 @@ public class OpenTransactionsTest {
   private static int port;
 
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
+  private static final String USER_NAME = "maxi";
   private static final String LOAN_ID = "dfa12cc0-b82e-4554-9cb0-4f5bb1fdca01";
   private static final String REQUEST_ID = "dfa12cc0-b82e-4554-9cb0-4f5bb1fdca02";
   private static final String ACCOUNT_ID = "dfa12cc0-b82e-4554-9cb0-4f5bb1fdca03";
@@ -70,12 +70,18 @@ public class OpenTransactionsTest {
   @Before
   public void cleanUpTransactionData(TestContext context) {
     TestUtil testUtil = new TestUtil();
-    Future<TestUtil.WrappedResponse> deleteLoanFuture = testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/loan-storage/loans/" + LOAN_ID, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteRequestsFuture = testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/request-storage/requests/" + REQUEST_ID, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteAccountsFuture = testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/accounts/" + ACCOUNT_ID, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteProxy1Future = testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_1, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteProxy2Future = testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_2, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteManualBlocksFuture = testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/manualblocks/" + MANUAL_BLOCK_ID, HttpMethod.DELETE, null, null);
+    Future<TestUtil.WrappedResponse> deleteLoanFuture =
+      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/loan-storage/loans/" + LOAN_ID, HttpMethod.DELETE, null, null);
+    Future<TestUtil.WrappedResponse> deleteRequestsFuture =
+      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/request-storage/requests/" + REQUEST_ID, HttpMethod.DELETE, null, null);
+    Future<TestUtil.WrappedResponse> deleteAccountsFuture =
+      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/accounts/" + ACCOUNT_ID, HttpMethod.DELETE, null, null);
+    Future<TestUtil.WrappedResponse> deleteProxy1Future =
+      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_1, HttpMethod.DELETE, null, null);
+    Future<TestUtil.WrappedResponse> deleteProxy2Future =
+      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_2, HttpMethod.DELETE, null, null);
+    Future<TestUtil.WrappedResponse> deleteManualBlocksFuture =
+      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/manualblocks/" + MANUAL_BLOCK_ID, HttpMethod.DELETE, null, null);
 
     Async async = context.async();
     CompositeFuture.all(deleteLoanFuture, deleteRequestsFuture, deleteAccountsFuture, deleteProxy1Future, deleteProxy2Future, deleteManualBlocksFuture)
@@ -95,11 +101,11 @@ public class OpenTransactionsTest {
 
   private static void insertData() {
     JsonObject userPost = new JsonObject()
-      .put("username", "maxi")
+      .put("username", USER_NAME)
       .put("id", USER_ID)
       .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
       .put("active", true)
-      .put("personal", new JsonObject().put("email", "maxi@maxi.com"));
+      .put("personal", new JsonObject().put("email", "maxi@maxi.com").put("lastName", "foobar"));
     given().body(userPost.encode()).
       when().post("http://localhost:" + okapiPort + "/users").
       then().statusCode(201);
@@ -120,6 +126,20 @@ public class OpenTransactionsTest {
       spec(okapi).port(port).
       when().
       get("/bl-users/by-id/" + USER_ID + "/open-transactions").
+      then().
+      statusCode(200).
+      body("hasOpenTransactions", equalTo(true),
+        "loans", equalTo(0),
+        "requests", equalTo(1),
+        "feesFines", equalTo(0),
+        "proxies", equalTo(0),
+        "blocks", equalTo(0),
+        "userId", equalTo(USER_ID));
+
+    given().
+      spec(okapi).port(port).
+      when().
+      get("/bl-users/by-username/" + USER_NAME + "/open-transactions").
       then().
       statusCode(200).
       body("hasOpenTransactions", equalTo(true),
@@ -187,7 +207,6 @@ public class OpenTransactionsTest {
     given().body(proxiesPostTwo.encode()).
       when().post("http://localhost:" + okapiPort + "/proxiesfor").
       then().statusCode(201);
-
 
     given().
       spec(okapi).port(port).

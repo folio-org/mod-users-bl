@@ -107,7 +107,29 @@ resourceTypes:
           body:
             text/plain:
               example: "Internal server error"
-
+  compositteOpenTransactionsResource:
+    get:
+      description: "Check if user has any open transactions. Identify user by <<typeName>>"
+      responses:
+        200:
+          body:
+            application/json:
+              schema: userTransactions
+        400:
+          description: "Bad request"
+          body:
+            text/plain:
+              example: "Bad request"
+        404:
+          description: "User not found"
+          body:
+            text/plain:
+              example: "User not found"
+        500:
+          description: "Internal server error"
+          body:
+            text/plain:
+              example: "Internal server error"
 /bl-users:
   get:
     description: Get a number of user (and possibly related) records based on criteria in the user and related modules
@@ -141,32 +163,13 @@ resourceTypes:
       type: { compositeUserResource: { "typeName" : "id" } }
       is: [includeable]
       /open-transactions:
-        get:
-          description: Check if user has any open transactions
-          responses:
-            200:
-              body:
-                application/json:
-                  schema: userTransactions
-            400:
-              description: "Bad request"
-              body:
-                text/plain:
-                  example: "Bad request"
-            404:
-              description: "User not found"
-              body:
-                text/plain:
-                  example: "User not found"
-            500:
-              description: "Internal server error"
-              body:
-                text/plain:
-                  example: "Internal server error"
+        type: { compositteOpenTransactionsResource: { "typeName" : "id" } }
   /by-username:
     /{username}:
       type: { compositeUserResource: { "typeName" : "username"} }
       is: [includeable]
+      /open-transactions:
+        type: { compositteOpenTransactionsResource: { "typeName" : "username" } }
   /_self:
     type: { compositeUserResource: { "typeName" : "self reference" } }
   /login:
