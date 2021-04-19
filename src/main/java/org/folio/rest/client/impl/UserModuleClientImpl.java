@@ -5,12 +5,18 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
-import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.client.UserModuleClient;
+import org.folio.rest.exception.OkapiModuleClientException;
+import org.folio.rest.jaxrs.model.ProxiesFor;
+import org.folio.rest.jaxrs.model.ProxyForCollection;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
+import org.folio.util.StringUtil;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
 public class UserModuleClientImpl implements UserModuleClient {
@@ -39,5 +45,27 @@ public class UserModuleClientImpl implements UserModuleClient {
             throw new OkapiModuleClientException(logMessage);
         }
       });
+  }
+
+  @Override
+  public Future<Optional<List<ProxiesFor>>> lookUpProxiesByUserId(String userId, OkapiConnectionParams connectionParams) {
+    String query = URLEncoder.encode("(userId==" + userId + " OR proxyUserId==" + userId + ")", StandardCharsets.UTF_8);
+    query = StringUtil.urlEncode(query).replace("+", "%20");
+    String requestUrl = connectionParams.getOkapiUrl() + "/proxiesfor?query=" + query;
+    return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
+            connectionParams.buildHeaders(), StringUtils.EMPTY)
+            .map(response -> {
+              switch (response.getCode()) {
+                case HttpStatus.SC_OK:
+                  ProxyForCollection proxies = response.getJson().mapTo(ProxyForCollection.class);
+                  return Optional.of(proxies.getProxiesFor());
+                case HttpStatus.SC_NOT_FOUND:
+                  return Optional.empty();
+                default:
+                  String logMessage =
+                          String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
+                  throw new OkapiModuleClientException(logMessage);
+              }
+            });
   }
 }

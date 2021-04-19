@@ -83,6 +83,18 @@
           ]
         },
         {
+          "methods": ["GET"],
+          "pathPattern": "/bl-users/by-id/{id}/open-transactions",
+          "permissionsRequired": [],
+          "modulePermissions": [
+            "circulation-storage.loans.collection.get",
+            "circulation-storage.requests.collection.get",
+            "accounts.collection.get",
+            "manualblocks.collection.get",
+            "proxiesfor.collection.get"
+          ]
+        },
+        {
           "methods": ["POST"],
           "pathPattern": "/bl-users",
           "permissionsRequired": ["users-bl.item.post"],
@@ -185,6 +197,10 @@
       "version" : "5.0"
     },
     {
+      "id": "loan-storage",
+      "version": "7.1"
+    },
+    {
       "id" : "login",
       "version" : "6.0 7.0"
     },
@@ -211,6 +227,10 @@
     {
       "id": "configuration",
       "version": "2.0"
+    },
+    {
+      "id": "feesfines",
+      "version": "16.3"
     }
   ],
   "permissionSets": [

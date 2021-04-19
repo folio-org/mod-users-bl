@@ -24,6 +24,12 @@ types:
   passwordResetAction: !include passwordResetAction.json
   passwordReset: !include passwordReset.json
   notification : !include notification.json
+  userTransactions: !include userTransactions.json
+  loans: !include loans.json
+  requests: !include requests.json
+  accounts: !include accounts.json
+  manualBlocks: !include manualblocks.json
+  proxyForCollection: !include proxyForCollection.json
 
 traits:
   orderable: !include raml-util/traits/orderable.raml
@@ -134,6 +140,29 @@ resourceTypes:
     /{id}:
       type: { compositeUserResource: { "typeName" : "id" } }
       is: [includeable]
+      /open-transactions:
+        get:
+          description: Check if user has any open transactions
+          responses:
+            200:
+              body:
+                application/json:
+                  schema: userTransactions
+            400:
+              description: "Bad request"
+              body:
+                text/plain:
+                  example: "Bad request"
+            404:
+              description: "User not found"
+              body:
+                text/plain:
+                  example: "User not found"
+            500:
+              description: "Internal server error"
+              body:
+                text/plain:
+                  example: "Internal server error"
   /by-username:
     /{username}:
       type: { compositeUserResource: { "typeName" : "username"} }

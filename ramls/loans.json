@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Loans",
+  "properties": {
+    "loans": {
+      "type": "array",
+      "description": "The loans of a user",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Loan id"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User id"
+          },
+          "status": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Loan's status"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "totalRecords": {
+      "type": "number",
+      "description": "Number of loans"
+    }
+  },
+  "additionalProperties": false
+}

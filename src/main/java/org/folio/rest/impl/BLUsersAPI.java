@@ -1,6 +1,6 @@
 package org.folio.rest.impl;
 
-import io.vertx.core.AsyncResult;
+import io.vertx.core.*;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -23,29 +23,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.client.ConfigurationsClient;
 import org.folio.rest.client.NotificationClient;
-import org.folio.rest.client.impl.AuthTokenClientImpl;
-import org.folio.rest.client.impl.ConfigurationClientImpl;
-import org.folio.rest.client.impl.NotificationClientImpl;
-import org.folio.rest.client.impl.PasswordResetActionClientImpl;
-import org.folio.rest.client.impl.UserModuleClientImpl;
+import org.folio.rest.client.UserModuleClient;
+import org.folio.rest.client.impl.*;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
-import org.folio.rest.jaxrs.model.CompositeUser;
-import org.folio.rest.jaxrs.model.CompositeUserListObject;
-import org.folio.rest.jaxrs.model.Errors;
-import org.folio.rest.jaxrs.model.GenerateLinkRequest;
-import org.folio.rest.jaxrs.model.GenerateLinkResponse;
-import org.folio.rest.jaxrs.model.Identifier;
-import org.folio.rest.jaxrs.model.LoginCredentials;
-import org.folio.rest.jaxrs.model.Notification;
-import org.folio.rest.jaxrs.model.PasswordReset;
-import org.folio.rest.jaxrs.model.PatronGroup;
-import org.folio.rest.jaxrs.model.Permissions;
-import org.folio.rest.jaxrs.model.ProxiesFor;
-import org.folio.rest.jaxrs.model.ServicePoint;
-import org.folio.rest.jaxrs.model.ServicePointsUser;
-import org.folio.rest.jaxrs.model.UpdateCredentials;
-import org.folio.rest.jaxrs.model.User;
+import org.folio.rest.jaxrs.model.*;
 import org.folio.rest.jaxrs.resource.BlUsers;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
@@ -58,7 +40,10 @@ import org.folio.service.PasswordResetLinkService;
 import org.folio.service.PasswordResetLinkServiceImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
+import org.folio.service.transactions.OpenTransactionsService;
+import org.folio.service.transactions.OpenTransactionsServiceImpl;
 import org.folio.util.StringUtil;
+
 import javax.ws.rs.core.HttpHeaders;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -123,19 +108,29 @@ public class BLUsersAPI implements BlUsers {
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
   private NotificationClient notificationClient;
+  private OpenTransactionsService openTransactionsService;
+  private UserModuleClient userClient;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
     HttpClient httpClient = initHttpClient(vertx);
     this.notificationClient = new NotificationClientImpl(httpClient);
+
+    userClient = new UserModuleClientImpl(httpClient);
     passwordResetLinkService = new PasswordResetLinkServiceImpl(
       new ConfigurationClientImpl(httpClient),
       new AuthTokenClientImpl(httpClient),
       this.notificationClient,
       new PasswordResetActionClientImpl(httpClient),
-      new UserModuleClientImpl(httpClient),
+      userClient,
       new UserPasswordServiceImpl(vertx));
+
+    openTransactionsService = new OpenTransactionsServiceImpl(
+      new CirculationStorageModuleClientImpl(httpClient),
+      new FeesFinesModuleClientImpl(httpClient),
+      userClient
+    );
   }
 
   private HttpClient initHttpClient(Vertx vertx) {
@@ -275,6 +270,38 @@ public class BLUsersAPI implements BlUsers {
   public void getBlUsersByIdById(String userid, List<String> include, boolean expandPerms, Map<String, String> okapiHeaders,
     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
     run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler);
+  }
+
+  @Override
+  public void getBlUsersByIdOpenTransactionsById(String id, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, Context vertxContext) {
+    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
+    String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+    // okapiURL = "http://localhost:9130";
+    // okapiHeaders.remove(OKAPI_URL_HEADER);
+    HttpClientInterface httpClient = HttpClientFactory.getHttpClient(okapiURL, tenant);
+    // okapiHeaders.put(OKAPI_URL_HEADER, "http://localhost:9130");
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+
+    // DONE: Check if user exists? -> yes, return 404 if user not found
+    // DONE: Korrekte responses und messages in clients
+
+    userClient.lookupUserById(id, connectionParams)
+      .onSuccess(user -> {
+        if (user.isPresent()) {
+          User u = user.get();
+          openTransactionsService.getTransactionsByUserId(u.getId(), connectionParams)
+            .onSuccess(userTransactions ->
+              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond200WithApplicationJson(userTransactions))))
+            .onFailure(error ->
+              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+        } else {
+          String msg = String.format("Users with id '%s' not found", id);
+          asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond404WithTextPlain(msg)));
+        }
+      })
+      .onFailure(error -> {
+        asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())));
+      });
   }
 
   private void run(String userid, String username, Boolean expandPerms,
@@ -975,7 +1002,7 @@ public class BLUsersAPI implements BlUsers {
   /**
    *
    * @param locateUserFields - a list of fields to be used for search
-   * @param value - a value to search
+   * @param value            - a value to search
    * @return
    */
   private String buildQuery(List<String> locateUserFields, String value) {

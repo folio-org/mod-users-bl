@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Accounts",
+  "properties": {
+    "accounts": {
+      "type": "array",
+      "description": "The fee/fine accounts of a user",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Account id"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User id"
+          },
+          "status": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Account's status"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "totalRecords": {
+      "type": "number",
+      "description": "Number of accounts"
+    }
+  },
+  "additionalProperties": true
+}
