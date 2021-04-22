@@ -35,6 +35,7 @@ public class OpenTransactionsTest {
   private static int port;
 
   private static final String USER_ID = "0bb4f26d-e073-4f93-afbc-dcc24fd88810";
+  private static final String USER_BARCODE = "12345";
   private static final String USER_NAME = "maxi";
   private static final String LOAN_ID = "dfa12cc0-b82e-4554-9cb0-4f5bb1fdca01";
   private static final String REQUEST_ID = "dfa12cc0-b82e-4554-9cb0-4f5bb1fdca02";
@@ -88,7 +89,7 @@ public class OpenTransactionsTest {
       .onSuccess(asyncResult -> {
         async.complete();
       })
-      .onFailure(throwable -> context.fail(throwable));
+      .onFailure(context::fail);
   }
 
   private static String token(String tenant, String user) {
@@ -103,6 +104,7 @@ public class OpenTransactionsTest {
     JsonObject userPost = new JsonObject()
       .put("username", USER_NAME)
       .put("id", USER_ID)
+      .put("barcode", USER_BARCODE)
       .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
       .put("active", true)
       .put("personal", new JsonObject().put("email", "maxi@maxi.com").put("lastName", "foobar"));
@@ -134,7 +136,8 @@ public class OpenTransactionsTest {
         "feesFines", equalTo(0),
         "proxies", equalTo(0),
         "blocks", equalTo(0),
-        "userId", equalTo(USER_ID));
+        "userId", equalTo(USER_ID),
+        "userBarcode", equalTo(USER_BARCODE));
 
     given().
       spec(okapi).port(port).
@@ -148,7 +151,8 @@ public class OpenTransactionsTest {
         "feesFines", equalTo(0),
         "proxies", equalTo(0),
         "blocks", equalTo(0),
-        "userId", equalTo(USER_ID));
+        "userId", equalTo(USER_ID),
+        "userBarcode", equalTo(USER_BARCODE));
   }
 
   @Test

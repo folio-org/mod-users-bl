@@ -6,6 +6,7 @@ import io.vertx.core.Promise;
 import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.client.FeesFinesModuleClient;
 import org.folio.rest.client.UserModuleClient;
+import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.jaxrs.model.UserTransactions;
 import org.folio.rest.util.OkapiConnectionParams;
 
@@ -31,7 +32,8 @@ public class OpenTransactionsServiceImpl implements OpenTransactionsService {
   }
 
   @Override
-  public Future<UserTransactions> getTransactionsByUserId(String id, OkapiConnectionParams connectionParams) {
+  public Future<UserTransactions> getTransactionsOfUser(User user, OkapiConnectionParams connectionParams) {
+    String id = user.getId();
     Future<Map.Entry<String, Integer>> loansFuture =
       circulationClient.lookupOpenLoansByUserId(id, connectionParams)
         .map(loans -> loans.orElse(Collections.emptyList()))
@@ -75,6 +77,9 @@ public class OpenTransactionsServiceImpl implements OpenTransactionsService {
           .withProxies(openTransactions.get(PROXIES))
           .withHasOpenTransactions(hasOpenTransactions)
           .withUserId(id);
+        if (user.getBarcode() != null) {
+          userTransactions.setUserBarcode(user.getBarcode());
+        }
         result.complete(userTransactions);
       })
       .onFailure(result::fail);

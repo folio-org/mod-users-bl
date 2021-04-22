@@ -8,6 +8,10 @@
       "type": "string",
       "description": "User's id"
     },
+    "userBarcode": {
+      "type": "string",
+      "description": "User's barcode"
+    },
     "hasOpenTransactions": {
       "type": "boolean",
       "description": "Specifies if the user has any open transactions"

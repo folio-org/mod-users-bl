@@ -280,8 +280,7 @@ public class BLUsersAPI implements BlUsers {
     userClient.lookupUserByUserName(username, connectionParams)
       .onSuccess(user -> {
         if (user.isPresent()) {
-          User u = user.get();
-          openTransactionsService.getTransactionsByUserId(u.getId(), connectionParams)
+          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
             .onSuccess(userTransactions ->
               asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond200WithApplicationJson(userTransactions))))
             .onFailure(error ->
@@ -291,9 +290,7 @@ public class BLUsersAPI implements BlUsers {
           asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond404WithTextPlain(msg)));
         }
       })
-      .onFailure(error -> {
-        asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage())));
-      });
+      .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
   }
 
   @Override
@@ -304,8 +301,7 @@ public class BLUsersAPI implements BlUsers {
     userClient.lookupUserById(id, connectionParams)
       .onSuccess(user -> {
         if (user.isPresent()) {
-          User u = user.get();
-          openTransactionsService.getTransactionsByUserId(u.getId(), connectionParams)
+          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
             .onSuccess(userTransactions ->
               asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond200WithApplicationJson(userTransactions))))
             .onFailure(error ->
@@ -315,9 +311,7 @@ public class BLUsersAPI implements BlUsers {
           asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond404WithTextPlain(msg)));
         }
       })
-      .onFailure(error -> {
-        asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())));
-      });
+      .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
   }
 
   private void run(String userid, String username, Boolean expandPerms,
