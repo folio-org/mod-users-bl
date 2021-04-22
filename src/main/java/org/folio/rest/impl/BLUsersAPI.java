@@ -272,48 +272,6 @@ public class BLUsersAPI implements BlUsers {
     run(userid, null, expandPerms, include, okapiHeaders, asyncResultHandler);
   }
 
-  @Override
-  public void getBlUsersByUsernameOpenTransactionsByUsername(String username, Map<String, String> okapiHeaders,
-                                                             Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-                                                             Context vertxContext) {
-    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
-    userClient.lookupUserByUserName(username, connectionParams)
-      .onSuccess(user -> {
-        if (user.isPresent()) {
-          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
-            .onSuccess(userTransactions ->
-              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond200WithApplicationJson(userTransactions))))
-            .onFailure(error ->
-              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
-        } else {
-          String msg = String.format("Users with username '%s' not found", username);
-          asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond404WithTextPlain(msg)));
-        }
-      })
-      .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
-  }
-
-  @Override
-  public void getBlUsersByIdOpenTransactionsById(String id, Map<String, String> okapiHeaders,
-                                                 Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-                                                 Context vertxContext) {
-    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
-    userClient.lookupUserById(id, connectionParams)
-      .onSuccess(user -> {
-        if (user.isPresent()) {
-          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
-            .onSuccess(userTransactions ->
-              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond200WithApplicationJson(userTransactions))))
-            .onFailure(error ->
-              asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
-        } else {
-          String msg = String.format("Users with id '%s' not found", id);
-          asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond404WithTextPlain(msg)));
-        }
-      })
-      .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
-  }
-
   private void run(String userid, String username, Boolean expandPerms,
           List<String> include, Map<String, String> okapiHeaders,
           Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
@@ -694,6 +652,96 @@ public class BLUsersAPI implements BlUsers {
         logger.error(e.getMessage(), e);
       }
     });
+  }
+
+  @Override
+  public void getBlUsersByUsernameOpenTransactionsByUsername(String username, Map<String, String> okapiHeaders,
+                                                             Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                                             Context vertxContext) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    userClient.lookupUserByUserName(username, connectionParams)
+      .onSuccess(user -> {
+        if (user.isPresent()) {
+          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
+            .onSuccess(userTransactions ->
+              asyncResultHandler.handle(Future.succeededFuture(
+                GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond200WithApplicationJson(userTransactions))))
+            .onFailure(error ->
+              asyncResultHandler.handle(Future.succeededFuture(
+                GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+        } else {
+          String msg = String.format("Users with username '%s' not found", username);
+          asyncResultHandler.handle(Future.succeededFuture(
+            GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond404WithTextPlain(msg)));
+        }
+      })
+      .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(
+        GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+  }
+
+  @Override
+  public void getBlUsersByIdOpenTransactionsById(String id, Map<String, String> okapiHeaders,
+                                                 Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                                 Context vertxContext) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    userClient.lookupUserById(id, connectionParams)
+      .onSuccess(user -> {
+        if (user.isPresent()) {
+          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
+            .onSuccess(userTransactions ->
+              asyncResultHandler.handle(Future.succeededFuture(
+                GetBlUsersByIdOpenTransactionsByIdResponse.respond200WithApplicationJson(userTransactions))))
+            .onFailure(error ->
+              asyncResultHandler.handle(Future.succeededFuture(
+                GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+        } else {
+          String msg = String.format("User with id '%s' not found", id);
+          asyncResultHandler.handle(Future.succeededFuture(
+            GetBlUsersByIdOpenTransactionsByIdResponse.respond404WithTextPlain(msg)));
+        }
+      })
+      .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(
+        GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+  }
+
+  @Override
+  public void deleteBlUsersByIdById(String id, List<String> include,
+                                    Map<String, String> okapiHeaders,
+                                    Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                    Context vertxContext) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    userClient.lookupUserById(id, connectionParams)
+      .onSuccess(user ->{
+        if (user.isPresent()) {
+          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
+            .onSuccess(userTransactions -> {
+              if (Boolean.TRUE.equals(userTransactions.getHasOpenTransactions())) {
+                asyncResultHandler.handle(Future.succeededFuture(
+                  DeleteBlUsersByIdByIdResponse.respond409WithApplicationJson(userTransactions)
+                ));
+              } else {
+                userClient.deleteUserById(user.get().getId(), connectionParams)
+                  .onSuccess(boolResult ->
+                    asyncResultHandler.handle(Future.succeededFuture(
+                      DeleteBlUsersByIdByIdResponse.respond204()
+                    )))
+                .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(
+                  DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())
+                  )));
+              }
+            })
+          .onFailure(error ->
+            asyncResultHandler.handle(Future.succeededFuture(
+              DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())
+            )));
+        } else {
+          String msg = String.format("User with id '%s' not found", id);
+          asyncResultHandler.handle(Future.succeededFuture(
+            DeleteBlUsersByIdByIdResponse.respond404WithTextPlain(msg)));
+        }
+      })
+      .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(
+        DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
   }
 
   private boolean responseOk(Response r){

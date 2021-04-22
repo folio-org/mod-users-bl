@@ -32,5 +32,7 @@ public interface UserModuleClient {
    */
   Future<Optional<User>> lookupUserByUserName(String userName, OkapiConnectionParams connectionParams);
 
+  Future<Boolean> deleteUserById(String userId, OkapiConnectionParams connectionParams);
+
   Future<Optional<List<ProxiesFor>>> lookUpProxiesByUserId(String userId, OkapiConnectionParams connectionParams);
 }

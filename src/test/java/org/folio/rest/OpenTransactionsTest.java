@@ -86,9 +86,7 @@ public class OpenTransactionsTest {
 
     Async async = context.async();
     CompositeFuture.all(deleteLoanFuture, deleteRequestsFuture, deleteAccountsFuture, deleteProxy1Future, deleteProxy2Future, deleteManualBlocksFuture)
-      .onSuccess(asyncResult -> {
-        async.complete();
-      })
+      .onSuccess(asyncResult -> async.complete())
       .onFailure(context::fail);
   }
 
@@ -108,9 +106,12 @@ public class OpenTransactionsTest {
       .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
       .put("active", true)
       .put("personal", new JsonObject().put("email", "maxi@maxi.com").put("lastName", "foobar"));
-    given().body(userPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/users").
-      then().statusCode(201);
+    given()
+      .body(userPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/users")
+      .then()
+      .statusCode(201);
   }
 
   @Test
@@ -120,17 +121,20 @@ public class OpenTransactionsTest {
       .put("requesterId", USER_ID)
       .put("itemId", UUID.randomUUID().toString())
       .put("status", "Open - Not yet filled");
-    given().body(requestPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/request-storage/requests").
-      then().statusCode(201);
+    given()
+      .body(requestPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/request-storage/requests")
+      .then()
+      .statusCode(201);
 
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-id/" + USER_ID + "/open-transactions").
-      then().
-      statusCode(200).
-      body("hasOpenTransactions", equalTo(true),
+    given()
+      .spec(okapi).port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(true),
         "loans", equalTo(0),
         "requests", equalTo(1),
         "feesFines", equalTo(0),
@@ -139,13 +143,13 @@ public class OpenTransactionsTest {
         "userId", equalTo(USER_ID),
         "userBarcode", equalTo(USER_BARCODE));
 
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-username/" + USER_NAME + "/open-transactions").
-      then().
-      statusCode(200).
-      body("hasOpenTransactions", equalTo(true),
+    given()
+      .spec(okapi).port(port)
+      .when()
+      .get("/bl-users/by-username/" + USER_NAME + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(true),
         "loans", equalTo(0),
         "requests", equalTo(1),
         "feesFines", equalTo(0),
@@ -161,17 +165,20 @@ public class OpenTransactionsTest {
       .put("id", ACCOUNT_ID)
       .put("userId", USER_ID)
       .put("status", new JsonObject().put("name", "Open"));
-    given().body(feesFinesPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/accounts").
-      then().statusCode(201);
+    given()
+      .body(feesFinesPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/accounts")
+      .then()
+      .statusCode(201);
 
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-id/" + USER_ID + "/open-transactions").
-      then().
-      statusCode(200).
-      body("hasOpenTransactions", equalTo(true),
+    given()
+      .spec(okapi).port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(true),
         "loans", equalTo(0),
         "requests", equalTo(0),
         "feesFines", equalTo(1),
@@ -185,40 +192,52 @@ public class OpenTransactionsTest {
     JsonObject manualBlockPost = new JsonObject()
       .put("id", MANUAL_BLOCK_ID)
       .put("userId", USER_ID);
-    given().body(manualBlockPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/manualblocks").
-      then().statusCode(201);
+    given()
+      .body(manualBlockPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/manualblocks")
+      .then()
+      .statusCode(201);
 
     JsonObject feesFinesPost = new JsonObject()
       .put("id", ACCOUNT_ID)
       .put("userId", USER_ID)
       .put("status", new JsonObject().put("name", "Open"));
-    given().body(feesFinesPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/accounts").
-      then().statusCode(201);
+    given()
+      .body(feesFinesPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/accounts")
+      .then()
+      .statusCode(201);
 
     JsonObject proxiesPostOne = new JsonObject()
       .put("id", PROXY_ID_1)
       .put("userId", USER_ID);
-    given().body(proxiesPostOne.encode()).
-      when().post("http://localhost:" + okapiPort + "/proxiesfor").
-      then().statusCode(201);
+    given()
+      .body(proxiesPostOne.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/proxiesfor")
+      .then()
+      .statusCode(201);
 
     JsonObject proxiesPostTwo = new JsonObject()
       .put("id", PROXY_ID_2)
       .put("userId", UUID.randomUUID().toString())
       .put("proxyUserId", USER_ID);
-    given().body(proxiesPostTwo.encode()).
-      when().post("http://localhost:" + okapiPort + "/proxiesfor").
-      then().statusCode(201);
+    given()
+      .body(proxiesPostTwo.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/proxiesfor")
+      .then().statusCode(201);
 
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-id/" + USER_ID + "/open-transactions").
-      then().
-      statusCode(200).
-      body("hasOpenTransactions", equalTo(true),
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(true),
         "loans", equalTo(0),
         "requests", equalTo(0),
         "feesFines", equalTo(1),
@@ -232,17 +251,21 @@ public class OpenTransactionsTest {
     JsonObject manualBlockPost = new JsonObject()
       .put("id", MANUAL_BLOCK_ID)
       .put("userId", USER_ID);
-    given().body(manualBlockPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/manualblocks").
-      then().statusCode(201);
+    given()
+      .body(manualBlockPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/manualblocks")
+      .then()
+      .statusCode(201);
 
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-id/" + USER_ID + "/open-transactions").
-      then().
-      statusCode(200).
-      body("hasOpenTransactions", equalTo(true),
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(true),
         "loans", equalTo(0),
         "requests", equalTo(0),
         "feesFines", equalTo(0),
@@ -253,13 +276,14 @@ public class OpenTransactionsTest {
 
   @Test
   public void getTransactionsOfUserHasNone() {
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-id/" + USER_ID + "/open-transactions").
-      then().
-      statusCode(200).
-      body("hasOpenTransactions", equalTo(false),
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(false),
         "loans", equalTo(0),
         "requests", equalTo(0),
         "feesFines", equalTo(0),

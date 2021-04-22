@@ -83,10 +83,24 @@
           ]
         },
         {
+          "methods": ["DELETE"],
+          "pathPattern": "/bl-users/by-id/{id}",
+          "permissionsRequired": [],
+          "modulePermissions": [
+            "users.item.get",
+            "circulation-storage.loans.collection.get",
+            "circulation-storage.requests.collection.get",
+            "accounts.collection.get",
+            "manualblocks.collection.get",
+            "proxiesfor.collection.get"
+          ]
+        },
+        {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-id/{id}/open-transactions",
           "permissionsRequired": [],
           "modulePermissions": [
+            "users.item.get",
             "circulation-storage.loans.collection.get",
             "circulation-storage.requests.collection.get",
             "accounts.collection.get",
@@ -99,6 +113,7 @@
           "pathPattern": "/bl-users/by-username/{name}/open-transactions",
           "permissionsRequired": [],
           "modulePermissions": [
+            "users.collection.get",
             "circulation-storage.loans.collection.get",
             "circulation-storage.requests.collection.get",
             "accounts.collection.get",

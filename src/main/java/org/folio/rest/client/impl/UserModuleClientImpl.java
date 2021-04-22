@@ -14,7 +14,6 @@ import org.folio.rest.jaxrs.model.ProxyForCollection;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
-import org.folio.util.StringUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -63,6 +62,19 @@ public class UserModuleClientImpl implements UserModuleClient {
       });
   }
 
+  @Override
+  public Future<Boolean> deleteUserById(String userId, OkapiConnectionParams connectionParams) {
+    String requestUrl = connectionParams.getOkapiUrl() + "/users/" + userId;
+    return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.DELETE,
+      connectionParams.buildHeaders(), StringUtils.EMPTY)
+      .map(response -> {
+        if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
+          return true;
+        }
+        throw new OkapiModuleClientException(generateErrorLogMsg(response));
+      });
+  }
+
   private Optional<User> extractUser(JsonObject usersJson) {
     JsonArray responseArray = usersJson.getJsonArray("users");
     if (responseArray.size() != 1) {
@@ -77,7 +89,6 @@ public class UserModuleClientImpl implements UserModuleClient {
   @Override
   public Future<Optional<List<ProxiesFor>>> lookUpProxiesByUserId(String userId, OkapiConnectionParams connectionParams) {
     String query = URLEncoder.encode("(userId==" + userId + " OR proxyUserId==" + userId + ")", StandardCharsets.UTF_8);
-//    query = StringUtil.urlEncode(query).replace("+", "%20");
     String requestUrl = connectionParams.getOkapiUrl() + "/proxiesfor?query=" + query;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
