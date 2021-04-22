@@ -41,9 +41,7 @@ public class UserModuleClientImpl implements UserModuleClient {
           case HttpStatus.SC_NOT_FOUND:
             return Optional.empty();
           default:
-            String logMessage =
-              String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
-            throw new OkapiModuleClientException(logMessage);
+            throw new OkapiModuleClientException(generateErrorLogMsg(response));
         }
       });
   }
@@ -56,43 +54,24 @@ public class UserModuleClientImpl implements UserModuleClient {
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
-            // TODO: make this cleaner
-            {
-              JsonObject responseJson = response.getJson();
-              JsonArray responseArray = responseJson.getJsonArray("users");
-              if (responseArray.size() != 1) {
-                String logMessage =
-                  String.format("Error looking up for user. None or multiple users found.");
-                throw new OkapiModuleClientException(logMessage);
-              } else {
-                return Optional.of(responseArray.getJsonObject(0).mapTo(User.class));
-              }
-            }
+            return extractUser(response.getJson());
           case HttpStatus.SC_NOT_FOUND:
             return Optional.empty();
           default:
-            String logMessage =
-              String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
-            throw new OkapiModuleClientException(logMessage);
+            throw new OkapiModuleClientException(generateErrorLogMsg(response));
         }
       });
   }
 
-  private Future<Optional<User>> lookupUser(String requestUrl, OkapiConnectionParams connectionParams) {
-    return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
-      connectionParams.buildHeaders(), StringUtils.EMPTY)
-      .map(response -> {
-        switch (response.getCode()) {
-          case HttpStatus.SC_OK:
-            return Optional.of(response.getJson().mapTo(User.class));
-          case HttpStatus.SC_NOT_FOUND:
-            return Optional.empty();
-          default:
-            String logMessage =
-              String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
-            throw new OkapiModuleClientException(logMessage);
-        }
-      });
+  private Optional<User> extractUser(JsonObject usersJson) {
+    JsonArray responseArray = usersJson.getJsonArray("users");
+    if (responseArray.size() != 1) {
+      String logMessage =
+        String.format("Error looking up for user. Expected 1 but %d users found.", responseArray.size());
+      throw new OkapiModuleClientException(logMessage);
+    } else {
+      return Optional.of(responseArray.getJsonObject(0).mapTo(User.class));
+    }
   }
 
   @Override
@@ -101,19 +80,21 @@ public class UserModuleClientImpl implements UserModuleClient {
 //    query = StringUtil.urlEncode(query).replace("+", "%20");
     String requestUrl = connectionParams.getOkapiUrl() + "/proxiesfor?query=" + query;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
-            connectionParams.buildHeaders(), StringUtils.EMPTY)
-            .map(response -> {
-              switch (response.getCode()) {
-                case HttpStatus.SC_OK:
-                  ProxyForCollection proxies = response.getJson().mapTo(ProxyForCollection.class);
-                  return Optional.of(proxies.getProxiesFor());
-                case HttpStatus.SC_NOT_FOUND:
-                  return Optional.empty();
-                default:
-                  String logMessage =
-                          String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
-                  throw new OkapiModuleClientException(logMessage);
-              }
-            });
+      connectionParams.buildHeaders(), StringUtils.EMPTY)
+      .map(response -> {
+        switch (response.getCode()) {
+          case HttpStatus.SC_OK:
+            ProxyForCollection proxies = response.getJson().mapTo(ProxyForCollection.class);
+            return Optional.of(proxies.getProxiesFor());
+          case HttpStatus.SC_NOT_FOUND:
+            return Optional.empty();
+          default:
+            throw new OkapiModuleClientException(generateErrorLogMsg(response));
+        }
+      });
+  }
+
+  private String generateErrorLogMsg(RestUtil.WrappedResponse response) {
+    return String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
   }
 }
