@@ -13,7 +13,6 @@ import org.folio.rest.jaxrs.model.ManualBlocks;
 import org.folio.rest.jaxrs.model.Manualblock;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
-import org.folio.util.StringUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +30,6 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
   @Override
   public Future<Optional<List<Account>>> lookupOpenAccountsByUserId(String userId, OkapiConnectionParams connectionParams) {
     String query = URLEncoder.encode("(userId==" + userId + " AND status.name=\"Open\")", StandardCharsets.UTF_8);
-    // query = StringUtil.urlEncode(query).replace("+", "%20");
     String requestUrl = connectionParams.getOkapiUrl() + "/accounts?query=" + query;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,

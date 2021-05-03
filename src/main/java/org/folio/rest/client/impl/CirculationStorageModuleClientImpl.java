@@ -30,7 +30,6 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
   public Future<Optional<List<Loan>>> lookupOpenLoansByUserId(String userId, OkapiConnectionParams connectionParams) {
 
     String query = StringUtil.urlEncode("userId==" + userId + " AND status.name=Open");
-    // query = StringUtil.urlEncode(query).replace("+", "%20");
     String requestUrl = connectionParams.getOkapiUrl() + "/loan-storage/loans?query=" + query;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
