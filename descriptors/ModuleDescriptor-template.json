@@ -4,7 +4,7 @@
   "provides": [
     {
       "id": "users-bl",
-      "version": "6.0",
+      "version": "6.1",
       "handlers": [
         {
           "methods": ["GET"],
@@ -85,7 +85,7 @@
         {
           "methods": ["DELETE"],
           "pathPattern": "/bl-users/by-id/{id}",
-          "permissionsRequired": [],
+          "permissionsRequired": ["users-bl.item.delete"],
           "modulePermissions": [
             "users.item.get",
             "circulation-storage.loans.collection.get",
@@ -98,7 +98,7 @@
         {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-id/{id}/open-transactions",
-          "permissionsRequired": [],
+          "permissionsRequired": ["users-bl.transactions.get"],
           "modulePermissions": [
             "users.item.get",
             "circulation-storage.loans.collection.get",
@@ -111,7 +111,7 @@
         {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-username/{name}/open-transactions",
-          "permissionsRequired": [],
+          "permissionsRequired": ["users-bl.transactions.get"],
           "modulePermissions": [
             "users.collection.get",
             "circulation-storage.loans.collection.get",
@@ -297,6 +297,16 @@
       "description" : "Reset password by link"
     },
     {
+      "permissionName": "users-bl.item.delete",
+      "displayName": "users-bl item delete",
+      "description": "Delete a user record after checking for open transactions"
+    },
+    {
+      "permissionName": "users-bl.transactions.get",
+      "displayName": "users-bl transactions get",
+      "description": "Get summary of open transactions of user record"
+    },
+    {
       "permissionName" : "users-bl.all",
       "displayName" : "users-bl all",
       "description" : "All user business-logic permissions",
@@ -305,9 +315,11 @@
         "users-bl.item.get",
         "users-bl.item.post",
         "users-bl.item.put",
+        "users-bl.item.delete",
         "users-bl.password-reset-link.generate",
         "users-bl.password-reset-link.validate",
-        "users-bl.password-reset-link.reset"
+        "users-bl.password-reset-link.reset",
+        "users-bl.transactions.get"
       ],
       "visible" : false
     }
