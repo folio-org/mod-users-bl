@@ -662,13 +662,7 @@ public class BLUsersAPI implements BlUsers {
     userClient.lookupUserByUserName(username, connectionParams)
       .onSuccess(user -> {
         if (user.isPresent()) {
-          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
-            .onSuccess(userTransactions ->
-              asyncResultHandler.handle(Future.succeededFuture(
-                GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond200WithApplicationJson(userTransactions))))
-            .onFailure(error ->
-              asyncResultHandler.handle(Future.succeededFuture(
-                GetBlUsersByUsernameOpenTransactionsByUsernameResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+          getTransactionsOfUser(user.get(), connectionParams, asyncResultHandler);
         } else {
           String msg = String.format("Users with username '%s' not found", username);
           asyncResultHandler.handle(Future.succeededFuture(
@@ -687,13 +681,7 @@ public class BLUsersAPI implements BlUsers {
     userClient.lookupUserById(id, connectionParams)
       .onSuccess(user -> {
         if (user.isPresent()) {
-          openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
-            .onSuccess(userTransactions ->
-              asyncResultHandler.handle(Future.succeededFuture(
-                GetBlUsersByIdOpenTransactionsByIdResponse.respond200WithApplicationJson(userTransactions))))
-            .onFailure(error ->
-              asyncResultHandler.handle(Future.succeededFuture(
-                GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+          getTransactionsOfUser(user.get(), connectionParams, asyncResultHandler);
         } else {
           String msg = String.format("User with id '%s' not found", id);
           asyncResultHandler.handle(Future.succeededFuture(
@@ -704,6 +692,17 @@ public class BLUsersAPI implements BlUsers {
         GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
   }
 
+  private void getTransactionsOfUser(User user, OkapiConnectionParams connectionParams,
+                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
+    openTransactionsService.getTransactionsOfUser(user, connectionParams)
+      .onSuccess(userTransactions ->
+        asyncResultHandler.handle(Future.succeededFuture(
+          GetBlUsersByIdOpenTransactionsByIdResponse.respond200WithApplicationJson(userTransactions))))
+      .onFailure(error ->
+        asyncResultHandler.handle(Future.succeededFuture(
+          GetBlUsersByIdOpenTransactionsByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+  }
+
   @Override
   public void deleteBlUsersByIdById(String id, List<String> include,
                                     Map<String, String> okapiHeaders,
@@ -711,7 +710,7 @@ public class BLUsersAPI implements BlUsers {
                                     Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     userClient.lookupUserById(id, connectionParams)
-      .onSuccess(user ->{
+      .onSuccess(user -> {
         if (user.isPresent()) {
           openTransactionsService.getTransactionsOfUser(user.get(), connectionParams)
             .onSuccess(userTransactions -> {
