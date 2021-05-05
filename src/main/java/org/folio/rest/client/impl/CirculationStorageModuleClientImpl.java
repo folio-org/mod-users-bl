@@ -44,7 +44,7 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
             return Optional.empty();
           default:
             String logMessage =
-              String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
+              String.format("Error looking up loans of user. Status: %d, body: %s", response.getCode(), response.getBody());
             throw new OkapiModuleClientException(logMessage);
         }
       });
@@ -69,7 +69,7 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
             return Optional.empty();
           default:
             String logMessage =
-              String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
+              String.format("Error looking up open requests of user. Status: %d, body: %s", response.getCode(), response.getBody());
             throw new OkapiModuleClientException(logMessage);
         }
       });

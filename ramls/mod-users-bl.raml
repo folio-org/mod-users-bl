@@ -130,7 +130,7 @@ resourceTypes:
           body:
             text/plain:
               example: "Internal server error"
-  compositteOpenTransactionsResource:
+  compositeOpenTransactionsResource:
     get:
       description: "Check if user has any open transactions. Identify user by <<typeName>>"
       responses:
@@ -187,13 +187,13 @@ resourceTypes:
       is: [includeable]
       delete:
       /open-transactions:
-        type: { compositteOpenTransactionsResource: { "typeName" : "id" } }
+        type: { compositeOpenTransactionsResource: { "typeName" : "id" } }
   /by-username:
     /{username}:
       type: { compositeUserResource: { "typeName" : "username"} }
       is: [includeable]
       /open-transactions:
-        type: { compositteOpenTransactionsResource: { "typeName" : "username" } }
+        type: { compositeOpenTransactionsResource: { "typeName" : "username" } }
   /_self:
     type: { compositeUserResource: { "typeName" : "self reference" } }
   /login:

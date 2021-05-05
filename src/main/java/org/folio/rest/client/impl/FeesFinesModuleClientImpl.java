@@ -44,7 +44,7 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
             return Optional.empty();
           default:
             String logMessage =
-              String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
+              String.format("Error looking up open accounts of user. Status: %d, body: %s", response.getCode(), response.getBody());
             throw new OkapiModuleClientException(logMessage);
         }
       });
@@ -64,7 +64,7 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
             return Optional.empty();
           default:
             String logMessage =
-              String.format("Error looking up for user. Status: %d, body: %s", response.getCode(), response.getBody());
+              String.format("Error looking up manual blocks of user. Status: %d, body: %s", response.getCode(), response.getBody());
             throw new OkapiModuleClientException(logMessage);
         }
       });
