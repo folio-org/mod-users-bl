@@ -88,6 +88,7 @@
           "permissionsRequired": ["users-bl.item.delete"],
           "modulePermissions": [
             "users.item.get",
+            "users.item.delete",
             "circulation-storage.loans.collection.get",
             "circulation-storage.requests.collection.get",
             "accounts.collection.get",
