@@ -47,7 +47,7 @@ public class UserModuleClientImpl implements UserModuleClient {
 
   @Override
   public Future<Optional<User>> lookupUserByUserName(String userName, OkapiConnectionParams connectionParams) {
-    String requestUrl = connectionParams.getOkapiUrl() + "/users/?query=username==\"" + userName + "\"";
+    String requestUrl = connectionParams.getOkapiUrl() + "/users?query=username==\"" + userName + "\"";
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
