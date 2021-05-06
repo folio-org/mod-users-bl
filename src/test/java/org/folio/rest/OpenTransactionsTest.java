@@ -298,7 +298,7 @@ public class OpenTransactionsTest {
       .spec(okapi)
       .port(port)
       .when()
-      .get("/bl-users/by-id/" + UUID.randomUUID().toString() + "/open-transactions")
+      .get("/bl-users/by-id/" + UUID.randomUUID() + "/open-transactions")
       .then()
       .statusCode(404);
 
@@ -309,5 +309,30 @@ public class OpenTransactionsTest {
       .get("/bl-users/by-username/noUser/open-transactions")
       .then()
       .statusCode(404);
+  }
+
+  @Test
+  public void getTransactionsMultiUser() {
+    JsonObject userPost = new JsonObject()
+      .put("username", USER_NAME)
+      .put("id", UUID.randomUUID().toString())
+      .put("barcode", USER_BARCODE)
+      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
+      .put("active", true)
+      .put("personal", new JsonObject().put("email", "maxi@maxi.com").put("lastName", "foobar"));
+    given()
+      .body(userPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/users")
+      .then()
+      .statusCode(201);
+
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-username/" + USER_NAME + "/open-transactions")
+      .then()
+      .statusCode(500);
   }
 }
