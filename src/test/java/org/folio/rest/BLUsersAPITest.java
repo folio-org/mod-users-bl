@@ -676,6 +676,18 @@ public class BLUsersAPITest {
       .statusCode(204);
   }
 
+  @Test
+  public void deleteUserNotExistent() {
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
+      .port(port)
+      .when()
+      .delete("/bl-users/by-id/" + UUID.randomUUID().toString())
+      .then()
+      .statusCode(HttpStatus.SC_NOT_FOUND);
+  }
+
   private String buildToken(String passwordResetActionId) {
     JsonObject payload = new JsonObject()
       .put("sub", UNDEFINED_USER_NAME + passwordResetActionId);

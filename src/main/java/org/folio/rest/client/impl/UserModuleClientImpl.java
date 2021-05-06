@@ -77,13 +77,15 @@ public class UserModuleClientImpl implements UserModuleClient {
 
   private Optional<User> extractUser(JsonObject usersJson) {
     JsonArray responseArray = usersJson.getJsonArray("users");
+    if (responseArray.isEmpty()) {
+      return Optional.empty();
+    }
     if (responseArray.size() != 1) {
       String logMessage =
         String.format("Error looking up for user. Expected 1 but %d users found.", responseArray.size());
       throw new OkapiModuleClientException(logMessage);
-    } else {
-      return Optional.of(responseArray.getJsonObject(0).mapTo(User.class));
     }
+    return Optional.of(responseArray.getJsonObject(0).mapTo(User.class));
   }
 
   @Override

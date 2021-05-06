@@ -292,5 +292,22 @@ public class OpenTransactionsTest {
         "userId", equalTo(USER_ID));
   }
 
+  @Test
+  public void getTransactionsUserNotPresent() {
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-id/" + UUID.randomUUID().toString() + "/open-transactions")
+      .then()
+      .statusCode(404);
 
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-username/noUser/open-transactions")
+      .then()
+      .statusCode(404);
+  }
 }
