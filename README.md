@@ -58,11 +58,13 @@ The module exposes a number of endpoints to provide a composite object that link
 #### `/bl-users/by-username/<username>/open-transactions`
 * Description: Return an object listing number of open transactions that are associated to the user referenced by the user's username
 * Supported operations: GET
+* queryParameters supported: no
 * Permissions required?: Yes
 
 #### `/bl-users/by-id/<id>`
 * Description: Delete a user referenced by user's id after checking for open transactions. Deletion will be executed if and only if the user has no open transactions.
 * Supported operations: DELETE
+* queryParameters supported: no
 * Permissions required?: Yes
 
 ## Object Format
