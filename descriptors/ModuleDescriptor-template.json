@@ -225,10 +225,6 @@
       "version" : "5.0"
     },
     {
-      "id": "loan-storage",
-      "version": "7.1"
-    },
-    {
       "id" : "login",
       "version" : "6.0 7.0"
     },
@@ -255,6 +251,12 @@
     {
       "id": "configuration",
       "version": "2.0"
+    }
+  ],
+  "optional": [
+    {
+      "id": "loan-storage",
+      "version": "7.1"
     },
     {
       "id": "feesfines",
