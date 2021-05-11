@@ -231,31 +231,19 @@ public class MockOkapiTest {
   public static void setupClass(TestContext context) {
     vertx = Vertx.vertx();
     testUtil = new TestUtil();
-    Async async = context.async();
+
     mockOkapiPort = NetworkUtils.nextFreePort();
     DeploymentOptions options = new DeploymentOptions().setConfig(
             new JsonObject().put("http.port", mockOkapiPort));
+    TestUtil.deploy(MockOkapi.class, options, vertx, context);
 
-    vertx.deployVerticle(MockOkapi.class.getName(), options, res -> {
-      if(res.failed()) {
-        context.fail(res.cause());
-      } else {
-        mockUsersBLPort = NetworkUtils.nextFreePort();
-        DeploymentOptions usersBLOptions = new DeploymentOptions()
-                .setConfig(new JsonObject()
-                        .put("http.port", mockUsersBLPort)
-                        .putNull(HttpClientMock2.MOCK_MODE)
-                );
-        vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions,
-                res2 -> {
-          if(res2.failed()) {
-            context.fail(res2.cause());
-          } else {
-            async.complete();
-          }
-        });
-      }
-    });
+    mockUsersBLPort = NetworkUtils.nextFreePort();
+    DeploymentOptions usersBLOptions = new DeploymentOptions()
+        .setConfig(new JsonObject()
+            .put("http.port", mockUsersBLPort)
+            .putNull(HttpClientMock2.MOCK_MODE)
+            );
+    TestUtil.deploy(RestVerticle.class, usersBLOptions, vertx, context);
   }
 
   @AfterClass

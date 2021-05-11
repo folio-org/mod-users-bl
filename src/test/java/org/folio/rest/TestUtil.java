@@ -1,19 +1,22 @@
 package org.folio.rest;
 
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.util.Map;
 
 /**
@@ -22,6 +25,18 @@ import java.util.Map;
  */
 public class TestUtil {
   private static final Logger log = LogManager.getLogger(TestUtil.class);
+
+  /**
+   * Deploy verticleClass using deploymentOptions and wait until deployment has completed.
+   */
+  public static void deploy(Class<? extends Verticle> verticleClass, DeploymentOptions deploymentOptions,
+      Vertx vertx, TestContext context) {
+
+    Async async = context.async();
+    vertx.deployVerticle(verticleClass, deploymentOptions)
+    .onComplete(context.asyncAssertSuccess(x -> async.complete()));
+    async.await(5000);
+  }
 
   class WrappedResponse {
     private int code;
@@ -81,7 +96,7 @@ public class TestUtil {
         request.putHeader(entry.getKey(), entry.getValue());
       }
     }
-    
+
     Future<HttpResponse<Buffer>> response;
 
     if (payload != null && (method == HttpMethod.PUT || method == HttpMethod.POST)) {
@@ -92,7 +107,7 @@ public class TestUtil {
     }
 
     response.onFailure(err -> {
-      log.info(String.format("Request for url %s failed: %s", url, 
+      log.info(String.format("Request for url %s failed: %s", url,
         err.getLocalizedMessage()));
       promise.fail(err);
     });
