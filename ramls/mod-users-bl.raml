@@ -24,7 +24,7 @@ types:
   passwordResetAction: !include passwordResetAction.json
   passwordReset: !include passwordReset.json
   notification : !include notification.json
-  userTransactions: !include userTransactions.json
+  openTransactions: !include openTransactions.json
   loans: !include loans.json
   requests: !include requests.json
   accounts: !include accounts.json
@@ -109,12 +109,12 @@ resourceTypes:
               example: "Internal server error"
   compositeOpenTransactionsResource:
     get:
-      description: "Check if user has any open transactions. Identify user by <<typeName>>"
+      description: "Check if user has any open transactions, and if so, how many. Identify user by <<typeName>>"
       responses:
         200:
           body:
             application/json:
-              schema: userTransactions
+              schema: openTransactions
         400:
           description: "Bad request"
           body:
@@ -175,7 +175,7 @@ resourceTypes:
             description: "Conflict, e.g. user cannot be deleted as there are open transactions"
             body:
               application/json:
-                type: userTransactions
+                type: openTransactions
           500:
             description: "Internal server error, e.g. due to misconfiguration"
             body:

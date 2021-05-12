@@ -1,11 +1,9 @@
 package org.folio.rest.client;
 
 import io.vertx.core.Future;
-import org.folio.rest.jaxrs.model.ProxiesFor;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.util.OkapiConnectionParams;
 
-import java.util.List;
 import java.util.Optional;
 
 
@@ -34,5 +32,5 @@ public interface UserModuleClient {
 
   Future<Boolean> deleteUserById(String userId, OkapiConnectionParams connectionParams);
 
-  Future<Optional<List<ProxiesFor>>> lookUpProxiesByUserId(String userId, OkapiConnectionParams connectionParams);
+  Future<Integer> getProxiesCountByUserId(String userId, OkapiConnectionParams connectionParams);
 }

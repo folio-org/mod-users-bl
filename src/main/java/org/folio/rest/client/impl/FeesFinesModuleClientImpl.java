@@ -7,17 +7,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.FeesFinesModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
-import org.folio.rest.jaxrs.model.Account;
 import org.folio.rest.jaxrs.model.Accounts;
 import org.folio.rest.jaxrs.model.ManualBlocks;
-import org.folio.rest.jaxrs.model.Manualblock;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
 
 public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
 
@@ -28,9 +24,9 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
   }
 
   @Override
-  public Future<Optional<List<Account>>> lookupOpenAccountsByUserId(String userId, OkapiConnectionParams connectionParams) {
+  public Future<Integer> getOpenAccountsCountByUserId(String userId, OkapiConnectionParams connectionParams) {
     String query = URLEncoder.encode("(userId==" + userId + " AND status.name=\"Open\")", StandardCharsets.UTF_8);
-    String requestUrl = connectionParams.getOkapiUrl() + "/accounts?query=" + query;
+    String requestUrl = connectionParams.getOkapiUrl() + "/accounts?limit=0&query=" + query;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
@@ -38,10 +34,9 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
             Accounts accounts = response.getJson().mapTo(Accounts.class);
-            List<Account> openAccounts = accounts.getAccounts();
-            return Optional.of(openAccounts);
+            return accounts.getTotalRecords().intValue();
           case HttpStatus.SC_NOT_FOUND:
-            return Optional.empty();
+            return 0;
           default:
             String logMessage =
               String.format("Error looking up open accounts of user. Status: %d, body: %s", response.getCode(), response.getBody());
@@ -51,17 +46,17 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
   }
 
   @Override
-  public Future<Optional<List<Manualblock>>> lookupManualBlocksByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String requestUrl = connectionParams.getOkapiUrl() + "/manualblocks?query=(userId==" + userId + ")";
+  public Future<Integer> getManualBlocksCountByUserId(String userId, OkapiConnectionParams connectionParams) {
+    String requestUrl = connectionParams.getOkapiUrl() + "/manualblocks?limit=0&query=(userId==" + userId + ")";
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
             ManualBlocks blocks = response.getJson().mapTo(ManualBlocks.class);
-            return Optional.of(blocks.getManualblocks());
+            return blocks.getTotalRecords().intValue();
           case HttpStatus.SC_NOT_FOUND:
-            return Optional.empty();
+            return 0;
           default:
             String logMessage =
               String.format("Error looking up manual blocks of user. Status: %d, body: %s", response.getCode(), response.getBody());

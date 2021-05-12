@@ -246,9 +246,9 @@ public class MockOkapi extends AbstractVerticle {
           response = item.encode();
         }
       } else {
-        List<JsonObject> responseList = getCollectionWithContextParams(userStore,
+        MockCollection responseCollection = getCollectionWithContextParams(userStore,
                 context);
-        JsonObject responseObject = wrapCollection(responseList, "users");
+        JsonObject responseObject = wrapCollection(responseCollection, "users");
         response = responseObject.encode();
       }
     } else if(method == PUT) {
@@ -428,9 +428,9 @@ public class MockOkapi extends AbstractVerticle {
     String response = null;
     if(method == GET) {
       if(id == null) { //Get collection
-        List<JsonObject> responseList = getCollectionWithContextParams(
+        MockCollection responseCollection = getCollectionWithContextParams(
                 store, context);
-        JsonObject responseObject = wrapCollection(responseList, collectionName);
+        JsonObject responseObject = wrapCollection(responseCollection, collectionName);
         response = responseObject.encode();
       } else { //Get individual permission
         JsonObject item = store.getItem(id);
@@ -486,9 +486,9 @@ public class MockOkapi extends AbstractVerticle {
       if(id == null) {
         System.out.println("Getting a list of permissions users\n");
         //Get list of perm users
-        List<JsonObject> userList = getCollectionWithContextParams(
+        MockCollection userCollection = getCollectionWithContextParams(
                 permsUsersStore, context);
-        JsonObject responseObject = wrapCollection(userList, "permissionUsers");
+        JsonObject responseObject = wrapCollection(userCollection, "permissionUsers");
         response = responseObject.encode();
       } else {
         if(!url.contains("/permissions")) {
@@ -592,18 +592,18 @@ public class MockOkapi extends AbstractVerticle {
     return new MockResponse(code, response);
   }
 
-  private JsonObject wrapCollection(List<JsonObject> obList, String collectionName) {
+  private JsonObject wrapCollection(MockCollection obCollection, String collectionName) {
     JsonObject result = new JsonObject();
     JsonArray obArray = new JsonArray();
-    for(JsonObject ob : obList) {
+    for(JsonObject ob : obCollection.getObjectList()) {
       obArray.add(ob);
     }
     result.put(collectionName, obArray);
-    result.put("totalRecords", obList.size() );
+    result.put("totalRecords", obCollection.getTotalRecords() );
     return result;
   }
 
-  List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore,
+  MockCollection getCollectionWithContextParams(JsonStore jsonStore,
           RoutingContext context) throws CQLParseException {
     String query = context.request().params().get("query");
     int offset = Integer.parseInt(getParamDefault(context, "offset", "0"));
@@ -647,11 +647,11 @@ public class MockOkapi extends AbstractVerticle {
     QuerySet querySet = new QuerySet().setLeft(query)
             .setOperator(BooleanOperator.AND)
             .setRight(Boolean.TRUE);
-    List<JsonObject> obList = permStore.getCollection(0, 1, querySet);
-    if(obList.isEmpty()) {
+    MockCollection obCollection = permStore.getCollection(0, 1, querySet);
+    if(obCollection.getObjectList().isEmpty()) {
       return null;
     }
-    return obList.get(0);
+    return obCollection.getObjectList().get(0);
   }
 
   protected static Matcher parseMockUri(String uri, String endpoint) {

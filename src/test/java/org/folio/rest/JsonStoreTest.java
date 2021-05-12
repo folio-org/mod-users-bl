@@ -71,17 +71,19 @@ public class JsonStoreTest {
   @Test
   public void test1() {
     assertNotNull(jsonStore.getCollection(null, null, null));
-    assertTrue(jsonStore.getCollection(null, null, null).size() == 10);
-    assertTrue(jsonStore.getCollection(null, null, null).get(0).getString("name").equals("thing1"));
+    assertTrue(jsonStore.getCollection(null, null, null).getObjectList().size() == 10);
+    assertTrue(jsonStore.getCollection(null, null, null).getTotalRecords() == 10);
+    assertTrue(jsonStore.getCollection(null, null, null).getObjectList().get(0).getString("name").equals("thing1"));
     assertTrue(jsonStore.getItem("01f3c7d3-05e0-4b5c-b3b7-2534bdff60ec").getString("name").equals("thing10"));
   }
 
   @Test
   public void test2() {
-    List<JsonObject> jsonList = jsonStore.getCollection(3, 1, null);
-    JsonObject ob = jsonList.get(0);
+    MockCollection jsonList = jsonStore.getCollection(3, 1, null);
+    JsonObject ob = jsonList.getObjectList().get(0);
     assertNotNull(ob);
-    assertTrue(jsonList.size() == 1);
+    assertTrue(jsonList.getObjectList().size() == 1);
+    assertTrue(jsonList.getTotalRecords() == 1);
     assertTrue(ob.containsKey("name"));
     assertNotNull(ob.getString("name"));
 
@@ -113,10 +115,10 @@ public class JsonStoreTest {
               .setField("name").setOperator(Operator.EQUALS).setValue("thing6"))
             .setOperator(BooleanOperator.AND)
             .setRight(Boolean.TRUE);
-    List<JsonObject> jsonList = jsonStore.getCollection(null, 1, qs);
-    JsonObject ob = jsonList.get(0);
+    MockCollection jsonList = jsonStore.getCollection(null, 1, qs);
+    JsonObject ob = jsonList.getObjectList().get(0);
     assertNotNull(ob);
-    assertTrue(jsonList.size() == 1);
+    assertTrue(jsonList.getObjectList().size() == 1);
     assertTrue(ob.containsKey("name"));
     assertNotNull(ob.getString("name"));
     assertTrue(ob.getString("name").equals("thing6"));

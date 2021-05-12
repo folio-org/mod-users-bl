@@ -3,9 +3,7 @@ package org.folio.rest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -57,7 +55,10 @@ public class OpenTransactionsTest {
     port = NetworkUtils.nextFreePort();
     DeploymentOptions usersBLOptions = new DeploymentOptions()
       .setConfig(new JsonObject().put("http.port", port).putNull(HttpClientMock2.MOCK_MODE));
-    vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions, context.asyncAssertSuccess());
+    Async async = context.async();
+    vertx.deployVerticle(RestVerticle.class, usersBLOptions)
+      .onComplete(context.asyncAssertSuccess(x -> async.complete()));
+    async.await(5000);
 
     RestAssured.port = port;
     RequestSpecBuilder builder = new RequestSpecBuilder();
@@ -71,23 +72,18 @@ public class OpenTransactionsTest {
   @Before
   public void cleanUpTransactionData(TestContext context) {
     TestUtil testUtil = new TestUtil();
-    Future<TestUtil.WrappedResponse> deleteLoanFuture =
-      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/loan-storage/loans/" + LOAN_ID, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteRequestsFuture =
-      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/request-storage/requests/" + REQUEST_ID, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteAccountsFuture =
-      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/accounts/" + ACCOUNT_ID, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteProxy1Future =
-      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_1, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteProxy2Future =
-      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_2, HttpMethod.DELETE, null, null);
-    Future<TestUtil.WrappedResponse> deleteManualBlocksFuture =
-      testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/manualblocks/" + MANUAL_BLOCK_ID, HttpMethod.DELETE, null, null);
-
-    Async async = context.async();
-    CompositeFuture.all(deleteLoanFuture, deleteRequestsFuture, deleteAccountsFuture, deleteProxy1Future, deleteProxy2Future, deleteManualBlocksFuture)
-      .onSuccess(asyncResult -> async.complete())
-      .onFailure(context::fail);
+    testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/loan-storage/loans/" + LOAN_ID, HttpMethod.DELETE, null, null)
+      .onComplete(context.asyncAssertSuccess());
+    testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/request-storage/requests/" + REQUEST_ID, HttpMethod.DELETE, null, null)
+      .onComplete(context.asyncAssertSuccess());
+    testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/accounts/" + ACCOUNT_ID, HttpMethod.DELETE, null, null)
+      .onComplete(context.asyncAssertSuccess());
+    testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_1, HttpMethod.DELETE, null, null)
+      .onComplete(context.asyncAssertSuccess());
+    testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/proxiesfor/" + PROXY_ID_2, HttpMethod.DELETE, null, null)
+      .onComplete(context.asyncAssertSuccess());
+    testUtil.doRequest(vertx, "http://localhost:" + okapiPort + "/manualblocks/" + MANUAL_BLOCK_ID, HttpMethod.DELETE, null, null)
+      .onComplete(context.asyncAssertSuccess());
   }
 
   private static String token(String tenant, String user) {

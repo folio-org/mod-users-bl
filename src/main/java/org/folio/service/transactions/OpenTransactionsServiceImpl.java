@@ -6,11 +6,10 @@ import io.vertx.core.Promise;
 import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.client.FeesFinesModuleClient;
 import org.folio.rest.client.UserModuleClient;
+import org.folio.rest.jaxrs.model.OpenTransactions;
 import org.folio.rest.jaxrs.model.User;
-import org.folio.rest.jaxrs.model.UserTransactions;
 import org.folio.rest.util.OkapiConnectionParams;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -32,55 +31,50 @@ public class OpenTransactionsServiceImpl implements OpenTransactionsService {
   }
 
   @Override
-  public Future<UserTransactions> getTransactionsOfUser(User user, OkapiConnectionParams connectionParams) {
+  public Future<OpenTransactions> getTransactionsOfUser(User user, OkapiConnectionParams connectionParams) {
     String id = user.getId();
     Future<Map.Entry<String, Integer>> loansFuture =
-      circulationClient.lookupOpenLoansByUserId(id, connectionParams)
-        .map(loans -> loans.orElse(Collections.emptyList()))
-        .map(loans -> Map.entry(LOANS, loans.size()));
+      circulationClient.getOpenLoansCountByUserId(id, connectionParams)
+        .map(numberLoans -> Map.entry(LOANS, numberLoans));
 
     Future<Map.Entry<String, Integer>> requestsFuture =
-      circulationClient.lookupOpenRequestsByUserId(id, connectionParams)
-        .map(requests -> requests.orElse(Collections.emptyList()))
-        .map(requests -> Map.entry(REQUESTS, requests.size()));
+      circulationClient.getOpenRequestsCountByUserId(id, connectionParams)
+        .map(numberReqs -> Map.entry(REQUESTS, numberReqs));
 
     Future<Map.Entry<String, Integer>> accountsFuture =
-      feesFinesClient.lookupOpenAccountsByUserId(id, connectionParams)
-        .map(accounts -> accounts.orElse(Collections.emptyList()))
-        .map(accounts -> Map.entry(ACCOUNTS, accounts.size()));
+      feesFinesClient.getOpenAccountsCountByUserId(id, connectionParams)
+        .map(accounts -> Map.entry(ACCOUNTS, accounts));
 
     Future<Map.Entry<String, Integer>> manualBlockFuture =
-      feesFinesClient.lookupManualBlocksByUserId(id, connectionParams)
-        .map(manualblocks -> manualblocks.orElse(Collections.emptyList()))
-        .map(manualblocks -> Map.entry(MANUAL_BLOCKS, manualblocks.size()));
+      feesFinesClient.getManualBlocksCountByUserId(id, connectionParams)
+        .map(manualblocks -> Map.entry(MANUAL_BLOCKS, manualblocks));
 
     Future<Map.Entry<String, Integer>> proxiesFuture =
-      userClient.lookUpProxiesByUserId(id, connectionParams)
-        .map(p -> p.orElse(Collections.emptyList()))
-        .map(p -> Map.entry(PROXIES, p.size()));
+      userClient.getProxiesCountByUserId(id, connectionParams)
+        .map(p -> Map.entry(PROXIES, p));
 
-    Promise<UserTransactions> result = Promise.promise();
+    Promise<OpenTransactions> result = Promise.promise();
     CompositeFuture.all(loansFuture, requestsFuture, accountsFuture, manualBlockFuture, proxiesFuture)
       .onSuccess(asyncResult -> {
         CompositeFuture compFutResult = asyncResult.result();
-        Map<String, Integer> openTransactions = compFutResult.list().stream()
+        Map<String, Integer> userTransactions = compFutResult.list().stream()
           .map(o -> (Map.Entry<String, Integer>) o)
           .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         boolean hasOpenTransactions = compFutResult.list().stream()
           .map(o -> (Map.Entry<String, Integer>) o)
           .anyMatch(entry -> entry.getValue() > 0);
-        UserTransactions userTransactions = new UserTransactions()
-          .withLoans(openTransactions.get(LOANS))
-          .withRequests(openTransactions.get(REQUESTS))
-          .withBlocks(openTransactions.get(MANUAL_BLOCKS))
-          .withFeesFines(openTransactions.get(ACCOUNTS))
-          .withProxies(openTransactions.get(PROXIES))
+        OpenTransactions openTransactions = new OpenTransactions()
+          .withLoans(userTransactions.get(LOANS))
+          .withRequests(userTransactions.get(REQUESTS))
+          .withBlocks(userTransactions.get(MANUAL_BLOCKS))
+          .withFeesFines(userTransactions.get(ACCOUNTS))
+          .withProxies(userTransactions.get(PROXIES))
           .withHasOpenTransactions(hasOpenTransactions)
           .withUserId(id);
         if (user.getBarcode() != null) {
-          userTransactions.setUserBarcode(user.getBarcode());
+          openTransactions.setUserBarcode(user.getBarcode());
         }
-        result.complete(userTransactions);
+        result.complete(openTransactions);
       })
       .onFailure(result::fail);
     return result.future();
