@@ -14,7 +14,7 @@
     },
     "hasOpenTransactions": {
       "type": "boolean",
-      "description": "Specifies if the user has any open transactions"
+      "description": "Specifies if the user has any open transactions (loans, requests, fees/fines, proxies, manual-blocks)"
     },
     "loans": {
       "type": "integer",
