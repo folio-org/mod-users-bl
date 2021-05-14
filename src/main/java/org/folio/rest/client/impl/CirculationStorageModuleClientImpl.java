@@ -7,8 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
-import org.folio.rest.jaxrs.model.Loans;
-import org.folio.rest.jaxrs.model.Requests;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 import org.folio.util.StringUtil;
@@ -32,8 +30,7 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
-            Loans loans = response.getJson().mapTo(Loans.class);
-            return loans.getTotalRecords().intValue();
+            return response.getJson().getInteger("totalRecords");
           case HttpStatus.SC_NOT_FOUND:
             return 0;
           default:
@@ -56,8 +53,7 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
-            Requests reqs = response.getJson().mapTo(Requests.class);
-            return reqs.getTotalRecords().intValue();
+            return response.getJson().getInteger("totalRecords");
           case HttpStatus.SC_NOT_FOUND:
             return 0;
           default:

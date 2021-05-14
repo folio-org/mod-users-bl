@@ -7,8 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.FeesFinesModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
-import org.folio.rest.jaxrs.model.Accounts;
-import org.folio.rest.jaxrs.model.ManualBlocks;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 
@@ -33,8 +31,7 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
-            Accounts accounts = response.getJson().mapTo(Accounts.class);
-            return accounts.getTotalRecords().intValue();
+            return response.getJson().getInteger("totalRecords");
           case HttpStatus.SC_NOT_FOUND:
             return 0;
           default:
@@ -53,8 +50,7 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
-            ManualBlocks blocks = response.getJson().mapTo(ManualBlocks.class);
-            return blocks.getTotalRecords().intValue();
+            return response.getJson().getInteger("totalRecords");
           case HttpStatus.SC_NOT_FOUND:
             return 0;
           default:

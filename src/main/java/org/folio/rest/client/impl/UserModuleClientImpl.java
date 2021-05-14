@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.UserModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
-import org.folio.rest.jaxrs.model.ProxyForCollection;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
@@ -95,8 +94,7 @@ public class UserModuleClientImpl implements UserModuleClient {
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
-            ProxyForCollection proxies = response.getJson().mapTo(ProxyForCollection.class);
-            return proxies.getTotalRecords();
+            return response.getJson().getInteger("totalRecords");
           case HttpStatus.SC_NOT_FOUND:
             return 0;
           default:
