@@ -331,4 +331,38 @@ public class OpenTransactionsTest {
       .then()
       .statusCode(500);
   }
+
+  @Test
+  public void getTransactionsNoOptionalDependencies(TestContext context) {
+    int portWith404 = NetworkUtils.nextFreePort();
+    Async async2 = context.async();
+    vertx.createHttpServer()
+      .requestHandler(request -> {
+        if (request.path().startsWith("/users/")) {
+          request.response().setStatusCode(200).end("{}");
+          return;
+        }
+        request.response().setStatusCode(404).end();
+      }).listen(portWith404)
+      .onComplete(context.asyncAssertSuccess(x -> async2.complete()));
+    async2.await(5000);
+
+    given()
+      .headers(
+        "X-Okapi-URL", "http://localhost:" + portWith404,
+        "X-Okapi-Tenant", "supertenant",
+        "X-Okapi-Token", token("supertenant", "maxi"))
+      .port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(false),
+        "loans", equalTo(0),
+        "requests", equalTo(0),
+        "feesFines", equalTo(0),
+        "proxies", equalTo(0),
+        "blocks", equalTo(0));
+  }
+
 }
