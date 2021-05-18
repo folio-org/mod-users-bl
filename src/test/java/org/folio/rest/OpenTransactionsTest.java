@@ -116,7 +116,7 @@ public class OpenTransactionsTest {
       .put("id", REQUEST_ID)
       .put("requesterId", USER_ID)
       .put("itemId", UUID.randomUUID().toString())
-      .put("status", "Open - Not yet filled");
+      .put("status", "Open");
     given()
       .body(requestPost.encode())
       .when()
