@@ -45,8 +45,7 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
   public Future<Integer> getOpenRequestsCountByUserId(String userId, OkapiConnectionParams connectionParams) {
 
     String query = StringUtil.urlEncode("(requesterId==" + userId + " AND status=\"Open\")");
-    query = StringUtil.urlEncode(query).replace("+", "%20");
-    String requestUrl = connectionParams.getOkapiUrl() + "/request-storage/requests?limit=0&query" + query;
+    String requestUrl = connectionParams.getOkapiUrl() + "/request-storage/requests?limit=0&query=" + query;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
