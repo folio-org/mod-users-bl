@@ -12,9 +12,8 @@ import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
+import org.folio.util.StringUtil;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 public class UserModuleClientImpl implements UserModuleClient {
@@ -44,7 +43,9 @@ public class UserModuleClientImpl implements UserModuleClient {
 
   @Override
   public Future<Optional<User>> lookupUserByUserName(String userName, OkapiConnectionParams connectionParams) {
-    String requestUrl = connectionParams.getOkapiUrl() + "/users?query=username==\"" + userName + "\"";
+    String requestUrl = connectionParams.getOkapiUrl() + "/users?query="
+      + StringUtil.urlEncode("username==" + StringUtil.cqlEncode(userName));
+
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
@@ -87,7 +88,7 @@ public class UserModuleClientImpl implements UserModuleClient {
 
   @Override
   public Future<Integer> getProxiesCountByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String query = URLEncoder.encode("(userId==" + userId + " OR proxyUserId==" + userId + ")", StandardCharsets.UTF_8);
+    String query = StringUtil.urlEncode("(userId==" + StringUtil.cqlEncode(userId) + " OR proxyUserId==" + StringUtil.cqlEncode(userId) + ")");
     String requestUrl = connectionParams.getOkapiUrl() + "/proxiesfor?limit=0&query=" + query;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)

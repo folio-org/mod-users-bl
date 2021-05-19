@@ -9,9 +9,7 @@ import org.folio.rest.client.FeesFinesModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import org.folio.util.StringUtil;
 
 public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
 
@@ -23,9 +21,8 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
 
   @Override
   public Future<Integer> getOpenAccountsCountByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String query = URLEncoder.encode("(userId==" + userId + " AND status.name=\"Open\")", StandardCharsets.UTF_8);
+    String query = StringUtil.urlEncode("(userId==" + StringUtil.cqlEncode(userId) + " AND status.name=" + StringUtil.cqlEncode("Open") + ")");
     String requestUrl = connectionParams.getOkapiUrl() + "/accounts?limit=0&query=" + query;
-
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
@@ -44,7 +41,8 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
 
   @Override
   public Future<Integer> getManualBlocksCountByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String requestUrl = connectionParams.getOkapiUrl() + "/manualblocks?limit=0&query=(userId==" + userId + ")";
+    String query = StringUtil.urlEncode("(userId==" + StringUtil.cqlEncode(userId) + ")");
+    String requestUrl = connectionParams.getOkapiUrl() + "/manualblocks?limit=0&query=" + query;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {

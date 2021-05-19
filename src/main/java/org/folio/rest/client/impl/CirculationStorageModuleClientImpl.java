@@ -21,10 +21,8 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
 
   @Override
   public Future<Integer> getOpenLoansCountByUserId(String userId, OkapiConnectionParams connectionParams) {
-
-    String query = StringUtil.urlEncode("userId==" + userId + " AND status.name=Open");
+    String query = StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId) + " AND status.name=" + StringUtil.cqlEncode("Open"));
     String requestUrl = connectionParams.getOkapiUrl() + "/loan-storage/loans?limit=0&query=" + query;
-
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
@@ -43,10 +41,8 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
 
   @Override
   public Future<Integer> getOpenRequestsCountByUserId(String userId, OkapiConnectionParams connectionParams) {
-
-    String query = StringUtil.urlEncode("(requesterId==" + userId + " AND status=\"Open\")");
+    String query = StringUtil.urlEncode("(requesterId==" + StringUtil.cqlEncode(userId) + " AND status=" + StringUtil.cqlEncode("Open") + ")");
     String requestUrl = connectionParams.getOkapiUrl() + "/request-storage/requests?limit=0&query=" + query;
-
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
