@@ -3,11 +3,14 @@ package org.folio.rest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.z3950.zing.cql.CQLParseException;
@@ -71,21 +74,24 @@ public class JsonStoreTest {
   @Test
   public void test1() {
     assertNotNull(jsonStore.getCollection(null, null, null));
-    assertTrue(jsonStore.getCollection(null, null, null).size() == 10);
-    assertTrue(jsonStore.getCollection(null, null, null).get(0).getString("name").equals("thing1"));
-    assertTrue(jsonStore.getItem("01f3c7d3-05e0-4b5c-b3b7-2534bdff60ec").getString("name").equals("thing10"));
+    assertThat(jsonStore.getCollection(null, null, null).getObjectList(), hasSize(10));
+    assertThat(jsonStore.getCollection(null, null, null).getTotalRecords(), is(10));
+    assertThat(jsonStore.getCollection(null, null, null).getObjectList().get(0).getString("name"), is("thing1"));
+    assertThat(jsonStore.getItem("01f3c7d3-05e0-4b5c-b3b7-2534bdff60ec").getString("name"), is("thing10"));
   }
 
   @Test
   public void test2() {
-    List<JsonObject> jsonList = jsonStore.getCollection(3, 1, null);
-    JsonObject ob = jsonList.get(0);
+    MockCollection jsonList = jsonStore.getCollection(3, 1, null);
+    JsonObject ob = jsonList.getObjectList().get(0);
     assertNotNull(ob);
-    assertTrue(jsonList.size() == 1);
+    assertThat(jsonList.getObjectList(), hasSize(1));
+    assertThat(jsonList.getObjectList(), hasSize(1));
+    assertThat(jsonList.getTotalRecords(), is(1));
     assertTrue(ob.containsKey("name"));
     assertNotNull(ob.getString("name"));
 
-    assertTrue(ob.getString("name").equals("thing4"));
+    assertThat(ob.getString("name"), is("thing4"));
   }
 
   @Test
@@ -101,7 +107,7 @@ public class JsonStoreTest {
     String id = "5581c6ea-153f-46df-9c94-5a64d371a4f0";
     jsonStore.addItem(null, new JsonObject().put("id", id).put("name", "thing11"));
     JsonObject ob = jsonStore.getItem(id);
-    assertTrue(ob.getString("name").equals("thing11"));
+    assertThat(ob.getString("name"), is("thing11"));
   }
 
  @Test
@@ -113,13 +119,13 @@ public class JsonStoreTest {
               .setField("name").setOperator(Operator.EQUALS).setValue("thing6"))
             .setOperator(BooleanOperator.AND)
             .setRight(Boolean.TRUE);
-    List<JsonObject> jsonList = jsonStore.getCollection(null, 1, qs);
-    JsonObject ob = jsonList.get(0);
+    MockCollection jsonList = jsonStore.getCollection(null, 1, qs);
+    JsonObject ob = jsonList.getObjectList().get(0);
     assertNotNull(ob);
-    assertTrue(jsonList.size() == 1);
+    assertThat(jsonList.getObjectList(), hasSize(1));
     assertTrue(ob.containsKey("name"));
     assertNotNull(ob.getString("name"));
-    assertTrue(ob.getString("name").equals("thing6"));
+    assertThat(ob.getString("name"), is("thing6"));
   }
 
   @Test
@@ -138,8 +144,8 @@ public class JsonStoreTest {
     System.out.println("Queryset dump: " + smallBlackCatQS.toString() + "\n");
     JsonArray resultList = filterList(thingList, smallBlackCatQS);
 
-    assertTrue(resultList.size() == 1);
-    assertTrue(resultList.getJsonObject(0).getString("name").equals("hector"));
+    assertThat(resultList.size(), is(1));
+    assertThat(resultList.getJsonObject(0).getString("name"), is("hector"));
 
   }
 
@@ -148,10 +154,10 @@ public class JsonStoreTest {
     String query = "size == small and species == cat and color == black";
     QuerySet qs = QuerySet.fromCQL(query);
     JsonArray resultList = filterList(thingList, qs);
-    System.out.println("Queryset dump: " + qs.toString() + "\n");
+    System.out.println("Queryset dump: " + qs + "\n");
     assertNotNull(resultList);
-    assertTrue(resultList.size() == 1);
-    assertTrue(resultList.getJsonObject(0).getString("name").equals("hector"));
+    assertThat(resultList.size(), is(1));
+    assertThat(resultList.getJsonObject(0).getString("name"), is("hector"));
   }
 
   private JsonArray filterList(JsonArray list, QuerySet qs) {

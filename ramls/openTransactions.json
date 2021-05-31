@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "User Transactions Schema",
+  "description": "Schema describing open transactions of a user",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "description": "User's id"
+    },
+    "userBarcode": {
+      "type": "string",
+      "description": "User's barcode"
+    },
+    "hasOpenTransactions": {
+      "type": "boolean",
+      "description": "Specifies if the user has any open transactions (loans, requests, fees/fines, proxies, manual-blocks)"
+    },
+    "loans": {
+      "type": "integer",
+      "description": "Number of open loans"
+    },
+    "requests": {
+      "type": "integer",
+      "description": "Number of open requests"
+    },
+    "feesFines": {
+      "type": "integer",
+      "description": "Number of open fees/fines"
+    },
+    "proxies": {
+      "type": "integer",
+      "description": "Number of open proxies"
+    },
+    "blocks": {
+      "type": "integer",
+      "description": "Number of open blocks"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "userId",
+    "hasOpenTransactions",
+    "loans",
+    "requests",
+    "feesFines",
+    "proxies",
+    "blocks"
+  ]
+}
