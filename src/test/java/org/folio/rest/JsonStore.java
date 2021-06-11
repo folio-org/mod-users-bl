@@ -7,8 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.UUID;
 
 /**
@@ -54,7 +52,7 @@ public class JsonStore {
   }
   */
 
-  public List<JsonObject> getCollection(Integer offset, Integer limit,
+  public MockCollection getCollection(Integer offset, Integer limit,
           QuerySet qs) {
     if(offset == null) { offset = 0; }
     if(limit == null) { limit = 30; }
@@ -81,8 +79,14 @@ public class JsonStore {
       returnList.add(rawMatchIterator.next());
     }
 
-    return returnList;
+    MockCollection result = new MockCollection(returnList);
 
+    // Mocking RMB behavior:
+    // "For limit = 0 an exact count is returned without any records."
+    if (limit == 0) {
+      result.setTotalRecords(rawMatchList.size());
+    }
+    return result;
   }
 
   public JsonObject getItem(String id) {

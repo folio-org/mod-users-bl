@@ -27,7 +27,6 @@ import static io.vertx.core.http.HttpMethod.POST;
 import static io.vertx.core.http.HttpMethod.PUT;
 
 /**
- *
  * @author kurt
  */
 public class MockOkapi extends AbstractVerticle {
@@ -40,6 +39,10 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore servicePointsUsersStore;
   private JsonStore configurationStore;
   private JsonStore resetPasswordActionStore;
+  private JsonStore loansStorage;
+  private JsonStore requestsStorage;
+  private JsonStore accountsStorage;
+  private JsonStore manualBlocksStorage;
 
   private static final String USERS_ENDPOINT = "/users";
   private static final String PASSWORD_VALIDATE_ENDPOINT = "/password/validate";
@@ -55,6 +58,10 @@ public class MockOkapi extends AbstractVerticle {
   private static final String SIGN_TOKEN_ENDPOINT = "/token";
   private static final String RESET_PASSWORD_ENDPOINT = "/authn/reset-password";
   private static final String NOTIFY_ENDPOINT = "/notify";
+  private static final String LOANS_ENDPOINT = "/loan-storage/loans";
+  private static final String REQUESTS_ENDPOINT = "/request-storage/request";
+  private static final String ACCOUNTS_ENDPOINT = "/accounts";
+  private static final String MANUAL_BLOCKS_ENDPOINT = "/manualblocks";
   private static final String ADMIN_USER_ID = UUID.randomUUID().toString();
 
   @Override
@@ -87,6 +94,10 @@ public class MockOkapi extends AbstractVerticle {
     servicePointsUsersStore = new JsonStore();
     configurationStore = new JsonStore();
     resetPasswordActionStore = new JsonStore();
+    loansStorage = new JsonStore();
+    requestsStorage = new JsonStore();
+    accountsStorage = new JsonStore();
+    manualBlocksStorage = new JsonStore();
   }
 
   private void handleRequest(RoutingContext context) {
@@ -95,7 +106,7 @@ public class MockOkapi extends AbstractVerticle {
     String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT, PASSWORD_VALIDATE_ENDPOINT, PASSWORD_UPDATE_ENDPOINT,
       PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT, SERVICE_POINTS_USERS_ENDPOINT,
       SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT, PASSWORD_RESET_ACTION_ENDPOINT, SIGN_TOKEN_ENDPOINT,
-      RESET_PASSWORD_ENDPOINT, NOTIFY_ENDPOINT};
+      RESET_PASSWORD_ENDPOINT, NOTIFY_ENDPOINT, LOANS_ENDPOINT, REQUESTS_ENDPOINT, ACCOUNTS_ENDPOINT, MANUAL_BLOCKS_ENDPOINT};
     String uri = context.request().path();
     Matcher matcher;
     String id = null;
@@ -181,6 +192,22 @@ public class MockOkapi extends AbstractVerticle {
         case NOTIFY_ENDPOINT:
           mockResponse = handleNotify(method, context.getBodyAsString());
           break;
+        case LOANS_ENDPOINT:
+          mockResponse = handleLoans(method, id, remainder,
+            context.getBodyAsString(), context);
+          break;
+        case REQUESTS_ENDPOINT:
+          mockResponse = handleRequests(method, id, remainder,
+            context.getBodyAsString(), context);
+          break;
+        case ACCOUNTS_ENDPOINT:
+          mockResponse = handleAccounts(method, id, remainder,
+            context.getBodyAsString(), context);
+          break;
+        case MANUAL_BLOCKS_ENDPOINT:
+          mockResponse = handleManualBlocks(method, id, remainder,
+            context.getBodyAsString(), context);
+          break;
         default:
           break;
       }
@@ -219,9 +246,9 @@ public class MockOkapi extends AbstractVerticle {
           response = item.encode();
         }
       } else {
-        List<JsonObject> responseList = getCollectionWithContextParams(userStore,
+        MockCollection responseCollection = getCollectionWithContextParams(userStore,
                 context);
-        JsonObject responseObject = wrapCollection(responseList, "users");
+        JsonObject responseObject = wrapCollection(responseCollection, "users");
         response = responseObject.encode();
       }
     } else if(method == PUT) {
@@ -261,7 +288,7 @@ public class MockOkapi extends AbstractVerticle {
   private MockResponse handleGroups(HttpMethod method, String id, String url,
           String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(groupsStore, "usergroups", method, id, url, payload,
-            context);
+      context);
   }
 
   private MockResponse handleProxies(HttpMethod method, String id, String url,
@@ -327,6 +354,32 @@ public class MockOkapi extends AbstractVerticle {
     }
   }
 
+  private MockResponse handleLoans(HttpMethod method, String id, String url,
+                                   String payload, RoutingContext context) throws CQLParseException {
+    String query = context.request().params().get("query");
+    System.out.println("QUERY PARAMS: " + query);
+    return handleBasicCrud(loansStorage, "loans", method, id, url, payload,
+      context);
+  }
+
+  private MockResponse handleRequests(HttpMethod method, String id, String url,
+                                   String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(requestsStorage, "requests", method, id, url, payload,
+      context);
+  }
+
+  private MockResponse handleAccounts(HttpMethod method, String id, String url,
+                                      String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(accountsStorage, "accounts", method, id, url, payload,
+      context);
+  }
+
+  private MockResponse handleManualBlocks(HttpMethod method, String id, String url,
+                                      String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(manualBlocksStorage, "manualblocks", method, id, url, payload,
+      context);
+  }
+
   private MockResponse handlerPasswordValidate(HttpMethod method, String id, String url,
                                                    String payload, RoutingContext context) {
     JsonObject object = new JsonObject(payload);
@@ -375,9 +428,9 @@ public class MockOkapi extends AbstractVerticle {
     String response = null;
     if(method == GET) {
       if(id == null) { //Get collection
-        List<JsonObject> responseList = getCollectionWithContextParams(
+        MockCollection responseCollection = getCollectionWithContextParams(
                 store, context);
-        JsonObject responseObject = wrapCollection(responseList, collectionName);
+        JsonObject responseObject = wrapCollection(responseCollection, collectionName);
         response = responseObject.encode();
       } else { //Get individual permission
         JsonObject item = store.getItem(id);
@@ -433,9 +486,9 @@ public class MockOkapi extends AbstractVerticle {
       if(id == null) {
         System.out.println("Getting a list of permissions users\n");
         //Get list of perm users
-        List<JsonObject> userList = getCollectionWithContextParams(
+        MockCollection userCollection = getCollectionWithContextParams(
                 permsUsersStore, context);
-        JsonObject responseObject = wrapCollection(userList, "permissionUsers");
+        JsonObject responseObject = wrapCollection(userCollection, "permissionUsers");
         response = responseObject.encode();
       } else {
         if(!url.contains("/permissions")) {
@@ -532,25 +585,25 @@ public class MockOkapi extends AbstractVerticle {
         }
       }
     }
-    if(response == null) {
+    if (response == null) {
       code = 500;
       response = "Server error";
     }
     return new MockResponse(code, response);
   }
 
-  private JsonObject wrapCollection(List<JsonObject> obList, String collectionName) {
+  private JsonObject wrapCollection(MockCollection obCollection, String collectionName) {
     JsonObject result = new JsonObject();
     JsonArray obArray = new JsonArray();
-    for(JsonObject ob : obList) {
+    for(JsonObject ob : obCollection.getObjectList()) {
       obArray.add(ob);
     }
     result.put(collectionName, obArray);
-    result.put("totalRecords", obList.size() );
+    result.put("totalRecords", obCollection.getTotalRecords() );
     return result;
   }
 
-  List<JsonObject> getCollectionWithContextParams(JsonStore jsonStore,
+  MockCollection getCollectionWithContextParams(JsonStore jsonStore,
           RoutingContext context) throws CQLParseException {
     String query = context.request().params().get("query");
     int offset = Integer.parseInt(getParamDefault(context, "offset", "0"));
@@ -594,11 +647,11 @@ public class MockOkapi extends AbstractVerticle {
     QuerySet querySet = new QuerySet().setLeft(query)
             .setOperator(BooleanOperator.AND)
             .setRight(Boolean.TRUE);
-    List<JsonObject> obList = permStore.getCollection(0, 1, querySet);
-    if(obList.isEmpty()) {
+    MockCollection obCollection = permStore.getCollection(0, 1, querySet);
+    if(obCollection.getObjectList().isEmpty()) {
       return null;
     }
-    return obList.get(0);
+    return obCollection.getObjectList().get(0);
   }
 
   protected static Matcher parseMockUri(String uri, String endpoint) {
