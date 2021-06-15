@@ -1,7 +1,12 @@
-## 7.0.0 IN PROGRESS
+## 7.0.0 2021-06-15
 
+* Checks for open transactions (e.g. loans, fines) when attempting to delete a user (MODUSERBL-116, MODUSERBL-115)
+* `embed_postgres` command line option is no longer supported (MODUSERBL-119)
 * Upgrades to RAML-Module-Builder 33.0.0 (MODUSERBL-119)
 * Upgrades to Vert.x 4.1.0.CR1 (MODUSERBL-119)
+* Provides `users-bl 6.1`
+* Optionally requires `loan-storage 6.1`
+* Optionally requires `feesfines 16.3`
 
 ## 6.2.0 2021-03-11
 
