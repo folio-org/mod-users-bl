@@ -85,7 +85,7 @@ public class HeadersForwardingTest {
 
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject().put("http.port", port));
-    vertx.deployVerticle(RestVerticle.class.getName(), options, context.asyncAssertSuccess());
+    TestUtil.deploy(RestVerticle.class, options, vertx, context);
   }
 
   @Test

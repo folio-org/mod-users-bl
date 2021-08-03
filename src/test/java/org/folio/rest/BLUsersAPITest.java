@@ -65,12 +65,12 @@ public class BLUsersAPITest {
     okapiPort = NetworkUtils.nextFreePort();
     DeploymentOptions okapiOptions = new DeploymentOptions()
         .setConfig(new JsonObject().put("http.port", okapiPort));
-    vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions, context.asyncAssertSuccess());
+    TestUtil.deploy(MockOkapi.class, okapiOptions, vertx, context);
 
     port = NetworkUtils.nextFreePort();
     DeploymentOptions usersBLOptions = new DeploymentOptions()
       .setConfig(new JsonObject().put("http.port", port).putNull(HttpClientMock2.MOCK_MODE));
-    vertx.deployVerticle(RestVerticle.class.getName(), usersBLOptions, context.asyncAssertSuccess());
+    TestUtil.deploy(RestVerticle.class, usersBLOptions, vertx, context);
 
     RestAssured.port = port;
     RequestSpecBuilder builder = new RequestSpecBuilder();

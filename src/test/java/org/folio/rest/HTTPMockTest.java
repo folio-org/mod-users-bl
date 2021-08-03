@@ -1,11 +1,5 @@
 package org.folio.rest;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.concurrent.CompletableFuture;
-
-import org.folio.rest.tools.client.HttpModuleClient2;
-import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.After;
@@ -16,7 +10,6 @@ import org.junit.runner.RunWith;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
@@ -37,14 +30,11 @@ public class HTTPMockTest {
 
     vertx = Vertx.vertx();
 
-    Async async = context.async();
     port = NetworkUtils.nextFreePort();
 
     DeploymentOptions options = new DeploymentOptions().setConfig(new JsonObject().put("http.port",
       port));
-    vertx.deployVerticle(RestVerticle.class.getName(), options, context.asyncAssertSuccess(id -> {
-      async.complete();
-    }));
+    TestUtil.deploy(RestVerticle.class, options, vertx, context);
   }
 
   @After

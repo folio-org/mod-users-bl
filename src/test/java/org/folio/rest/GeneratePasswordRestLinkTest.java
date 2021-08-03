@@ -90,7 +90,7 @@ public class GeneratePasswordRestLinkTest {
     port = NetworkUtils.nextFreePort();
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject().put("http.port", port));
-    vertx.deployVerticle(RestVerticle.class.getName(), options, context.asyncAssertSuccess());
+    TestUtil.deploy(RestVerticle.class, options, vertx, context);
 
     spec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
