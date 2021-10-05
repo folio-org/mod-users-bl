@@ -1,3 +1,7 @@
+## 7.1.0 2021-10-05
+ 
+* Optionally requires `feesfines 16.3 or 17.0`
+
 ## 7.0.0 2021-06-15
 
 * Checks for open transactions (e.g. loans, fines) when attempting to delete a user (MODUSERBL-116, MODUSERBL-115)
