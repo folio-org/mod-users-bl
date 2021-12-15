@@ -1,3 +1,7 @@
+## 7.0.1 2021-12-16
+
+* Upgrade to RMB to address log4j security vulnerability (MODUSERBL-123)
+
 ## 7.0.0 2021-06-15
 
 * Checks for open transactions (e.g. loans, fines) when attempting to delete a user (MODUSERBL-116, MODUSERBL-115)
