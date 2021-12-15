@@ -1,3 +1,7 @@
+## 7.2.0 IN-PROGRESS
+
+* Upgrade to RMB to address log4j security vulverability (MODUSERBL-123)
+
 ## 7.1.0 2021-10-05
  
 * Optionally requires `feesfines 16.3 or 17.0`
