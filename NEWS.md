@@ -1,4 +1,4 @@
-## 7.2.0 IN-PROGRESS
+## 7.1.1 2021-12-16
 
 * Upgrade to RMB to address log4j security vulverability (MODUSERBL-123)
 
