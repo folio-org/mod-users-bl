@@ -1,4 +1,4 @@
-## 7.2.0 IN-PROGRESS
+## 7.2.0 2022-02-22
 
 * Upgrade to RMB 33.2.4 and addressing log4j security vulverability (MODUSERBL-123, MODUSERBL-137)
 
