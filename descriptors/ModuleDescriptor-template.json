@@ -40,7 +40,6 @@
           "modulePermissions" : [
             "users.item.get",
             "users.collection.get",
-            "perms.users.item.get",
             "perms.users.get",
             "usergroups.item.get",
             "inventory-storage.service-points-users.collection.get",
@@ -136,9 +135,8 @@
           "pathPattern": "/bl-users/{id}",
           "permissionsDesired": ["perms.users.item.put" ],
           "permissionsRequired": ["users-bl.item.put"],
-          "modulePermissions": ["users.edit", "users.item.put",
-            "perms.users.item.put",
-            "login.item.put"]
+          "modulePermissions": ["users.item.put",
+            "perms.users.item.put"]
         },
         {
           "methods": ["POST"],
@@ -147,7 +145,6 @@
           "permissionsRequired": [],
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
-            "login.item.put",
             "configuration.entries.collection.get",
             "users.collection.get",
             "users.item.get",
@@ -163,7 +160,6 @@
           "permissionsRequired": [],
           "modulePermissions": ["users.edit", "users.item.put",
             "perms.users.item.put",
-            "login.item.put",
             "configuration.entries.collection.get",
             "users.collection.get",
             "notify.item.post"
@@ -175,7 +171,7 @@
           "permissionsDesired": [],
           "permissionsRequired": [],
           "modulePermissions": ["validation.validate.post",
-            "login.item.put", "users.item.get"]
+            "users.item.get"]
         },
         {
           "methods": ["POST"],
