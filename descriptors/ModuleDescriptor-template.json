@@ -59,7 +59,6 @@
             "users.item.get",
             "users.collection.get",
             "perms.users.get",
-            "login.item.get",
             "inventory-storage.service-points-users.collection.get",
             "inventory-storage.service-points-users.item.get",
             "inventory-storage.service-points.collection.get",
@@ -74,7 +73,6 @@
             "users.item.get",
             "users.collection.get",
             "perms.users.get",
-            "login.item.get",
             "inventory-storage.service-points-users.collection.get",
             "inventory-storage.service-points-users.item.get",
             "inventory-storage.service-points.collection.get",
@@ -222,7 +220,7 @@
     },
     {
       "id" : "login",
-      "version" : "6.0 7.0"
+      "version" : "7.0"
     },
     {
       "id" : "service-points",
