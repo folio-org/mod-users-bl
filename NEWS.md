@@ -1,4 +1,4 @@
-## 7.2.1 IN-PROGRESS
+## 7.2.1 2022-03-29
 
 * removed unused permissions (MODUSERBL-140)
 
