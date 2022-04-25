@@ -1,3 +1,9 @@
+## 7.2.2 2022-04-26
+
+* Vert.x HttpClient objects are leaked (MODUSERBL-80)
+* Update dependencies (RMB, Vertx, Jackson, Netty) (MODUSERBL-145)
+* Remove reference to login.item.get (MODUSERBL-141)
+
 ## 7.2.1 2022-03-29
 
 * removed unused permissions (MODUSERBL-140)
