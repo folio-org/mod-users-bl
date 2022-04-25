@@ -1062,52 +1062,45 @@ public class BLUsersAPI implements BlUsers {
    * @param fieldAliasList - a list of aliases
    * @return a list of user fields to use for search
    */
-  private io.vertx.core.Future<List<String>> getLocateUserFields(List<String> fieldAliasList, java.util.Map<String, String> okapiHeaders) {
-    //TODO:
-
-    String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
-    String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
-
-    Matcher matcher = HOST_PORT_PATTERN.matcher(okapiURL);
-    if (!matcher.find()) {
-      return io.vertx.core.Future.failedFuture("Could not parse okapiURL: " + okapiURL);
-    }
-    Promise<List<String>> promise = Promise.promise();
-
-    ConfigurationsClient configurationsClient = new ConfigurationsClient(okapiURL, tenant, token);
-    StringBuilder query = new StringBuilder("module==USERSBL AND (")
-      .append(fieldAliasList.stream()
-                            .map(f -> new StringBuilder("code==\"").append(f).append("\"").toString())
-                            .collect(Collectors.joining(" or ")))
-      .append(")");
+  private Future<List<String>> getLocateUserFields(List<String> fieldAliasList, Map<String, String> okapiHeaders) {
 
     try {
-      configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null, response -> {
-        HttpResponse<Buffer> result = response.result();
-        if (result.statusCode() != 200) {
-          promise.fail("Expected status code 200, got '" + result.statusCode() +
-            "' :" + result.bodyAsString() );
-          return;
-        }
+      String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+      String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
+      String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
 
-        JsonObject entries = result.bodyAsJsonObject();
+      Matcher matcher = HOST_PORT_PATTERN.matcher(okapiURL);
+      if (!matcher.find()) {
+        return Future.failedFuture("Could not parse okapiURL: " + okapiURL);
+      }
 
-        if (!entries.getJsonArray("configs").isEmpty()) {
-          promise.complete(
-            entries.getJsonArray("configs").stream()
-              .map(o -> ((JsonObject) o).getString("value"))
-              .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
-              .collect(Collectors.toList()));
-        } else {
-          promise.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
-        }
-      });
+      ConfigurationsClient configurationsClient = new ConfigurationsClient(okapiURL, tenant, token);
+      StringBuilder query = new StringBuilder("module==USERSBL AND (")
+          .append(fieldAliasList.stream()
+              .map(f -> new StringBuilder("code==\"").append(f).append("\"").toString())
+              .collect(Collectors.joining(" or ")))
+          .append(")");
 
-    } catch (UnsupportedEncodingException e) {
-      promise.fail(e);
+      return configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null)
+          .map(result -> {
+            if (result.statusCode() != 200) {
+              throw new RuntimeException("Expected status code 200, got '" + result.statusCode() +
+                  "' :" + result.bodyAsString());
+            }
+
+            JsonObject entries = result.bodyAsJsonObject();
+
+            if (entries.getJsonArray("configs").isEmpty()) {
+              return DEFAULT_FIELDS_TO_LOCATE_USER;
+            }
+            return entries.getJsonArray("configs").stream()
+                .map(o -> ((JsonObject) o).getString("value"))
+                .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
+                .collect(Collectors.toList());
+          });
+    } catch (Exception e) {
+      return Future.failedFuture(e);
     }
-    return promise.future();
   }
 
 

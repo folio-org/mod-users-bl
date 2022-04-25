@@ -42,6 +42,15 @@
     </pluginRepository>
   </pluginRepositories>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <raml-module-builder.version>33.2.9</raml-module-builder.version>
+    <mod-configuration-client.version>5.7.6</mod-configuration-client.version>
+    <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
+    <vertx-version>4.2.7</vertx-version>
+  </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -101,7 +110,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -271,6 +280,7 @@
           </dependency>
         </dependencies>
       </plugin>
+
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <version>3.0.1</version>
@@ -365,6 +375,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -401,6 +412,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -412,17 +424,11 @@
           <useSystemClassLoader>false</useSystemClassLoader>
         </configuration>
       </plugin>
+
     </plugins>
   </build>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <raml-module-builder.version>33.2.4</raml-module-builder.version>
-    <mod-configuration-client.version>5.6.0</mod-configuration-client.version>
-    <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <vertx-version>4.1.4</vertx-version>
-  </properties>
-    <repositories>
+
+  <repositories>
     <repository>
       <id>folio-nexus</id>
       <name>FOLIO Maven repository</name>
@@ -433,7 +439,6 @@
       <name>Index Data</name>
       <url>https://maven.indexdata.com/</url>
     </repository>
-
   </repositories>
 
 </project>
