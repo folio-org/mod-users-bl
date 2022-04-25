@@ -1,6 +1,6 @@
 package org.folio.rest.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -8,7 +8,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -35,6 +34,7 @@ import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.ExceptionHelper;
+import org.folio.rest.util.HttpClientUtil;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.PasswordResetLinkService;
 import org.folio.service.PasswordResetLinkServiceImpl;
@@ -103,8 +103,6 @@ public class BLUsersAPI implements BlUsers {
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
 
-  private static final int DEFAULT_PORT = 9030;
-
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
   private NotificationClient notificationClient;
@@ -114,7 +112,7 @@ public class BLUsersAPI implements BlUsers {
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
-    HttpClient httpClient = initHttpClient(vertx);
+    HttpClient httpClient = HttpClientUtil.getInstance(vertx);
     this.notificationClient = new NotificationClientImpl(httpClient);
 
     userClient = new UserModuleClientImpl(httpClient);
@@ -124,22 +122,13 @@ public class BLUsersAPI implements BlUsers {
       this.notificationClient,
       new PasswordResetActionClientImpl(httpClient),
       userClient,
-      new UserPasswordServiceImpl(vertx));
+      new UserPasswordServiceImpl(httpClient));
 
     openTransactionsService = new OpenTransactionsServiceImpl(
       new CirculationStorageModuleClientImpl(httpClient),
       new FeesFinesModuleClientImpl(httpClient),
       userClient
     );
-  }
-
-  private HttpClient initHttpClient(Vertx vertx) {
-    int lookupTimeout = Integer
-      .parseInt(RestVerticle.MODULE_SPECIFIC_ARGS.getOrDefault("lookup.timeout", "1000"));
-    HttpClientOptions options = new HttpClientOptions();
-    options.setConnectTimeout(lookupTimeout);
-    options.setIdleTimeout(lookupTimeout);
-    return vertx.createHttpClient(options);
   }
 
   private List<String> getDefaultIncludes(){

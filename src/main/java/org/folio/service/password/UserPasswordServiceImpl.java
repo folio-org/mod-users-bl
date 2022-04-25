@@ -4,15 +4,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.folio.rest.RestVerticle;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Error;
 import org.folio.rest.jaxrs.model.Errors;
@@ -30,27 +27,13 @@ public class UserPasswordServiceImpl implements UserPasswordService {
   private static final String VALIDATE_URL = "/password/validate";
   private static final String UPDATE_URL = "/authn/update";
 
-  // Timeout to wait for response
-  private int lookupTimeout = Integer
-    .parseInt(RestVerticle.MODULE_SPECIFIC_ARGS.getOrDefault("lookup.timeout", "1000"));
-
   // Http client to call programmatic rules as internal OKAPI endpoints
   private HttpClient httpClient;
 
   private static final Logger logger = LogManager.getLogger(UserPasswordServiceImpl.class);
 
-  private void initHttpClient(final Vertx vertx) {
-    HttpClientOptions options = new HttpClientOptions();
-    options.setConnectTimeout(lookupTimeout);
-    options.setIdleTimeout(lookupTimeout);
-    this.httpClient = vertx.createHttpClient(options);
-  }
-
-  public UserPasswordServiceImpl() {
-  }
-
-  public UserPasswordServiceImpl(final Vertx vertx) {
-    initHttpClient(vertx);
+  public UserPasswordServiceImpl(HttpClient httpClient) {
+    this.httpClient = httpClient;
   }
 
   @Override
