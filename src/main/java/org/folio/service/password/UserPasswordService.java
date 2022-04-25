@@ -5,6 +5,7 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
 
 
@@ -14,8 +15,8 @@ import io.vertx.core.json.JsonObject;
 @ProxyGen
 public interface UserPasswordService {
 
-  static UserPasswordService create(Vertx vertx) {
-    return new UserPasswordServiceImpl(vertx);
+  static UserPasswordService create(HttpClient httpClient) {
+    return new UserPasswordServiceImpl(httpClient);
   }
 
   /**
