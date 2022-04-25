@@ -5,8 +5,12 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import org.folio.rest.RestVerticle;
 
-public class HttpClientUtil {
+public final class HttpClientUtil {
   private static final String KEY = "httpClient";
+
+  private HttpClientUtil() {
+    throw new UnsupportedOperationException("Cannot instantiate utility class");
+  }
 
   public static HttpClient getInstance(Vertx vertx) {
     var context = vertx.getOrCreateContext();
