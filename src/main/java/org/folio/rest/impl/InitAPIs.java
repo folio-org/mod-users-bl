@@ -7,6 +7,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.folio.rest.resource.interfaces.InitAPI;
+import org.folio.rest.util.HttpClientUtil;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 
@@ -18,9 +19,10 @@ public class InitAPIs implements InitAPI {
 
   @Override
   public void init(Vertx vertx, Context context, Handler<AsyncResult<Boolean>> handler) {
+    var httpClient = HttpClientUtil.getInstance(vertx);
     new ServiceBinder(vertx)
       .setAddress(UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS)
-      .register(UserPasswordService.class, UserPasswordService.create(vertx));
+      .register(UserPasswordService.class, UserPasswordService.create(httpClient));
     handler.handle(Future.succeededFuture(true));
   }
 }

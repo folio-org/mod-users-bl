@@ -1,6 +1,6 @@
 package org.folio.rest.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -8,7 +8,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -35,6 +34,7 @@ import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.ExceptionHelper;
+import org.folio.rest.util.HttpClientUtil;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.PasswordResetLinkService;
 import org.folio.service.PasswordResetLinkServiceImpl;
@@ -103,8 +103,6 @@ public class BLUsersAPI implements BlUsers {
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
 
-  private static final int DEFAULT_PORT = 9030;
-
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
   private NotificationClient notificationClient;
@@ -114,7 +112,7 @@ public class BLUsersAPI implements BlUsers {
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
-    HttpClient httpClient = initHttpClient(vertx);
+    HttpClient httpClient = HttpClientUtil.getInstance(vertx);
     this.notificationClient = new NotificationClientImpl(httpClient);
 
     userClient = new UserModuleClientImpl(httpClient);
@@ -124,22 +122,13 @@ public class BLUsersAPI implements BlUsers {
       this.notificationClient,
       new PasswordResetActionClientImpl(httpClient),
       userClient,
-      new UserPasswordServiceImpl(vertx));
+      new UserPasswordServiceImpl(httpClient));
 
     openTransactionsService = new OpenTransactionsServiceImpl(
       new CirculationStorageModuleClientImpl(httpClient),
       new FeesFinesModuleClientImpl(httpClient),
       userClient
     );
-  }
-
-  private HttpClient initHttpClient(Vertx vertx) {
-    int lookupTimeout = Integer
-      .parseInt(RestVerticle.MODULE_SPECIFIC_ARGS.getOrDefault("lookup.timeout", "1000"));
-    HttpClientOptions options = new HttpClientOptions();
-    options.setConnectTimeout(lookupTimeout);
-    options.setIdleTimeout(lookupTimeout);
-    return vertx.createHttpClient(options);
   }
 
   private List<String> getDefaultIncludes(){
@@ -1073,52 +1062,45 @@ public class BLUsersAPI implements BlUsers {
    * @param fieldAliasList - a list of aliases
    * @return a list of user fields to use for search
    */
-  private io.vertx.core.Future<List<String>> getLocateUserFields(List<String> fieldAliasList, java.util.Map<String, String> okapiHeaders) {
-    //TODO:
-
-    String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
-    String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
-
-    Matcher matcher = HOST_PORT_PATTERN.matcher(okapiURL);
-    if (!matcher.find()) {
-      return io.vertx.core.Future.failedFuture("Could not parse okapiURL: " + okapiURL);
-    }
-    Promise<List<String>> promise = Promise.promise();
-
-    ConfigurationsClient configurationsClient = new ConfigurationsClient(okapiURL, tenant, token);
-    StringBuilder query = new StringBuilder("module==USERSBL AND (")
-      .append(fieldAliasList.stream()
-                            .map(f -> new StringBuilder("code==\"").append(f).append("\"").toString())
-                            .collect(Collectors.joining(" or ")))
-      .append(")");
+  private Future<List<String>> getLocateUserFields(List<String> fieldAliasList, Map<String, String> okapiHeaders) {
 
     try {
-      configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null, response -> {
-        HttpResponse<Buffer> result = response.result();
-        if (result.statusCode() != 200) {
-          promise.fail("Expected status code 200, got '" + result.statusCode() +
-            "' :" + result.bodyAsString() );
-          return;
-        }
+      String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+      String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
+      String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
 
-        JsonObject entries = result.bodyAsJsonObject();
+      Matcher matcher = HOST_PORT_PATTERN.matcher(okapiURL);
+      if (!matcher.find()) {
+        return Future.failedFuture("Could not parse okapiURL: " + okapiURL);
+      }
 
-        if (!entries.getJsonArray("configs").isEmpty()) {
-          promise.complete(
-            entries.getJsonArray("configs").stream()
-              .map(o -> ((JsonObject) o).getString("value"))
-              .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
-              .collect(Collectors.toList()));
-        } else {
-          promise.complete(DEFAULT_FIELDS_TO_LOCATE_USER);
-        }
-      });
+      ConfigurationsClient configurationsClient = new ConfigurationsClient(okapiURL, tenant, token);
+      StringBuilder query = new StringBuilder("module==USERSBL AND (")
+          .append(fieldAliasList.stream()
+              .map(f -> new StringBuilder("code==\"").append(f).append("\"").toString())
+              .collect(Collectors.joining(" or ")))
+          .append(")");
 
-    } catch (UnsupportedEncodingException e) {
-      promise.fail(e);
+      return configurationsClient.getConfigurationsEntries(query.toString(), 0, 3, null, null)
+          .map(result -> {
+            if (result.statusCode() != 200) {
+              throw new RuntimeException("Expected status code 200, got '" + result.statusCode() +
+                  "' :" + result.bodyAsString());
+            }
+
+            JsonObject entries = result.bodyAsJsonObject();
+
+            if (entries.getJsonArray("configs").isEmpty()) {
+              return DEFAULT_FIELDS_TO_LOCATE_USER;
+            }
+            return entries.getJsonArray("configs").stream()
+                .map(o -> ((JsonObject) o).getString("value"))
+                .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
+                .collect(Collectors.toList());
+          });
+    } catch (Exception e) {
+      return Future.failedFuture(e);
     }
-    return promise.future();
   }
 
 
