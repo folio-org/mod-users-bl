@@ -1,3 +1,8 @@
+## 7.2.3 2022-04-29
+
+* Increase max container mem to 512MB (MODUSERBL-144)
+* Rebuild to fix ZipException on 64-bit systems (FOLIO-3484)
+
 ## 7.2.2 2022-04-26
 
 * Vert.x HttpClient objects are leaked (MODUSERBL-80)
