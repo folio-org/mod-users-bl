@@ -518,24 +518,21 @@ public class BLUsersAPI implements BlUsers {
     boolean[] aRequestHasFailed = new boolean[]{false};
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-    //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
     HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-
-    okapiHeaders.remove(OKAPI_URL_HEADER);
     CompletableFuture<Response> []userIdResponse = new CompletableFuture[1];
-
-    if(include == null || include.isEmpty()){
-      //by default return perms and groups
-      include = getDefaultIncludes();
-    }
-
-    StringBuffer userUrl = new StringBuffer("/users?");
-    if(query != null){
-      userUrl.append("query=").append(StringUtil.urlEncode(query)).append("&");
-    }
-    userUrl.append("offset=").append(offset).append("&limit=").append(limit);
-
     try {
+      okapiHeaders.remove(OKAPI_URL_HEADER);
+
+      if(include == null || include.isEmpty()){
+        //by default return perms and groups
+        include = getDefaultIncludes();
+      }
+
+      StringBuffer userUrl = new StringBuffer("/users?");
+      if(query != null){
+        userUrl.append("query=").append(StringUtil.urlEncode(query)).append("&");
+      }
+      userUrl.append("offset=").append(offset).append("&limit=").append(limit);
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
     } catch (Exception ex) {
       client.closeClient();
