@@ -825,6 +825,7 @@ public class BLUsersAPI implements BlUsers {
           .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
         loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL, headers);
       } catch (Exception ex) {
+        client.closeClient();
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
         return;
