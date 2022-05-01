@@ -42,6 +42,7 @@ import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 import org.folio.service.transactions.OpenTransactionsService;
 import org.folio.service.transactions.OpenTransactionsServiceImpl;
+import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -523,14 +524,14 @@ public class BLUsersAPI implements BlUsers {
     try {
       okapiHeaders.remove(OKAPI_URL_HEADER);
 
-      if(include == null || include.isEmpty()){
+      if (include == null || include.isEmpty()) {
         //by default return perms and groups
         include = getDefaultIncludes();
       }
 
       StringBuffer userUrl = new StringBuffer("/users?");
-      if(query != null){
-        userUrl.append("query=").append(StringUtil.urlEncode(query)).append("&");
+      if (query != null) {
+        userUrl.append("query=").append(PercentCodec.encode(query)).append("&");
       }
       userUrl.append("offset=").append(offset).append("&limit=").append(limit);
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
