@@ -42,6 +42,7 @@ import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 import org.folio.service.transactions.OpenTransactionsService;
 import org.folio.service.transactions.OpenTransactionsServiceImpl;
+import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -300,6 +301,7 @@ public class BLUsersAPI implements BlUsers {
         mode[0] = "username";
       }
     } catch (Exception ex) {
+      client.closeClient();
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
@@ -368,6 +370,7 @@ public class BLUsersAPI implements BlUsers {
 
       }
     } catch (Exception ex) {
+      client.closeClient();
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
@@ -482,7 +485,6 @@ public class BLUsersAPI implements BlUsers {
           }
         }
 
-        client.closeClient();
         if(mode[0].equals("id")){
           asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond200WithApplicationJson(cu)));
@@ -501,6 +503,8 @@ public class BLUsersAPI implements BlUsers {
               GetBlUsersByUsernameByUsernameResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
         }
+      } finally {
+        client.closeClient();
       }
     });
   }
@@ -515,26 +519,24 @@ public class BLUsersAPI implements BlUsers {
     boolean[] aRequestHasFailed = new boolean[]{false};
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-    //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
     HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-
-    okapiHeaders.remove(OKAPI_URL_HEADER);
     CompletableFuture<Response> []userIdResponse = new CompletableFuture[1];
-
-    if(include == null || include.isEmpty()){
-      //by default return perms and groups
-      include = getDefaultIncludes();
-    }
-
-    StringBuffer userUrl = new StringBuffer("/users?");
-    if(query != null){
-      userUrl.append("query=").append(StringUtil.urlEncode(query)).append("&");
-    }
-    userUrl.append("offset=").append(offset).append("&limit=").append(limit);
-
     try {
+      okapiHeaders.remove(OKAPI_URL_HEADER);
+
+      if (include == null || include.isEmpty()) {
+        //by default return perms and groups
+        include = getDefaultIncludes();
+      }
+
+      StringBuffer userUrl = new StringBuffer("/users?");
+      if (query != null) {
+        userUrl.append("query=").append(PercentCodec.encode(query)).append("&");
+      }
+      userUrl.append("offset=").append(offset).append("&limit=").append(limit);
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
     } catch (Exception ex) {
+      client.closeClient();
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
@@ -625,7 +627,6 @@ public class BLUsersAPI implements BlUsers {
             composite.joinOn("compositeUser[*].users.id", proxiesforResponse, "proxiesFor[*].userId", "../", "../../proxiesFor", false);
           }
         }
-        client.closeClient();
         @SuppressWarnings("unchecked")
         List<CompositeUser> cuol = (List<CompositeUser>)Response.convertToPojo(composite.getBody().getJsonArray("compositeUser"), CompositeUser.class);
         cu.setCompositeUsers(cuol);
@@ -639,6 +640,8 @@ public class BLUsersAPI implements BlUsers {
             GetBlUsersResponse.respond500WithTextPlain(e.getLocalizedMessage())));
         }
         logger.error(e.getMessage(), e);
+      } finally {
+        client.closeClient();
       }
     });
   }
@@ -802,6 +805,7 @@ public class BLUsersAPI implements BlUsers {
     }
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
+      client.closeClient();
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
@@ -819,6 +823,7 @@ public class BLUsersAPI implements BlUsers {
           .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
         loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL, headers);
       } catch (Exception ex) {
+        client.closeClient();
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
         return;
@@ -868,6 +873,7 @@ public class BLUsersAPI implements BlUsers {
             completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
             requestedIncludes.add(expandSPUResponse);
           } catch (Exception ex) {
+            client.closeClient();
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
             return;
@@ -976,7 +982,6 @@ public class BLUsersAPI implements BlUsers {
             }
           }
 
-          client.closeClient();
           if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
               PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
@@ -988,6 +993,8 @@ public class BLUsersAPI implements BlUsers {
               PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
           logger.error(e.getMessage(), e);
+        } finally {
+          client.closeClient();
         }
       });
     }
@@ -1165,6 +1172,8 @@ public class BLUsersAPI implements BlUsers {
 
       } catch (Exception e) {
         asyncResult.fail(e);
+      } finally {
+        client.closeClient();
       }
     });
 

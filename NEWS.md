@@ -1,3 +1,7 @@
+## 7.2.4 2022-05-04
+
+Fix socket leaks for HttpClientInterface usage (MODUSERBL-147)
+
 ## 7.2.3 2022-04-29
 
 * Increase max container mem to 512MB (MODUSERBL-144)
