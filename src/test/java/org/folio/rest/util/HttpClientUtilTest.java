@@ -4,9 +4,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-import io.vertx.core.Vertx;
-import org.folio.rest.testing.UtilityClassTester;
+import org.folio.okapi.testing.UtilityClassTester;
 import org.junit.Test;
+
+import io.vertx.core.Vertx;
 
 public class HttpClientUtilTest {
 
