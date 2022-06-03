@@ -45,7 +45,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <raml-module-builder.version>33.2.9</raml-module-builder.version>
+    <raml-module-builder.version>34.0.0</raml-module-builder.version>
     <mod-configuration-client.version>5.7.6</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <vertx-version>4.2.7</vertx-version>
@@ -67,12 +67,10 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-service-proxy</artifactId>
-      <version>${vertx-version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
-      <version>${vertx-version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -116,7 +114,12 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
-      <version>${vertx-version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.folio.okapi</groupId>
+      <artifactId>okapi-testing</artifactId>
+      <version>4.14.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
