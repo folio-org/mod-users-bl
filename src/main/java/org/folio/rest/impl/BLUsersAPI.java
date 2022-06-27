@@ -28,6 +28,7 @@ import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.*;
 import org.folio.rest.jaxrs.resource.BlUsers;
+import org.folio.rest.jaxrs.resource.support.ResponseDelegate;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
@@ -782,6 +783,14 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
+  public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
+                               LoginCredentials entity, Map<String, String> okapiHeaders,
+                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      Context vertxContext) {
+    // TODO
+  }
+
+  @Override
   public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
                                LoginCredentials entity, Map<String, String> okapiHeaders,
                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
@@ -789,7 +798,11 @@ public class BLUsersAPI implements BlUsers {
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, vertxContext, LOGIN_ENDPOINT_LEGACY);
   }
 
-  private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
+  private void handleLoginWith400TextPlain(Handler<AsyncResult<javax.ws.rs.core.Response>> h, String txt, boolean isLegacy) {
+    h.handle(Future.succeededFuture(PostBlUsersLoginResponse.respond400WithTextPlain(txt)));
+  }
+
+  private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
                               LoginCredentials entity, Map<String, String> okapiHeaders,
                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                               Context vertxContext, String loginEndpoint) {
@@ -816,8 +829,9 @@ public class BLUsersAPI implements BlUsers {
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
       client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-        PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
+      handleLoginWith400TextPlain(asyncResultHandler, "Improperly formatted request", true);
+      // asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      //   PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
       logger.debug("Requesting login from " + loginEndpoint);
       //can only be one user with this username - so only one result expected
