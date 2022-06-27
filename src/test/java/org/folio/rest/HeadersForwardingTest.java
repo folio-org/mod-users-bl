@@ -124,15 +124,15 @@ public class HeadersForwardingTest {
         .withQueryParam("limit", equalTo("1000"))
         .willReturn(WireMock.okJson(jsonObject.encode()).withStatus(201)));
 
-      RestAssured
-        .given()
-        .spec(spec)
-        .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-        .body(JsonObject.mapFrom(credentials).encode())
-        .when()
-        .post("/bl-users/login")
-        .then()
-        .statusCode(201);
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(201);
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==" + USERNAME)));

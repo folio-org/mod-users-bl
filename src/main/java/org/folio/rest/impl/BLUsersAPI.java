@@ -104,6 +104,9 @@ public class BLUsersAPI implements BlUsers {
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
 
+  private static final String LOGIN_ENDPOINT = "/authn/login-with-expiry";
+  private static final String LOGIN_ENDPOINT_LEGACY = "/authn/login";
+
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
   private NotificationClient notificationClient;
@@ -783,6 +786,13 @@ public class BLUsersAPI implements BlUsers {
                                LoginCredentials entity, Map<String, String> okapiHeaders,
                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
+    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, vertxContext, LOGIN_ENDPOINT_LEGACY);
+  }
+
+  private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
+                              LoginCredentials entity, Map<String, String> okapiHeaders,
+                              Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                              Context vertxContext, String loginEndpoint) {
 
     //works on single user, no joins needed , just aggregate
 
@@ -809,8 +819,7 @@ public class BLUsersAPI implements BlUsers {
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
-      String moduleURL = "/authn/login";
-      logger.debug("Requesting login from " + moduleURL);
+      logger.debug("Requesting login from " + loginEndpoint);
       //can only be one user with this username - so only one result expected
       String userUrl = "/users?query=username==%s";
       //run login
@@ -821,7 +830,7 @@ public class BLUsersAPI implements BlUsers {
           .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
         Optional.ofNullable(xForwardedFor)
           .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
-        loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL, headers);
+        loginResponse[0] = client.request(HttpMethod.POST, entity, loginEndpoint, headers);
       } catch (Exception ex) {
         client.closeClient();
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
