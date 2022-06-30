@@ -15,6 +15,7 @@ types:
   usergroup.json: !include usergroup.json
   permissionUser.json: !include permissionUser.json
   proxyfor.json: !include proxyfor.json
+  tokenExpiration: !include tokenExpiration.json
   identifier: !include identifier.json
   errors: !include raml-util/schemas/errors.schema
   updateCredentials: !include updateCredentials.json
@@ -237,7 +238,8 @@ resourceTypes:
             application/json:
               schema: compositeUser
           headers:
-            # TODO remove since it wil be in non-raml set-cookie
+            # TODO Remove since it wil be in non-raml set-cookie
+            # TODO May need to not respond with raml object in /login too so that code generation for other things doesn't break.
             x-okapi-token:
         400:
           description: "Bad request"

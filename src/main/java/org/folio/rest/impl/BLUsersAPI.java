@@ -832,7 +832,7 @@ public class BLUsersAPI implements BlUsers {
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
          PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
-      logger.debug("Requesting login from " + loginEndpoint);
+      logger.debug("Requesting login from {}", loginEndpoint);
       //can only be one user with this username - so only one result expected
       String userUrl = "/users?query=username==%s";
       //run login
@@ -843,7 +843,9 @@ public class BLUsersAPI implements BlUsers {
           .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
         Optional.ofNullable(xForwardedFor)
           .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
+
         loginResponse[0] = client.request(HttpMethod.POST, entity, loginEndpoint, headers);
+
       } catch (Exception ex) {
         client.closeClient();
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
@@ -927,7 +929,8 @@ public class BLUsersAPI implements BlUsers {
             return;
           }
 
-          String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
+          // TODO Conditionalize. This doesn't need to be defined here. Can be lower.
+          //String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
 
           //all requested endpoints have completed, proces....
           CompositeUser cu = new CompositeUser();
@@ -1004,8 +1007,11 @@ public class BLUsersAPI implements BlUsers {
             }
           }
 
+          String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
+
           if(!aRequestHasFailed[0]){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          // TODO COnditionalize for legacy and new response.
+          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
               PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
                 PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
           }

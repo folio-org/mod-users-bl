@@ -173,7 +173,10 @@ public class HeadersForwardingTest {
       .willReturn(WireMock.okJson(users.encode())));
 
     WireMock.stubFor(post(URL_AUTH_LOGIN)
-      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201)));
+      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode())
+      .withStatus(201)));
+      // TODO Add withBody containting the token expiration properties
+      // TODO add withHeader with dual Set-Cookie
 
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray().add(new JsonObject()));
@@ -199,6 +202,9 @@ public class HeadersForwardingTest {
       .post(BL_USERS_LOGIN)
       .then()
       .statusCode(201);
+      // TODO Test for Set-Cookie passthrough
+      // TODO Test for new expiration props in composite user object
+
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==" + USERNAME)));
