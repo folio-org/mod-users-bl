@@ -168,15 +168,20 @@ public class HeadersForwardingTest {
       .put("users", new JsonArray().add(user))
       .put("totalRecords", 1);
 
+    JsonObject tokenExpiration = new JsonObject()
+      .put("refreshTokenExpiration","987")
+      .put("accessTokenExpiration", "456");
+
     WireMock.stubFor(get(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==" + USERNAME))
       .willReturn(WireMock.okJson(users.encode())));
 
     WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode())
-      .withStatus(201)));
-      // TODO Add withBody containting the token expiration properties
-      // TODO add withHeader with dual Set-Cookie
+      .withStatus(201)
+      .withHeader("Set-Cookie", "refreshToken=abc123; HttpOnly; Path=/auth; Max-Age=123")
+      .withHeader("Set-Cookie", "accessToken=321xyz; HttpOnly; Max-Age=321")
+      .withBody(tokenExpiration.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray().add(new JsonObject()));

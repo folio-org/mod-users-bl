@@ -32,6 +32,7 @@ import org.folio.rest.jaxrs.resource.support.ResponseDelegate;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
+
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.ExceptionHelper;
@@ -47,6 +48,10 @@ import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.MultivaluedHashMap;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -65,6 +70,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 /**
  * @author shale
@@ -929,9 +935,6 @@ public class BLUsersAPI implements BlUsers {
             return;
           }
 
-          // TODO Conditionalize. This doesn't need to be defined here. Can be lower.
-          //String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
-
           //all requested endpoints have completed, proces....
           CompositeUser cu = new CompositeUser();
           //user errors handled in chainedRequest, so assume user is ok at this point
@@ -1007,13 +1010,17 @@ public class BLUsersAPI implements BlUsers {
             }
           }
 
-          String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
-
           if(!aRequestHasFailed[0]){
-          // TODO COnditionalize for legacy and new response.
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-              PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
-                PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
+            if (isLoginLegacy(loginEndpoint)) {
+              String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
+              asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+                  PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
+                    PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
+            } else {
+              asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+                tokenResponse(loginResponse[0], cu)
+              ));
+            }
           }
         } catch (Exception e) {
           if(!aRequestHasFailed[0]){
@@ -1026,6 +1033,33 @@ public class BLUsersAPI implements BlUsers {
         }
       });
     }
+  }
+
+  private boolean isLoginLegacy(String endpoint) {
+    return endpoint.equals(LOGIN_ENDPOINT_LEGACY);
+  }
+
+  private javax.ws.rs.core.Response tokenResponse(CompletableFuture<Response> loginResponse, CompositeUser cu)
+      throws InterruptedException, ExecutionException {
+    String accessTokenExpiration = loginResponse.get().getBody().getString("refreshTokenExpiration");
+    String refreshTokenExpiration = loginResponse.get().getBody().getString("accessTokenExpiration");
+    var tokenExpiration = new TokenExpiration();
+    tokenExpiration.setAccessTokenExpiration(accessTokenExpiration);
+    tokenExpiration.setRefreshTokenExpiration(refreshTokenExpiration);
+    cu.setTokenExpiration(tokenExpiration);
+
+    // Use the ResponseBuilder rather than RMB-generated code. We need to do this because
+    // RMB generated-code does not allow multiple headers with the same key -- which is what we need
+    // here.
+    List<String> setCookeHeaders = loginResponse.get().getHeaders().getAll("Set-Cookie");
+    var setCookieHeadersArray = setCookeHeaders.toArray();
+
+    return javax.ws.rs.core.Response.status(201)
+        .header("Set-Cooke", setCookieHeadersArray[0])
+        .header("Set-Cooke", setCookieHeadersArray[1])
+        .type(MediaType.APPLICATION_JSON)
+        .entity(cu)
+        .build();
   }
 
   private CompletableFuture<Response> expandServicePoints(
