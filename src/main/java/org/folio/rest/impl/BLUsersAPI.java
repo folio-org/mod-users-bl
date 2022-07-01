@@ -1051,12 +1051,15 @@ public class BLUsersAPI implements BlUsers {
     // Use the ResponseBuilder rather than RMB-generated code. We need to do this because
     // RMB generated-code does not allow multiple headers with the same key -- which is what we need
     // here.
-    List<String> setCookeHeaders = loginResponse.get().getHeaders().getAll("Set-Cookie");
-    var setCookieHeadersArray = setCookeHeaders.toArray();
+    List<String> setCookieHeaders = loginResponse.get().getHeaders().getAll("Set-Cookie");
+    var setCookieHeadersArray = setCookieHeaders.toArray();
+
+    logger.info("Cookie 1 {}", setCookieHeadersArray[0]);
+    logger.info("Cookie 2 {}", setCookieHeadersArray[1]);
 
     return javax.ws.rs.core.Response.status(201)
-        .header("Set-Cooke", setCookieHeadersArray[0])
-        .header("Set-Cooke", setCookieHeadersArray[1])
+        .header("Set-Cookie", setCookieHeadersArray[0])
+        .header("Set-Cookie", setCookieHeadersArray[1])
         .type(MediaType.APPLICATION_JSON)
         .entity(cu)
         .build();

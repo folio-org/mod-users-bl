@@ -12,6 +12,7 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.specification.RequestSpecification;
+import io.restassured.matcher.RestAssuredMatchers;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -65,6 +66,10 @@ public class HeadersForwardingTest {
   private static final String URL_AUTH_LOGIN = "/authn/login-with-expiry";
   private static final String BL_USERS_LOGIN_LEGACY = "/bl-users/login";
   private static final String BL_USERS_LOGIN = "/bl-users/login-with-expiry";
+  private static final String REFRESH_TOKEN = "refreshToken";
+  private static final String ACCESS_TOKEN = "accessToken";
+  private static final String REFRESH_TOKEN_EXPIRATION = "refreshTokenExpiration";
+  private static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
 
   private RequestSpecification spec;
 
@@ -179,8 +184,8 @@ public class HeadersForwardingTest {
     WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode())
       .withStatus(201)
-      .withHeader("Set-Cookie", "refreshToken=abc123; HttpOnly; Path=/auth; Max-Age=123")
-      .withHeader("Set-Cookie", "accessToken=321xyz; HttpOnly; Max-Age=321")
+      .withHeader("Set-Cookie", "refreshToken=abc123; HttpOnly; Path=/authn; Max-Age=123; Secure")
+      .withHeader("Set-Cookie", "accessToken=321xyz; HttpOnly; Max-Age=321; Secure")
       .withBody(tokenExpiration.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
@@ -206,8 +211,18 @@ public class HeadersForwardingTest {
       .when()
       .post(BL_USERS_LOGIN)
       .then()
-      .statusCode(201);
-      // TODO Test for Set-Cookie passthrough
+      .statusCode(201)
+      .cookie(REFRESH_TOKEN, RestAssuredMatchers.detailedCookie()
+          .value("abc123")
+          .maxAge(123)
+          .path("/authn")
+          .httpOnly(true)
+          .secured(true))
+      .cookie(ACCESS_TOKEN, RestAssuredMatchers.detailedCookie()
+          .value("321xyz")
+          .maxAge(321)
+          .httpOnly(true)
+          .secured(true));
       // TODO Test for new expiration props in composite user object
 
 
