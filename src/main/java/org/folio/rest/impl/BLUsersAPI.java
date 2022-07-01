@@ -28,7 +28,6 @@ import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.*;
 import org.folio.rest.jaxrs.resource.BlUsers;
-import org.folio.rest.jaxrs.resource.support.ResponseDelegate;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
@@ -47,12 +46,8 @@ import org.folio.service.transactions.OpenTransactionsServiceImpl;
 import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.MultivaluedHashMap;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -804,10 +799,6 @@ public class BLUsersAPI implements BlUsers {
                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, vertxContext, LOGIN_ENDPOINT_LEGACY);
-  }
-
-  private void handleLoginResponseFor400TextPlain(Handler<AsyncResult<javax.ws.rs.core.Response>> h, String txt, boolean isLegacy) {
-    h.handle(Future.succeededFuture(PostBlUsersLoginResponse.respond400WithTextPlain(txt)));
   }
 
   private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
