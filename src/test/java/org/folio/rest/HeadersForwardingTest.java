@@ -15,6 +15,7 @@ import io.restassured.specification.RequestSpecification;
 import io.restassured.matcher.RestAssuredMatchers;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
@@ -46,6 +47,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
 import static junit.framework.TestCase.assertTrue;
 
+import static org.hamcrest.Matchers.hasKey;
+
 @RunWith(VertxUnitRunner.class)
 public class HeadersForwardingTest {
 
@@ -70,6 +73,7 @@ public class HeadersForwardingTest {
   private static final String ACCESS_TOKEN = "accessToken";
   private static final String REFRESH_TOKEN_EXPIRATION = "refreshTokenExpiration";
   private static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
+  private static final String TOKEN_EXPIRATION = "tokenExpiration";
 
   private RequestSpecification spec;
 
@@ -181,11 +185,20 @@ public class HeadersForwardingTest {
       .withQueryParam("query", equalTo("username==" + USERNAME))
       .willReturn(WireMock.okJson(users.encode())));
 
+    var accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, "321xyz")
+      .setMaxAge(321)
+      .setSecure(true)
+      .setHttpOnly(true);
+    var refreshTokenCookie = Cookie.cookie(REFRESH_TOKEN, "abc123")
+      .setMaxAge(123)
+      .setSecure(true)
+      .setPath("/authn")
+      .setHttpOnly(true);
     WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode())
       .withStatus(201)
-      .withHeader("Set-Cookie", "refreshToken=abc123; HttpOnly; Path=/authn; Max-Age=123; Secure")
-      .withHeader("Set-Cookie", "accessToken=321xyz; HttpOnly; Max-Age=321; Secure")
+      .withHeader("Set-Cookie", accessTokenCookie.encode())
+      .withHeader("Set-Cookie", refreshTokenCookie.encode())
       .withBody(tokenExpiration.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
@@ -222,9 +235,9 @@ public class HeadersForwardingTest {
           .value("321xyz")
           .maxAge(321)
           .httpOnly(true)
-          .secured(true));
-      // TODO Test for new expiration props in composite user object
-
+          .secured(true))
+      .body(TOKEN_EXPIRATION, hasKey(ACCESS_TOKEN_EXPIRATION))
+      .body(TOKEN_EXPIRATION, hasKey(REFRESH_TOKEN_EXPIRATION));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==" + USERNAME)));

@@ -47,6 +47,8 @@ import org.folio.service.transactions.OpenTransactionsServiceImpl;
 import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -1018,7 +1020,7 @@ public class BLUsersAPI implements BlUsers {
                     PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
             } else {
               asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-                tokenResponse(loginResponse[0], cu)
+                respond201WithCookieHeadersAndTokenExpiration(loginResponse[0], cu)
               ));
             }
           }
@@ -1039,7 +1041,7 @@ public class BLUsersAPI implements BlUsers {
     return endpoint.equals(LOGIN_ENDPOINT_LEGACY);
   }
 
-  private javax.ws.rs.core.Response tokenResponse(CompletableFuture<Response> loginResponse, CompositeUser cu)
+  private javax.ws.rs.core.Response respond201WithCookieHeadersAndTokenExpiration(CompletableFuture<Response> loginResponse, CompositeUser cu)
       throws InterruptedException, ExecutionException {
     String accessTokenExpiration = loginResponse.get().getBody().getString("refreshTokenExpiration");
     String refreshTokenExpiration = loginResponse.get().getBody().getString("accessTokenExpiration");
@@ -1049,13 +1051,10 @@ public class BLUsersAPI implements BlUsers {
     cu.setTokenExpiration(tokenExpiration);
 
     // Use the ResponseBuilder rather than RMB-generated code. We need to do this because
-    // RMB generated-code does not allow multiple headers with the same key -- which is what we need
+    // RMB generated-code does not allow multiple headers with the same key, which is what we need
     // here.
     List<String> setCookieHeaders = loginResponse.get().getHeaders().getAll("Set-Cookie");
     var setCookieHeadersArray = setCookieHeaders.toArray();
-
-    logger.info("Cookie 1 {}", setCookieHeadersArray[0]);
-    logger.info("Cookie 2 {}", setCookieHeadersArray[1]);
 
     return javax.ws.rs.core.Response.status(201)
         .header("Set-Cookie", setCookieHeadersArray[0])
