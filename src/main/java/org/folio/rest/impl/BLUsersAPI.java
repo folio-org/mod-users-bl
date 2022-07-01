@@ -1043,19 +1043,21 @@ public class BLUsersAPI implements BlUsers {
 
   private javax.ws.rs.core.Response respond201WithCookieHeadersAndTokenExpiration(CompletableFuture<Response> loginResponse, CompositeUser cu)
       throws InterruptedException, ExecutionException {
-    String accessTokenExpiration = loginResponse.get().getBody().getString("refreshTokenExpiration");
-    String refreshTokenExpiration = loginResponse.get().getBody().getString("accessTokenExpiration");
+    Response response = loginResponse.get();
+    JsonObject body = response.getBody();
+    String accessTokenExpiration = body.getString("refreshTokenExpiration");
+    String refreshTokenExpiration = body.getString("accessTokenExpiration");
     var tokenExpiration = new TokenExpiration();
     tokenExpiration.setAccessTokenExpiration(accessTokenExpiration);
     tokenExpiration.setRefreshTokenExpiration(refreshTokenExpiration);
     cu.setTokenExpiration(tokenExpiration);
 
+    List<String> setCookieHeaders = response.getHeaders().getAll("Set-Cookie");
+    var setCookieHeadersArray = setCookieHeaders.toArray();
+
     // Use the ResponseBuilder rather than RMB-generated code. We need to do this because
     // RMB generated-code does not allow multiple headers with the same key, which is what we need
     // here.
-    List<String> setCookieHeaders = loginResponse.get().getHeaders().getAll("Set-Cookie");
-    var setCookieHeadersArray = setCookieHeaders.toArray();
-
     return javax.ws.rs.core.Response.status(201)
         .header("Set-Cookie", setCookieHeadersArray[0])
         .header("Set-Cookie", setCookieHeadersArray[1])
