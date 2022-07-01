@@ -786,25 +786,25 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
+  public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
                                LoginCredentials entity, Map<String, String> okapiHeaders,
                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
-    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, vertxContext, LOGIN_ENDPOINT);
+    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, LOGIN_ENDPOINT);
   }
 
   @Override
-  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
+  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
                                LoginCredentials entity, Map<String, String> okapiHeaders,
                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
-    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, vertxContext, LOGIN_ENDPOINT_LEGACY);
+    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, LOGIN_ENDPOINT_LEGACY);
   }
 
-  private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
+  private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor, //NOSONAR
                               LoginCredentials entity, Map<String, String> okapiHeaders,
                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-                              Context vertxContext, String loginEndpoint) {
+                              String loginEndpoint) {
 
     //works on single user, no joins needed , just aggregate
 
