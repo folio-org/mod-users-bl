@@ -31,7 +31,6 @@ import org.folio.rest.jaxrs.resource.BlUsers;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
 import org.folio.rest.tools.client.Response;
-
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.ExceptionHelper;
@@ -829,7 +828,7 @@ public class BLUsersAPI implements BlUsers {
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
       client.closeClient();
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
+        PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
       logger.debug("Requesting login from {}", loginEndpoint);
       //can only be one user with this username - so only one result expected
