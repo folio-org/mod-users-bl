@@ -61,6 +61,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -786,24 +787,23 @@ public class BLUsersAPI implements BlUsers {
 
   @Override
   public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
-                               LoginCredentials entity, Map<String, String> okapiHeaders,
-                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
-    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, LOGIN_ENDPOINT);
+    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
+        LOGIN_ENDPOINT, this::loginResponse);
   }
 
   @Override
   public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
-                               LoginCredentials entity, Map<String, String> okapiHeaders,
-                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
-    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler, LOGIN_ENDPOINT_LEGACY);
+    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
+        LOGIN_ENDPOINT_LEGACY, this::loginResponseLegacy);
   }
 
   private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor, //NOSONAR
-                              LoginCredentials entity, Map<String, String> okapiHeaders,
-                              Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-                              String loginEndpoint) {
+      LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      String loginEndpoint, BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) {
 
     //works on single user, no joins needed , just aggregate
 
@@ -1003,16 +1003,8 @@ public class BLUsersAPI implements BlUsers {
           }
 
           if(!aRequestHasFailed[0]){
-            if (isLoginLegacy(loginEndpoint)) {
-              String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
-              asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-                  PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
-                    PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
-            } else {
-              asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
-                respond201WithCookieHeadersAndTokenExpiration(loginResponse[0], cu)
-              ));
-            }
+            javax.ws.rs.core.Response r = respond.apply(loginResponse[0].get(), cu);
+            asyncResultHandler.handle(Future.succeededFuture(r));
           }
         } catch (Exception e) {
           if(!aRequestHasFailed[0]){
@@ -1027,14 +1019,14 @@ public class BLUsersAPI implements BlUsers {
     }
   }
 
-  private boolean isLoginLegacy(String endpoint) {
-    return endpoint.equals(LOGIN_ENDPOINT_LEGACY);
+  private javax.ws.rs.core.Response loginResponseLegacy(Response loginResponse, CompositeUser cu) {
+    String token = loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER);
+    return PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
+      PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token));
   }
 
-  private javax.ws.rs.core.Response respond201WithCookieHeadersAndTokenExpiration(CompletableFuture<Response> loginResponse, CompositeUser cu)
-      throws InterruptedException, ExecutionException {
-    Response response = loginResponse.get();
-    JsonObject body = response.getBody();
+  private javax.ws.rs.core.Response loginResponse(Response loginResponse, CompositeUser cu) {
+    JsonObject body = loginResponse.getBody();
     String accessTokenExpiration = body.getString("refreshTokenExpiration");
     String refreshTokenExpiration = body.getString("accessTokenExpiration");
     var tokenExpiration = new TokenExpiration();
@@ -1042,12 +1034,12 @@ public class BLUsersAPI implements BlUsers {
     tokenExpiration.setRefreshTokenExpiration(refreshTokenExpiration);
     cu.setTokenExpiration(tokenExpiration);
 
-    List<String> setCookieHeaders = response.getHeaders().getAll("Set-Cookie");
+    List<String> setCookieHeaders = loginResponse.getHeaders().getAll("Set-Cookie");
     var setCookieHeadersArray = setCookieHeaders.toArray();
 
     // Use the ResponseBuilder rather than RMB-generated code. We need to do this because
     // RMB generated-code does not allow multiple headers with the same key, which is what we need
-    // here.
+    // here. This is a permanent workaround as long as mod-users-bl uses RMB.
     return javax.ws.rs.core.Response.status(201)
         .header("Set-Cookie", setCookieHeadersArray[0])
         .header("Set-Cookie", setCookieHeadersArray[1])

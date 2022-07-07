@@ -234,13 +234,12 @@ resourceTypes:
           schema: loginCredentials
       responses:
         201:
+          # NOTE: Set-Cookie headers are set in BLUsersAPI.java using the raw response object
+          # rather than through RMB code-generation. This is because RMB code generation doesn't
+          # let us do multiple haders with the same value, which we need to do here.
           body:
             application/json:
               schema: compositeUser
-          headers:
-            # TODO Remove since it wil be in non-raml set-cookie
-            # TODO May need to not respond with raml object in /login too so that code generation for other things doesn't break.
-            x-okapi-token:
         400:
           description: "Bad request"
           body:
