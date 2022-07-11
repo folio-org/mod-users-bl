@@ -223,8 +223,8 @@ resourceTypes:
     post:
       description: |
         Allow a new user to login and return two cookies, one containing the user's refresh token
-        and one containting an access token. Both tokens have an expiration. The expiration time
-        for each is contained in the composite user token expiration proerty.
+        and one containing an access token. Both tokens have an expiration. The expiration time
+        for each is contained in the composite user token expiration property.
       is: [permissionsExpandable, includeable]
       headers:
         User-Agent:
@@ -234,9 +234,12 @@ resourceTypes:
           schema: loginCredentials
       responses:
         201:
-          # NOTE: Set-Cookie headers are set in BLUsersAPI.java using the raw response object
-          # rather than through RMB code-generation. This is because RMB code generation doesn't
-          # let us do multiple haders with the same value, which we need to do here.
+          description: |
+            Returns a CompositeUser object in addition to two Set-Cookie headers, one containing
+            the refresh token and one containing the access token. Note that the Set-Cookie headers are
+            set in BLUsersAPI.java using the raw response object rather than through RMB code-generation.
+            This is because RMB code generation doesn't let us do multiple headers with the same value,
+            which we need to do here.
           body:
             application/json:
               schema: compositeUser
