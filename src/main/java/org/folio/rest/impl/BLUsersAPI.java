@@ -1027,8 +1027,8 @@ public class BLUsersAPI implements BlUsers {
 
   private javax.ws.rs.core.Response loginResponse(Response loginResponse, CompositeUser cu) {
     JsonObject body = loginResponse.getBody();
-    String accessTokenExpiration = body.getString("refreshTokenExpiration");
-    String refreshTokenExpiration = body.getString("accessTokenExpiration");
+    String refreshTokenExpiration = body.getString("refreshTokenExpiration");
+    String accessTokenExpiration = body.getString("accessTokenExpiration");
     var tokenExpiration = new TokenExpiration();
     tokenExpiration.setAccessTokenExpiration(accessTokenExpiration);
     tokenExpiration.setRefreshTokenExpiration(refreshTokenExpiration);

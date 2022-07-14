@@ -238,7 +238,7 @@ resourceTypes:
             Returns a CompositeUser object in addition to two Set-Cookie headers, one containing
             the refresh token and one containing the access token. Note that the Set-Cookie headers are
             set in BLUsersAPI.java using the raw response object rather than through RMB code-generation.
-            This is because RMB code generation doesn't let us do multiple headers with the same value,
+            This is because RMB code generation doesn't let us do multiple headers with the same name,
             which we need to do here.
           body:
             application/json:
