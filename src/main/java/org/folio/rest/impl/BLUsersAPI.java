@@ -1034,18 +1034,16 @@ public class BLUsersAPI implements BlUsers {
     tokenExpiration.setRefreshTokenExpiration(refreshTokenExpiration);
     cu.setTokenExpiration(tokenExpiration);
 
-    List<String> setCookieHeaders = loginResponse.getHeaders().getAll("Set-Cookie");
-    var setCookieHeadersArray = setCookieHeaders.toArray();
-
     // Use the ResponseBuilder rather than RMB-generated code. We need to do this because
     // RMB generated-code does not allow multiple headers with the same key, which is what we need
     // here. This is a permanent workaround as long as mod-users-bl uses RMB.
-    return javax.ws.rs.core.Response.status(201)
-        .header("Set-Cookie", setCookieHeadersArray[0])
-        .header("Set-Cookie", setCookieHeadersArray[1])
+    var responseBuilder = javax.ws.rs.core.Response.status(201)
         .type(MediaType.APPLICATION_JSON)
-        .entity(cu)
-        .build();
+        .entity(cu);
+    for (String cookie : loginResponse.getHeaders().getAll("Set-Cookie")) {
+      responseBuilder.header("Set-Cookie", cookie);
+    }
+    return responseBuilder.build();
   }
 
   private CompletableFuture<Response> expandServicePoints(
