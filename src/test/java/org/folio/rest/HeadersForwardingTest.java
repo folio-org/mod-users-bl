@@ -69,8 +69,8 @@ public class HeadersForwardingTest {
   private static final String URL_AUTH_LOGIN = "/authn/login-with-expiry";
   private static final String BL_USERS_LOGIN_LEGACY = "/bl-users/login";
   private static final String BL_USERS_LOGIN = "/bl-users/login-with-expiry";
-  private static final String REFRESH_TOKEN = "refreshToken";
-  private static final String ACCESS_TOKEN = "accessToken";
+  private static final String REFRESH_TOKEN = "folioRefreshToken";
+  private static final String ACCESS_TOKEN = "folioAccessToken";
   private static final String REFRESH_TOKEN_EXPIRATION = "refreshTokenExpiration";
   private static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
   private static final String TOKEN_EXPIRATION = "tokenExpiration";
