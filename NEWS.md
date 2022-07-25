@@ -1,6 +1,6 @@
 ## 7.4.0 IN-PROGRESS
 
-*  Upgrade users interface to 16.0 (MODUSERBL-154)
+* Upgrade users interface to 16.0 (MODUSERBL-154)
 
 ## 7.3.0 2022-06-13
 
