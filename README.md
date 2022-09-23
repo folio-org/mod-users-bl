@@ -14,6 +14,12 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 
 Business logic "join" module to provide simple access to all user-centric data.
 
+## Optional dependencies
+
+This module has optional interface dependencies in its [module descriptor](descriptors/ModuleDescriptor-template.json). This allows operators to choose which dependent modules to install for the desired features of this module, and does not require that all dependent modules be installed in every FOLIO instance. For example, operators can install mod-users-bl with the modules designated in the `requires` array, and perform a successful login through the UI. However, unless the dependent modules of the `service-points` and `service-points-users` interfaces are installed in the FOLIO instance, service points will not be returned in the login response. The login response will not produce an HTTP error response however. Instead a partial login response (a partial `CompositeUser` object) is returned without the service points included. Okapi will however log the 404 for the call to the service points endpoint letting the operator know that a dependency is missing for this feature.
+
+The same is true of other optional dependencies. If operators need password reset, they should install the dependent modules of the `password-validator` and `notify` interfaces. Like the example above with service points, the password reset operation will not produce an HTTP error response if `notify` isn't installed. Instead the notification will not be sent, and an error is logged by this module and okapi.
+
 ## Usage
 
 The module exposes a number of endpoints to provide a composite object that links a given user record with a number of related records. All of the current methods are read-only. Creation and modification of composite records is planned for future versions.
