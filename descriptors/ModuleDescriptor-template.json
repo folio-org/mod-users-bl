@@ -229,6 +229,10 @@
     {
       "id": "configuration",
       "version": "2.0"
+    },
+    {
+      "id": "password-validator",
+      "version": "1.0"
     }
   ],
   "optional": [
@@ -247,10 +251,6 @@
     {
       "id" : "service-points-users",
       "version" : "1.0"
-    },
-    {
-      "id": "password-validator",
-      "version": "1.0"
     },
     {
       "id": "notify",
