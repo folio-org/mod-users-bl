@@ -14,8 +14,18 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 
 Business logic "join" module to provide simple access to all user-centric data.
 
-## Usage
+## Dependencies
+This module has both required and optional interface dependencies in its [module descriptor](descriptors/ModuleDescriptor-template.json). This allows operators to choose which dependent modules to install for the desired features of this module, and does not require that all dependent modules be installed in every FOLIO instance.
 
+### Required dependencies
+This module has a number of required dependencies (designated in the `requires` array of the module descriptor) to support core features such as authentication, authorization, permissions, and configuration. Operators can install mod-users-bl with the required modules and expect to be able to perform a successful login through the UI. If the required modules are installed, this module also supports password validation and reset via a POST request to the `settings/myprofile/password` endpoint should password reset be required.
+
+### Optional dependencies
+Service point and notification interfaces are optional dependencies since each requires a large number of dependent modules and it is often desireable to have a minimal system. Unless the optional dependent modules of the `service-points` and `service-points-users` interfaces are installed in the FOLIO instance, service points are not returned in the login response. The login response will not produce an HTTP error response if service points are missing however. Instead a partial login response (a partial `CompositeUser` object) is returned without the service points included. Okapi will log the 404 for the call to the service points endpoint letting the operator know that a dependency is missing for this feature, but that is all it will do.
+
+If operators wish to support a password reset which involves sending a notification (via the `/password-reset/reset` endpoint), they should install the many dependent modules of the `notify` interfaces. However, password reset is still testable without `notify`. A request to the `password-reset/link` endpoint will produce a token (embedded in the link) which can then be provided to the `/validate` and `/reset` endpoints. Other endpoints in this module that rely on the `notify` interface will behave normally without `notify`, except that an error will be logged that `notify` could not be reached.
+
+## Usage
 The module exposes a number of endpoints to provide a composite object that links a given user record with a number of related records. All of the current methods are read-only. Creation and modification of composite records is planned for future versions.
 
 #### `/bl-users/by-id/<id>`
