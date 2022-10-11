@@ -45,10 +45,10 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <raml-module-builder.version>34.0.0</raml-module-builder.version>
+    <raml-module-builder.version>35.0.0</raml-module-builder.version>
     <mod-configuration-client.version>5.7.6</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <vertx-version>4.2.7</vertx-version>
+    <vertx-version>4.3.3</vertx-version>
   </properties>
 
   <dependencyManagement>
