@@ -1,6 +1,7 @@
 ## 7.4.0 IN-PROGRESS
 
 * Upgrade users interface to 16.0 (MODUSERBL-154)
+* Upgrade to RAML Module Builder 35.0.0 (MODUSERBL-158)
 
 ## 7.3.0 2022-06-13
 

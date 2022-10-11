@@ -13,7 +13,6 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.folio.rest.TestUtil.WrappedResponse;
-import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -241,7 +240,7 @@ public class MockOkapiTest {
     DeploymentOptions usersBLOptions = new DeploymentOptions()
         .setConfig(new JsonObject()
             .put("http.port", mockUsersBLPort)
-            .putNull(HttpClientMock2.MOCK_MODE)
+            .putNull("mock.httpclient")
             );
     TestUtil.deploy(RestVerticle.class, usersBLOptions, vertx, context);
   }
