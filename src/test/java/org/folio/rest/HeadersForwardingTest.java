@@ -115,7 +115,7 @@ public class HeadersForwardingTest {
       .put("totalRecords", 1);
 
     WireMock.stubFor(get(urlPathEqualTo("/users"))
-      .withQueryParam("query", equalTo("username==" + USERNAME))
+      .withQueryParam("query", equalTo("username==\"" + USERNAME + "\""))
       .willReturn(WireMock.okJson(users.encode())));
 
     WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
@@ -146,8 +146,10 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(201);
 
+    // WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
+    //   .withQueryParam("query", equalTo("username==" + USERNAME)));
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
-      .withQueryParam("query", equalTo("username==" + USERNAME)));
+      .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID)));
@@ -182,7 +184,7 @@ public class HeadersForwardingTest {
       .put("accessTokenExpiration", "456");
 
     WireMock.stubFor(get(urlPathEqualTo("/users"))
-      .withQueryParam("query", equalTo("username==" + USERNAME))
+      .withQueryParam("query", equalTo("username==\"" + USERNAME + "\""))
       .willReturn(WireMock.okJson(users.encode())));
 
     var accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, "321xyz")
@@ -240,7 +242,7 @@ public class HeadersForwardingTest {
       .body(TOKEN_EXPIRATION, hasKey(REFRESH_TOKEN_EXPIRATION));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
-      .withQueryParam("query", equalTo("username==" + USERNAME)));
+      .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID)));
@@ -280,7 +282,7 @@ public class HeadersForwardingTest {
       .put("totalRecords", 1);
 
     WireMock.stubFor(get(urlPathEqualTo("/users"))
-      .withQueryParam("query", equalTo("username==" + USERNAME))
+      .withQueryParam("query", equalTo("username==\"" + USERNAME + "\""))
       .willReturn(WireMock.okJson(users.encode())));
 
     WireMock.stubFor(post(authLoginEndpoint)
@@ -314,7 +316,7 @@ public class HeadersForwardingTest {
       .statusCode(404);
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
-      .withQueryParam("query", equalTo("username==" + USERNAME)));
+      .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID)));

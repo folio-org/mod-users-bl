@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>7.4.0-SNAPSHOT</version>
+  <version>7.5.0-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -49,7 +49,7 @@
     <mod-configuration-client.version>5.7.6</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <vertx-version>4.3.4</vertx-version>
-  </properties>
+ </properties>
 
   <dependencyManagement>
     <dependencies>

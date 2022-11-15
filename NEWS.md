@@ -1,3 +1,9 @@
+## 7.4.0 2022-10-18
+
+* Upgrade users interface to 16.0 (MODUSERBL-154)
+* Upgrade to RAML Module Builder 35.0.0 (MODUSERBL-158)
+* Username CQL injection in POST /bl-users/login (MODUSERBL-157)
+
 ## 7.3.0 2022-06-13
 
 * removed unused permissions (MODUSERBL-140)

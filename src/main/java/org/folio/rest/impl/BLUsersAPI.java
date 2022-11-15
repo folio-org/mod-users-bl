@@ -6,17 +6,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.folio.rest.RestVerticle;
@@ -46,6 +42,7 @@ import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
+
 import javax.ws.rs.core.MediaType;
 
 import java.io.UnsupportedEncodingException;
@@ -832,10 +829,10 @@ public class BLUsersAPI implements BlUsers {
     } else {
       logger.debug("Requesting login from {}", loginEndpoint);
       //can only be one user with this username - so only one result expected
-      String userUrl = "/users?query=username==%s";
+      var cql = "username==" + StringUtil.cqlEncode(entity.getUsername());
+      var userUrl = "/users?query=" + PercentCodec.encode(cql);
       //run login
       try {
-        userUrl = String.format(userUrl, new URLCodec().encode(entity.getUsername()));
         Map<String, String> headers = new CaseInsensitiveMap<>(okapiHeaders);
         Optional.ofNullable(userAgent)
           .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
