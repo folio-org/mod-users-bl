@@ -53,7 +53,7 @@ resourceTypes:
       200:
         body:
           application/json:
-            schema: compositeUser
+            type: compositeUser
       400:
         description: "Bad request"
         body:
@@ -84,7 +84,7 @@ resourceTypes:
       description: called when a user has forgotten <<resourceTypeName>>
       body:
         application/json:
-          schema: identifier
+          type: identifier
       responses:
         204:
         400:
@@ -109,7 +109,7 @@ resourceTypes:
         200:
           body:
             application/json:
-              schema: openTransactions
+              type: openTransactions
         400:
           description: "Bad request"
           body:
@@ -137,7 +137,7 @@ resourceTypes:
       200:
         body:
           application/json:
-            schema: compositeUserListObject
+            type: compositeUserListObject
       400:
         description: "Bad request"
         body:
@@ -195,12 +195,12 @@ resourceTypes:
         X-Forwarded-For:
       body:
         application/json:
-          schema: loginCredentials
+          type: loginCredentials
       responses:
         201:
           body:
             application/json:
-              schema: compositeUser
+              type: compositeUser
           headers:
             x-okapi-token:
         400:
@@ -243,7 +243,7 @@ resourceTypes:
               description: "Bad request"
               body:
                 application/json:
-                  schema: errors
+                  type: errors
             401:
               description: "Unauthorized"
               body:
