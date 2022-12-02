@@ -16,7 +16,7 @@ For the purposes of this form, "store" includes the following:
 
 ## Personal Data processed by this Module
 
-- [ ] This module does not store any PD.
+- [X] This module does not store any PD.
 - [ ] This module does not process any PD.
 - [ ] This module provides [custom fields](https://github.com/folio-org/folio-custom-fields).
 - [ ] This module stores fields with free-form text (tags, notes, descriptions, etc.)
@@ -42,21 +42,21 @@ For the purposes of this form, "store" includes the following:
 
 Information can be combined with others to form a person’s identity.
 
-- [ ] First name
-- [ ] Last name
-- [ ] Gender
-- [ ] Date of birth
+- [X] First name
+- [X] Last name
+- [X] Gender
+- [X] Date of birth
 - [ ] Place of birth
 - [ ] Racial or ethnic origin
-- [ ] Address
+- [X] Address
 - [ ] Location information
 - [ ] Geolocation data
-- [ ] Phone number(s)
-- [ ] Pseudonym / Alias / Nickname
+- [X] Phone number(s)
+- [X] Pseudonym / Alias / Nickname
 - [X] Username / User Identifier (UUID)
 - [X] Proxies
 - [X] Groups
-- [ ] Email address
+- [X] Email address
 - [ ] Financial information / Fees or Fines
 - [ ] Circulation transaction(s)
 - [ ] Web cookies
