@@ -84,17 +84,14 @@ The returned composite object format contains both ids and objects for the compo
 Example:
 ~~~~
 {
-  "userId": "0002",
-  "permissionsId": "shane",
-  "groupId": "53d5c933-87e4-44ed-86f2-5eb4273c2ef5",
   "user": {
     "username": "shane",
-    "id": "0002",
+    "id": "0002d1e9-42ae-4bc8-9ac3-d49cc7a0a5ce",
     "active": true,
     "patronGroup": "53d5c933-87e4-44ed-86f2-5eb4273c2ef5"
   },
   "permissions": {
-    "username": "shane",
+    "userId": "0002d1e9-42ae-4bc8-9ac3-d49cc7a0a5ce",
     "permissions": [
       "perms.users",
       "perms.permissions",
@@ -114,7 +111,7 @@ Example:
       "login.all"
     ]
   },
-  "group": {
+  "patronGroup": {
     "group": "administrators",
     "desc": "Big Bosses",
     "id": "53d5c933-87e4-44ed-86f2-5eb4273c2ef5"
