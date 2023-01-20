@@ -34,7 +34,7 @@
     },
     "meta": {
       "type": "object",
-      "description": "Metadata object"
+      "description": "Deprecated, data has moved to metadata"
     },
     "proxyFor": {
       "description" : "Deprecated",
@@ -146,12 +146,12 @@
     "createdDate": {
       "type": "string",
       "format": "date-time",
-      "description": "Created date"
+      "description": "Deprecated, data has moved to metadata"
     },
     "updatedDate": {
       "type": "string",
       "format": "date-time",
-      "description": "Updated date"
+      "description": "Deprecated, data has moved to metadata"
     },
     "metadata": {
       "type": "object",
