@@ -1,3 +1,8 @@
+## 7.5.0 2023-02-13
+
+* Added user data form (MODUSERBL-156)
+* Corrections to RAML files and examples (MODUSERBL-161, MODUSERBL-160)
+
 ## 7.4.0 2022-10-18
 
 * Upgrade users interface to 16.0 (MODUSERBL-154)
