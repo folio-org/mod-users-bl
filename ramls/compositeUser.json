@@ -32,7 +32,7 @@
       "description": "Service point user",
       "$ref": "servicepointsexpandeduser.json"
     },
-    "tenantId": {
+    "tenant": {
       "description": "Tenant identifier",
       "type": "string"
     }

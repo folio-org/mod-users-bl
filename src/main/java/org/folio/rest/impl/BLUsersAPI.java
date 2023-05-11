@@ -919,7 +919,7 @@ public class BLUsersAPI implements BlUsers {
                       return;
                     }
                     //all requested endpoints have completed, proces....
-                    CompositeUser compositeUser = new CompositeUser().withTenantId(tenant);
+                    CompositeUser compositeUser = new CompositeUser().withTenant(tenant);
                     //user errors handled in chainedRequest, so assume user is ok at this point
                     compositeUser.setUser((User)Response.convertToPojo(
                       userResponse[0].get().getBody().getJsonArray("users").getJsonObject(0), User.class));
@@ -1000,6 +1000,7 @@ public class BLUsersAPI implements BlUsers {
                     if (!aRequestHasFailed[0]) {
                       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
                         PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
+                      throw new RuntimeException(e);
                     }
                     logger.error(e.getMessage(), e);
                   } finally {
@@ -1009,7 +1010,8 @@ public class BLUsersAPI implements BlUsers {
                 });
             } catch (Exception e) {
               client.closeClient();
-              throw new RuntimeException(e);
+              asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+                PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
             }
           });
       } catch (Exception ex) {
