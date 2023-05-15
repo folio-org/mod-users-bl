@@ -355,14 +355,8 @@ public class BLUsersAPI implements BlUsers {
       completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
     }
     try {
-
       if (completedLookup.containsKey(SERVICEPOINTS_INCLUDE)) {
-        CompletableFuture<Response> expandSPUResponse = expandServicePoints(
-          completedLookup.get(SERVICEPOINTS_INCLUDE), client, aRequestHasFailed,
-          okapiHeaders, asyncResultHandler);
-        completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
-        requestedIncludes.add(expandSPUResponse);
-
+        addExpandServicePoints(okapiHeaders, asyncResultHandler, aRequestHasFailed, requestedIncludes, completedLookup, client, completedLookup.get(SERVICEPOINTS_INCLUDE));
       }
     } catch (Exception ex) {
       client.closeClient();
@@ -731,29 +725,24 @@ public class BLUsersAPI implements BlUsers {
   }
 
   private boolean responseOk(Response r){
-    if(r != null && r.getBody() != null){
-      return true;
-    }
-    return false;
+    return r != null && r.getBody() != null;
   }
 
   private boolean isNull(Response r){
-    if(r != null){
-      return false;
-    }
-    return true;
+    return r == null;
   }
 
   private String getUsername(String token) {
     JsonObject payload = parseTokenPayload(token);
-    if(payload == null) { return null; }
-    String username = payload.getString("sub");
-    return username;
+    if (payload == null) {
+      return null;
+    }
+    return payload.getString("sub");
   }
 
   private String getUserId(String token) {
     JsonObject payload = parseTokenPayload(token);
-    if(payload == null) {
+    if (payload == null) {
       return null;
     }
     return payload.getString("user_id");
@@ -761,8 +750,8 @@ public class BLUsersAPI implements BlUsers {
 
   private String getTenant(String token) {
     JsonObject payload = parseTokenPayload(token);
-    if(payload == null) {
-      throw new RuntimeException("Token must have tenant");
+    if (payload == null) {
+      return null;
     }
     return payload.getString("tenant");
   }
@@ -784,12 +773,14 @@ public class BLUsersAPI implements BlUsers {
           Map<String, String> okapiHeaders,
           Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
           Context vertxContext) {
+    String UNDEFINED_USER = "UNDEFINED_USER__";
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
-    String tenantFromHeader = okapiHeaders.get(OKAPI_TENANT_HEADER);
-    if (!tenantFromHeader.equals(getTenant(token))) {
-      run(getUserId(token), null, expandPerms, include, okapiHeaders, asyncResultHandler);
+    String username = getUsername(token);
+    String userId = getUserId(token);
+    if (StringUtils.isNotBlank(username) && username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
+      run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
     } else {
-      run(null, getUsername(token), expandPerms, include, okapiHeaders, asyncResultHandler);
+      run(userId, null, expandPerms, include, okapiHeaders, asyncResultHandler);
     }
   }
 
@@ -881,11 +872,7 @@ public class BLUsersAPI implements BlUsers {
                   requestedIncludes.add(servicePointsResponse);
                   completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
                   try {
-                    CompletableFuture<Response> expandSPUResponse = expandServicePoints(
-                      servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
-                      asyncResultHandler);
-                    completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
-                    requestedIncludes.add(expandSPUResponse);
+                    addExpandServicePoints(okapiHeaders, asyncResultHandler, aRequestHasFailed, requestedIncludes, completedLookup, client, servicePointsResponse);
                   } catch (Exception ex) {
                     client.closeClient();
                     asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
@@ -1000,7 +987,6 @@ public class BLUsersAPI implements BlUsers {
                     if (!aRequestHasFailed[0]) {
                       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
                         PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
-                      throw new RuntimeException(e);
                     }
                     logger.error(e.getMessage(), e);
                   } finally {
@@ -1013,6 +999,12 @@ public class BLUsersAPI implements BlUsers {
               asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
             }
+          })
+          .exceptionally(throwable -> {
+            clientForLogin.closeClient();
+            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+              PostBlUsersLoginResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
+            return null;
           });
       } catch (Exception ex) {
         clientForLogin.closeClient();
@@ -1020,6 +1012,14 @@ public class BLUsersAPI implements BlUsers {
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       }
     }
+  }
+
+  private void addExpandServicePoints(Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, boolean[] aRequestHasFailed, ArrayList<CompletableFuture<Response>> requestedIncludes, Map<String, CompletableFuture<Response>> completedLookup, HttpClientInterface client, CompletableFuture<Response> servicePointsResponse) throws InterruptedException, ExecutionException {
+    CompletableFuture<Response> expandSPUResponse = expandServicePoints(
+      servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
+      asyncResultHandler);
+    completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
+    requestedIncludes.add(expandSPUResponse);
   }
 
   private CompletableFuture<Response> expandServicePoints(
