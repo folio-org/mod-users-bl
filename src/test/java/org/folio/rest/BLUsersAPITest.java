@@ -31,6 +31,7 @@ import java.util.Base64;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static org.folio.rest.MockOkapi.getToken;
 import static org.hamcrest.Matchers.equalTo;
 
 
@@ -257,6 +258,17 @@ public class BLUsersAPITest {
             statusCode(200).
             body("compositeUsers.size()", equalTo(5),
                  "compositeUsers[0].users.username", equalTo("maxi"));
+  }
+
+  @Test
+  public void getBlUsersSelf(TestContext context) {
+    Header header = new Header(RestVerticle.OKAPI_HEADER_TOKEN, getToken(USER_ID, "maxi", "diku"));
+    given().
+        spec(okapi).port(port).header(header).
+      when().
+        get("/bl-users/_self").
+      then().
+        statusCode(200);
   }
 
   @Test

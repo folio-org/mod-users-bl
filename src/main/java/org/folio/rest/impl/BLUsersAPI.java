@@ -98,6 +98,7 @@ public class BLUsersAPI implements BlUsers {
   private static final String QUERY_LIMIT = "&limit=1000";
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
+  private static final String UNDEFINED_USER = "UNDEFINED_USER__";
 
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
@@ -773,7 +774,6 @@ public class BLUsersAPI implements BlUsers {
           Map<String, String> okapiHeaders,
           Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
           Context vertxContext) {
-    String UNDEFINED_USER = "UNDEFINED_USER__";
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
     String userId = getUserId(token);
