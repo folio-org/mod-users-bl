@@ -106,7 +106,7 @@ public class BLUsersAPI implements BlUsers {
   private OpenTransactionsService openTransactionsService;
   private UserModuleClient userClient;
 
-  public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
+  public BLUsersAPI(Vertx vertx) { //NOSONAR
     this.userPasswordService = UserPasswordService
       .createProxy(vertx, UserPasswordServiceImpl.USER_PASS_SERVICE_ADDRESS);
     HttpClient httpClient = HttpClientUtil.getInstance(vertx);
