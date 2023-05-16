@@ -177,13 +177,39 @@ public class HeadersForwardingTest {
   }
 
   @Test
-  public void testPostBlUsersLoginWithNullTenant() {
+  public void testPostBlUsersLoginWithoutTenant() {
     LoginCredentials credentials = new LoginCredentials();
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
 
     WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getTokenWithoutTenant(USER_ID, USERNAME))));
+
+    WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID))
+      .willReturn(WireMock.notFound()));
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(500);
+
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
+  }
+
+  @Test
+  public void testPostBlUsersLoginWithNullToken() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(USERNAME);
+    credentials.setPassword("password");
+
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, "")));
 
     WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID))

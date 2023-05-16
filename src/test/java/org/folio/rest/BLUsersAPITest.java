@@ -273,6 +273,17 @@ public class BLUsersAPITest {
   }
 
   @Test
+  public void getBlUsersSelfWithoutToken(TestContext context) {
+    Header header = new Header(RestVerticle.OKAPI_HEADER_TOKEN, "");
+    given().
+      spec(okapi).port(port).header(header).
+      when().
+      get("/bl-users/_self").
+      then().
+      statusCode(400);
+  }
+
+  @Test
   public void getBlUsersSelfWithoutUserId(TestContext context) {
     Header header = new Header(RestVerticle.OKAPI_HEADER_TOKEN, getTokenWithoutUserId("maxi", "diku"));
     given().
