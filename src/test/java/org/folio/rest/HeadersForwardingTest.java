@@ -45,6 +45,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
 import static junit.framework.TestCase.assertTrue;
 import static org.folio.rest.MockOkapi.getToken;
+import static org.folio.rest.MockOkapi.getTokenWithoutTenant;
 import static org.folio.rest.impl.BLUsersAPI.OKAPI_TOKEN_HEADER;
 
 @RunWith(VertxUnitRunner.class)
@@ -151,6 +152,54 @@ public class HeadersForwardingTest {
     WireMock.getAllServeEvents().stream()
       .map(ServeEvent::getRequest)
       .forEach(this::verifyHeaders);
+  }
+
+  @Test
+  public void testPostBlUsersLoginWithNullResponseFromLogin() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(USERNAME);
+    credentials.setPassword("password");
+
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(null));
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(500);
+
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
+  }
+
+  @Test
+  public void testPostBlUsersLoginWithNullTenant() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(USERNAME);
+    credentials.setPassword("password");
+
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getTokenWithoutTenant(USER_ID, USERNAME))));
+
+    WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID))
+      .willReturn(WireMock.notFound()));
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(500);
+
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
   }
 
   @Test
