@@ -707,6 +707,15 @@ public class MockOkapi extends AbstractVerticle {
     return "header." + Base64.getEncoder().encodeToString(payload.getBytes()) + ".verify";
   }
 
+  public static String getTokenWithoutUserId(String username, String tenant) {
+    final String payload = new JsonObject()
+      .put("sub", username)
+      .put("tenant", tenant)
+      .toString();
+
+    return "header." + Base64.getEncoder().encodeToString(payload.getBytes()) + ".verify";
+  }
+
   public static String getTokenWithoutTenant(String userId, String username) {
     final String payload = new JsonObject()
       .put("user_id", userId)

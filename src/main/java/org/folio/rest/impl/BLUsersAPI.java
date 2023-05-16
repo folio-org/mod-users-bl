@@ -777,7 +777,7 @@ public class BLUsersAPI implements BlUsers {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
     String userId = getUserId(token);
-    if (StringUtils.isNotBlank(username) && username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
+    if (StringUtils.isBlank(username) || username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
       run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
     } else {
       run(userId, null, expandPerms, include, okapiHeaders, asyncResultHandler);
