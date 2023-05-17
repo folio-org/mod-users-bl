@@ -866,7 +866,7 @@ public class BLUsersAPI implements BlUsers {
                   );
                   requestedIncludes.add(servicePointsResponse);
                   completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
-                  try {
+                  try { //NOSONAR
                     addExpandServicePoints(okapiHeaders, asyncResultHandler, aRequestHasFailed, requestedIncludes, completedLookup, client, servicePointsResponse);
                   } catch (Exception ex) {
                     client.closeClient();
