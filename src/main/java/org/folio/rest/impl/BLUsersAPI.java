@@ -792,9 +792,6 @@ public class BLUsersAPI implements BlUsers {
 
     //works on single user, no joins needed , just aggregate
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-
-    HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
-
     okapiHeaders.remove(OKAPI_URL_HEADER);
 
     CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
@@ -808,16 +805,14 @@ public class BLUsersAPI implements BlUsers {
 
     //populate composite based on includes
     int includeCount = include.size();
-    ArrayList<CompletableFuture<Response>> requestedIncludes
-      = new ArrayList<>();
-    Map<String, CompletableFuture<Response>> completedLookup
-      = new HashMap<>();
+    ArrayList<CompletableFuture<Response>> requestedIncludes = new ArrayList<>();
+    Map<String, CompletableFuture<Response>> completedLookup = new HashMap<>();
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
-      clientForLogin.closeClient();
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
+      HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
       String moduleURL = "/authn/login";
       logger.debug("Requesting login from " + moduleURL);
       //can only be one user with this username - so only one result expected
@@ -994,7 +989,7 @@ public class BLUsersAPI implements BlUsers {
                     client.closeClient();
                   }
                 });
-            } catch (Exception e) {
+            } catch (Exception e) { //NOSONAR
               client.closeClient();
               asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
