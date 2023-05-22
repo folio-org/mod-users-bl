@@ -98,6 +98,7 @@ public class BLUsersAPI implements BlUsers {
   private static final String QUERY_LIMIT = "&limit=1000";
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
+  private static final String UNDEFINED_USER = "UNDEFINED_USER__";
 
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
@@ -751,6 +752,22 @@ public class BLUsersAPI implements BlUsers {
     return username;
   }
 
+  private String getUserId(String token) {
+    JsonObject payload = parseTokenPayload(token);
+    if (payload == null) {
+      return null;
+    }
+    return payload.getString("user_id");
+  }
+
+  private String getTenant(String token) {
+    JsonObject payload = parseTokenPayload(token);
+    if (payload == null) {
+      return null;
+    }
+    return payload.getString("tenant");
+  }
+
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if(tokenParts.length == 3) {
@@ -770,7 +787,12 @@ public class BLUsersAPI implements BlUsers {
           Context vertxContext) {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
-    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
+    String userId = getUserId(token);
+    if (StringUtils.isBlank(username) || username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
+      run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
+    } else {
+      run(userId, null, expandPerms, include, okapiHeaders, asyncResultHandler);
+    }
   }
 
   @Override
@@ -780,17 +802,8 @@ public class BLUsersAPI implements BlUsers {
       Context vertxContext) {
 
     //works on single user, no joins needed , just aggregate
-
-    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-
-    //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
-    HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-
     okapiHeaders.remove(OKAPI_URL_HEADER);
-
-    CompletableFuture<Response> loginResponse[] = new CompletableFuture[1];
-    CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
 
     boolean []aRequestHasFailed = new boolean[]{false};
 
@@ -800,10 +813,10 @@ public class BLUsersAPI implements BlUsers {
     }
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
-      client.closeClient();
       asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
+      HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
       String moduleURL = "/authn/login";
       logger.debug("Requesting login from " + moduleURL);
       //can only be one user with this username - so only one result expected
@@ -816,27 +829,57 @@ public class BLUsersAPI implements BlUsers {
           .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
         Optional.ofNullable(xForwardedFor)
           .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
-        loginResponse[0] = client.request(HttpMethod.POST, entity, moduleURL, headers);
+
+        List<String> finalInclude = include;
+
+        clientForLogin.request(HttpMethod.POST, entity, moduleURL, headers)
+          .thenAccept(loginResponse -> {
+            //then get user by username, inject okapi headers from the login response into the user request
+            //see 'true' flag passed into the chainedRequest
+            handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
+
+            String token = loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER);
+            String tenant = getTenant(token);
+            okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
+            HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+
+            try {
+              getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, token, tenant, client);
+            } catch (Exception e) { //NOSONAR
+              client.closeClient();
+              asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+                PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
+            } finally {
+              clientForLogin.closeClient();
+            }
+          })
+          .exceptionally(throwable -> {
+            clientForLogin.closeClient();
+            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+              PostBlUsersLoginResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
+            return null;
+          });
       } catch (Exception ex) {
-        client.closeClient();
+        clientForLogin.closeClient();
         asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
-        return;
       }
-      //then get user by username, inject okapi headers from the login response into the user request
-      //see 'true' flag passed into the chainedRequest
-      userResponse[0] = loginResponse[0].thenCompose(client.chainedRequest(
-        userUrl, okapiHeaders, false, null, handlePreviousResponse(false,
-          false, true, aRequestHasFailed, asyncResultHandler)));
+    }
+  }
 
-      //populate composite based on includes
-      int includeCount = include.size();
+  private void getUserWithPerms(boolean expandPerms, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                String userUrl, List<String> include, String token, String tenant, HttpClientInterface client) throws Exception {
+
+      CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
+      boolean []aRequestHasFailed = new boolean[]{false};
       ArrayList<CompletableFuture<Response>> requestedIncludes
           = new ArrayList<>();
       Map<String, CompletableFuture<Response>> completedLookup
           = new HashMap<>();
 
-      for (int i = 0; i < includeCount; i++) {
+      userResponse[0] = client.request(HttpMethod.GET, userUrl, okapiHeaders);
+
+      for (int i = 0; i < include.size(); i++) {
 
         if (include.get(i).equals(PERMISSIONS_INCLUDE)){
           //call perms once the /users?query=username={username} (same as creds) completes
@@ -861,7 +904,7 @@ public class BLUsersAPI implements BlUsers {
           );
           requestedIncludes.add(servicePointsResponse);
           completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
-          try {
+          try { //NOSONAR
             CompletableFuture<Response> expandSPUResponse = expandServicePoints(
               servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
               asyncResultHandler);
@@ -871,7 +914,6 @@ public class BLUsersAPI implements BlUsers {
             client.closeClient();
             asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
-            return;
           }
         }
       }
@@ -899,11 +941,8 @@ public class BLUsersAPI implements BlUsers {
           if(aRequestHasFailed[0]){
             return;
           }
-
-          String token = loginResponse[0].get().getHeaders().get(OKAPI_TOKEN_HEADER);
-
           //all requested endpoints have completed, proces....
-          CompositeUser cu = new CompositeUser();
+          CompositeUser cu = new CompositeUser().withTenant(tenant);
           //user errors handled in chainedRequest, so assume user is ok at this point
           cu.setUser((User)Response.convertToPojo(
             userResponse[0].get().getBody().getJsonArray("users").getJsonObject(0), User.class));
@@ -992,7 +1031,6 @@ public class BLUsersAPI implements BlUsers {
           client.closeClient();
         }
       });
-    }
   }
 
   private CompletableFuture<Response> expandServicePoints(
