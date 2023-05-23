@@ -229,7 +229,7 @@ public class HeadersForwardingTest {
   }
 
   @Test
-  public void testPostBlUsersLoginWithNullToken1() {
+  public void testPostBlUsersLoginWithError() {
     LoginCredentials credentials = new LoginCredentials();
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
