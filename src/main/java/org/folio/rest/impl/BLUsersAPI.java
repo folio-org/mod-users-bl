@@ -165,7 +165,7 @@ public class BLUsersAPI implements BlUsers {
     if(isNull(response)){
       //response is null, meaning the previous call failed.
       //set previousFailure flag to true so that we don't send another error response to the client
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(
             "response is null from one of the services requested")));
       previousFailure[0] = true;
@@ -190,13 +190,13 @@ public class BLUsersAPI implements BlUsers {
             response.setError(new JsonObject());
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond404WithTextPlain("No record found for query '"
                 + response.getEndpoint() + "'")));
         } else if(totalRecords != null && totalRecords > 1 && requireOneResult) {
           logger.error("'" + response.getEndpoint() + "' returns multiple results");
           previousFailure[0] = true;
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond400WithTextPlain(("'" + response.getEndpoint()
                 + "' returns multiple results"))));
         }
@@ -298,7 +298,7 @@ public class BLUsersAPI implements BlUsers {
       }
     } catch (Exception ex) {
       client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
     }
@@ -367,7 +367,7 @@ public class BLUsersAPI implements BlUsers {
       }
     } catch (Exception ex) {
       client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
     }
@@ -482,20 +482,20 @@ public class BLUsersAPI implements BlUsers {
         }
 
         if(mode[0].equals("id")){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond200WithApplicationJson(cu)));
         }else if(mode[0].equals("username")){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByUsernameByUsernameResponse.respond200WithApplicationJson(cu)));
         }
       } catch (Exception e) {
         if(!aRequestHasFailed[0]){
           logger.error(e.getMessage(), e);
           if(mode[0].equals("id")){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               GetBlUsersByIdByIdResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }else if(mode[0].equals("username")){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               GetBlUsersByUsernameByUsernameResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
         }
@@ -533,7 +533,7 @@ public class BLUsersAPI implements BlUsers {
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
     } catch (Exception ex) {
       client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
     }
@@ -586,7 +586,7 @@ public class BLUsersAPI implements BlUsers {
         composite.mapFrom(userResponse, "users[*]", "compositeUser", "users", true);
         if(composite.getBody().isEmpty()){
           if(!aRequestHasFailed[0]){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               GetBlUsersResponse.respond200WithApplicationJson(cu)));
           }
           aRequestHasFailed[0] = true;
@@ -627,12 +627,12 @@ public class BLUsersAPI implements BlUsers {
         List<CompositeUser> cuol = (List<CompositeUser>)Response.convertToPojo(composite.getBody().getJsonArray("compositeUser"), CompositeUser.class);
         cu.setCompositeUsers(cuol);
         if(!aRequestHasFailed[0]){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersResponse.respond200WithApplicationJson(cu)));
         }
       } catch (Exception e) {
         if(!aRequestHasFailed[0]){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersResponse.respond500WithTextPlain(e.getLocalizedMessage())));
         }
         logger.error(e.getMessage(), e);
@@ -813,7 +813,7 @@ public class BLUsersAPI implements BlUsers {
     }
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
       HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
@@ -847,7 +847,7 @@ public class BLUsersAPI implements BlUsers {
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, token, tenant, client);
             } catch (Exception e) {
               client.closeClient();
-              asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+              asyncResultHandler.handle(Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
             } finally {
               clientForLogin.closeClient();
@@ -855,13 +855,13 @@ public class BLUsersAPI implements BlUsers {
           })
           .exceptionally(throwable -> {
             clientForLogin.closeClient();
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
             return null;
           });
       } catch (Exception ex) {
         clientForLogin.closeClient();
-        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+        asyncResultHandler.handle(Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       }
     }
@@ -912,7 +912,7 @@ public class BLUsersAPI implements BlUsers {
             requestedIncludes.add(expandSPUResponse);
           } catch (Exception ex) {
             client.closeClient();
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
           }
         }
@@ -1017,13 +1017,13 @@ public class BLUsersAPI implements BlUsers {
           }
 
           if(!aRequestHasFailed[0]){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
                 PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
           }
         } catch (Exception e) {
           if(!aRequestHasFailed[0]){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
           logger.error(e.getMessage(), e);
@@ -1151,8 +1151,8 @@ public class BLUsersAPI implements BlUsers {
    * @param okapiHeaders
    * @return
    */
-  private io.vertx.core.Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
-                                                       java.util.Map<String, String> okapiHeaders, String errorKey) {
+  private Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
+                                                       Map<String, String> okapiHeaders, String errorKey) {
     Promise<User> asyncResult = Promise.promise();
     getLocateUserFields(fieldAliasList, okapiHeaders).onComplete(locateUserFieldsAR -> {
       if (!locateUserFieldsAR.succeeded()) {
@@ -1223,7 +1223,7 @@ public class BLUsersAPI implements BlUsers {
    * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "if true personal.email will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.email" }
    */
   @Override
-  public void postBlUsersForgottenPassword(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
+  public void postBlUsersForgottenPassword(Identifier entity, Map<String, String>okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_PASSWORD_ERROR_KEY)
       .compose(user -> passwordResetLinkService.sendPasswordRestLink(user.getId(), connectionParams))
@@ -1234,7 +1234,7 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersForgottenUsername(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
+  public void postBlUsersForgottenUsername(Identifier entity, Map<String, String>okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     locateUserByAlias(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_USERNAME_ERROR_KEY)
       .compose(user -> {
