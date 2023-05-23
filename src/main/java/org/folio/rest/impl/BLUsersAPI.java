@@ -845,7 +845,7 @@ public class BLUsersAPI implements BlUsers {
 
             try {
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, token, tenant, client);
-            } catch (Exception e) { //NOSONAR
+            } catch (Exception e) {
               client.closeClient();
               asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
