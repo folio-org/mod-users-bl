@@ -252,6 +252,69 @@ public class HeadersForwardingTest {
   }
 
   @Test
+  public void testPostBlUsersLoginNullResponse() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(USERNAME);
+    credentials.setPassword("password");
+
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(null));
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(500);
+
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
+    WireMock.verify(0, postRequestedFor(urlPathEqualTo("/perms/users")));
+  }
+
+  @Test
+  public void testPostBlUsersLoginWithoutUsername() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(null);
+    credentials.setPassword("password");
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(400);
+
+    WireMock.verify(0, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
+    WireMock.verify(0, postRequestedFor(urlPathEqualTo("/perms/users")));
+  }
+
+  @Test
+  public void testPostBlUsersLoginWithoutPassword() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(USERNAME);
+    credentials.setPassword(null);
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(400);
+
+    WireMock.verify(0, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
+    WireMock.verify(0, postRequestedFor(urlPathEqualTo("/perms/users")));
+  }
+
+  @Test
   public void testPostBlUsersLoginIncorrectPermissions() {
     LoginCredentials credentials = new LoginCredentials();
     credentials.setUsername(USERNAME);
