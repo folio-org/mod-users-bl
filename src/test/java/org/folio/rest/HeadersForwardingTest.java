@@ -229,6 +229,29 @@ public class HeadersForwardingTest {
   }
 
   @Test
+  public void testPostBlUsersLoginWithNullToken1() {
+    LoginCredentials credentials = new LoginCredentials();
+    credentials.setUsername(USERNAME);
+    credentials.setPassword("password");
+
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(422)));
+
+    RestAssured
+      .given()
+      .spec(spec)
+      .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
+      .body(JsonObject.mapFrom(credentials).encode())
+      .when()
+      .post("/bl-users/login")
+      .then()
+      .statusCode(422);
+
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
+    WireMock.verify(0, postRequestedFor(urlPathEqualTo("/perms/users")));
+  }
+
+  @Test
   public void testPostBlUsersLoginIncorrectPermissions() {
     LoginCredentials credentials = new LoginCredentials();
     credentials.setUsername(USERNAME);
