@@ -96,7 +96,7 @@ public class GeneratePasswordRestLinkTest {
       .setContentType(ContentType.JSON)
       .setBaseUri("http://localhost:" + port)
       .addHeader(RestVerticle.OKAPI_HEADER_TENANT, TENANT)
-      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, getToken())
+      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, getToken(UUID.randomUUID().toString(),"admin", "diku"))
       .build();
   }
 

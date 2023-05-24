@@ -62,7 +62,6 @@ public class MockOkapi extends AbstractVerticle {
   private static final String REQUESTS_ENDPOINT = "/request-storage/request";
   private static final String ACCOUNTS_ENDPOINT = "/accounts";
   private static final String MANUAL_BLOCKS_ENDPOINT = "/manualblocks";
-  private static final String ADMIN_USER_ID = UUID.randomUUID().toString();
 
   @Override
   public void start(Promise<Void> future) {
@@ -698,11 +697,29 @@ public class MockOkapi extends AbstractVerticle {
     return newList;
   }
 
-  public static String getToken() {
+  public static String getToken(String userId, String username, String tenant) {
     final String payload = new JsonObject()
-      .put("user_id", ADMIN_USER_ID)
-      .put("sub", "admin")
-      .put("tenant", "diku")
+      .put("user_id", userId)
+      .put("sub", username)
+      .put("tenant", tenant)
+      .toString();
+
+    return "header." + Base64.getEncoder().encodeToString(payload.getBytes()) + ".verify";
+  }
+
+  public static String getTokenWithoutUserId(String username, String tenant) {
+    final String payload = new JsonObject()
+      .put("sub", username)
+      .put("tenant", tenant)
+      .toString();
+
+    return "header." + Base64.getEncoder().encodeToString(payload.getBytes()) + ".verify";
+  }
+
+  public static String getTokenWithoutTenant(String userId, String username) {
+    final String payload = new JsonObject()
+      .put("user_id", userId)
+      .put("sub", username)
       .toString();
 
     return "header." + Base64.getEncoder().encodeToString(payload.getBytes()) + ".verify";
