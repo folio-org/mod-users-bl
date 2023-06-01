@@ -144,7 +144,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .compose(token -> {
         String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
         String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
-        String generatedLink = linkHost + linkPath + '/' + token;
+        String generatedLink = linkHost + linkPath + '/' + token + "?tenant=" + connectionParams.getTenantId();
         linkHolder.value = generatedLink;
 
         String expirationTimeFromConfig =
