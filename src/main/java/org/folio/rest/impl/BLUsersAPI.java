@@ -104,6 +104,7 @@ public class BLUsersAPI implements BlUsers {
   private static final String QUERY_LIMIT = "&limit=1000";
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
+  private static final String UNDEFINED_USER = "UNDEFINED_USER__";
 
   private static final String LOGIN_ENDPOINT = "/authn/login-with-expiry";
   private static final String LOGIN_ENDPOINT_LEGACY = "/authn/login";
@@ -173,7 +174,7 @@ public class BLUsersAPI implements BlUsers {
     if(isNull(response)){
       //response is null, meaning the previous call failed.
       //set previousFailure flag to true so that we don't send another error response to the client
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(
             "response is null from one of the services requested")));
       previousFailure[0] = true;
@@ -198,13 +199,13 @@ public class BLUsersAPI implements BlUsers {
             response.setError(new JsonObject());
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond404WithTextPlain("No record found for query '"
                 + response.getEndpoint() + "'")));
         } else if(totalRecords != null && totalRecords > 1 && requireOneResult) {
           logger.error("'" + response.getEndpoint() + "' returns multiple results");
           previousFailure[0] = true;
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond400WithTextPlain(("'" + response.getEndpoint()
                 + "' returns multiple results"))));
         }
@@ -306,7 +307,7 @@ public class BLUsersAPI implements BlUsers {
       }
     } catch (Exception ex) {
       client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
     }
@@ -375,7 +376,7 @@ public class BLUsersAPI implements BlUsers {
       }
     } catch (Exception ex) {
       client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
     }
@@ -490,20 +491,20 @@ public class BLUsersAPI implements BlUsers {
         }
 
         if(mode[0].equals("id")){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond200WithApplicationJson(cu)));
         }else if(mode[0].equals("username")){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByUsernameByUsernameResponse.respond200WithApplicationJson(cu)));
         }
       } catch (Exception e) {
         if(!aRequestHasFailed[0]){
           logger.error(e.getMessage(), e);
           if(mode[0].equals("id")){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               GetBlUsersByIdByIdResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }else if(mode[0].equals("username")){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               GetBlUsersByUsernameByUsernameResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
         }
@@ -541,7 +542,7 @@ public class BLUsersAPI implements BlUsers {
       userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
     } catch (Exception ex) {
       client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       return;
     }
@@ -594,7 +595,7 @@ public class BLUsersAPI implements BlUsers {
         composite.mapFrom(userResponse, "users[*]", "compositeUser", "users", true);
         if(composite.getBody().isEmpty()){
           if(!aRequestHasFailed[0]){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               GetBlUsersResponse.respond200WithApplicationJson(cu)));
           }
           aRequestHasFailed[0] = true;
@@ -635,12 +636,12 @@ public class BLUsersAPI implements BlUsers {
         List<CompositeUser> cuol = (List<CompositeUser>)Response.convertToPojo(composite.getBody().getJsonArray("compositeUser"), CompositeUser.class);
         cu.setCompositeUsers(cuol);
         if(!aRequestHasFailed[0]){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersResponse.respond200WithApplicationJson(cu)));
         }
       } catch (Exception e) {
         if(!aRequestHasFailed[0]){
-          asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+          asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersResponse.respond500WithTextPlain(e.getLocalizedMessage())));
         }
         logger.error(e.getMessage(), e);
@@ -760,6 +761,22 @@ public class BLUsersAPI implements BlUsers {
     return username;
   }
 
+  private String getUserId(String token) {
+    JsonObject payload = parseTokenPayload(token);
+    if (payload == null) {
+      return null;
+    }
+    return payload.getString("user_id");
+  }
+
+  private String getTenant(String token) {
+    JsonObject payload = parseTokenPayload(token);
+    if (payload == null) {
+      return null;
+    }
+    return payload.getString("tenant");
+  }
+
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if(tokenParts.length == 3) {
@@ -779,7 +796,12 @@ public class BLUsersAPI implements BlUsers {
           Context vertxContext) {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
-    run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
+    String userId = getUserId(token);
+    if (StringUtils.isBlank(username) || username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
+      run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
+    } else {
+      run(userId, null, expandPerms, include, okapiHeaders, asyncResultHandler);
+    }
   }
 
   @Override
@@ -803,17 +825,8 @@ public class BLUsersAPI implements BlUsers {
       String loginEndpoint, BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) {
 
     //works on single user, no joins needed , just aggregate
-
-    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
-
-    //HttpModuleClient2 client = new HttpModuleClient2(okapiURL, tenant);
-    HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-
     okapiHeaders.remove(OKAPI_URL_HEADER);
-
-    CompletableFuture<Response> loginResponse[] = new CompletableFuture[1];
-    CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
 
     boolean []aRequestHasFailed = new boolean[]{false};
 
@@ -823,10 +836,10 @@ public class BLUsersAPI implements BlUsers {
     }
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
-      client.closeClient();
-      asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+      asyncResultHandler.handle(Future.succeededFuture(
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
+      HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
       logger.debug("Requesting login from {}", loginEndpoint);
       //can only be one user with this username - so only one result expected
       var cql = "username==" + StringUtil.cqlEncode(entity.getUsername());
@@ -839,28 +852,59 @@ public class BLUsersAPI implements BlUsers {
         Optional.ofNullable(xForwardedFor)
           .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
 
-        loginResponse[0] = client.request(HttpMethod.POST, entity, loginEndpoint, headers);
+        List<String> finalInclude = include;
 
+        clientForLogin.request(HttpMethod.POST, entity, loginEndpoint, headers)
+          .thenAccept(loginResponse -> {
+            //then get user by username, inject okapi headers from the login response into the user request
+            //see 'true' flag passed into the chainedRequest
+            handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
+
+             String token = loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER);
+             String tenant = getTenant(token);
+            okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
+            HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+
+            try {
+              getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, token, tenant, loginResponse, client, respond);
+            } catch (Exception e) {
+              client.closeClient();
+              asyncResultHandler.handle(Future.succeededFuture(
+                PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
+            } finally {
+              clientForLogin.closeClient();
+            }
+          })
+          .exceptionally(throwable -> {
+            clientForLogin.closeClient();
+            asyncResultHandler.handle(Future.succeededFuture(
+              PostBlUsersLoginResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
+            return null;
+          });
       } catch (Exception ex) {
-        client.closeClient();
-        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+        clientForLogin.closeClient();
+        asyncResultHandler.handle(Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
-        return;
       }
-      //then get user by username, inject okapi headers from the login response into the user request
-      //see 'true' flag passed into the chainedRequest
-      userResponse[0] = loginResponse[0].thenCompose(client.chainedRequest(
-        userUrl, okapiHeaders, false, null, handlePreviousResponse(false,
-          false, true, aRequestHasFailed, asyncResultHandler)));
+    }
+  }
 
-      //populate composite based on includes
-      int includeCount = include.size();
+  private void getUserWithPerms(boolean expandPerms, Map<String, String> okapiHeaders,
+                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                String userUrl, List<String> include, String token, String tenant,
+                                Response loginResponse, HttpClientInterface client,
+                                BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
+
+      CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
+      boolean []aRequestHasFailed = new boolean[]{false};
       ArrayList<CompletableFuture<Response>> requestedIncludes
           = new ArrayList<>();
       Map<String, CompletableFuture<Response>> completedLookup
           = new HashMap<>();
 
-      for (int i = 0; i < includeCount; i++) {
+      userResponse[0] = client.request(HttpMethod.GET, userUrl, okapiHeaders);
+
+      for (int i = 0; i < include.size(); i++) {
 
         if (include.get(i).equals(PERMISSIONS_INCLUDE)){
           //call perms once the /users?query=username={username} (same as creds) completes
@@ -885,7 +929,7 @@ public class BLUsersAPI implements BlUsers {
           );
           requestedIncludes.add(servicePointsResponse);
           completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
-          try {
+          try { //NOSONAR
             CompletableFuture<Response> expandSPUResponse = expandServicePoints(
               servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
               asyncResultHandler);
@@ -893,9 +937,8 @@ public class BLUsersAPI implements BlUsers {
             requestedIncludes.add(expandSPUResponse);
           } catch (Exception ex) {
             client.closeClient();
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
-            return;
           }
         }
       }
@@ -923,9 +966,8 @@ public class BLUsersAPI implements BlUsers {
           if(aRequestHasFailed[0]){
             return;
           }
-
           //all requested endpoints have completed, proces....
-          CompositeUser cu = new CompositeUser();
+          CompositeUser cu = new CompositeUser().withTenant(tenant);
           //user errors handled in chainedRequest, so assume user is ok at this point
           cu.setUser((User)Response.convertToPojo(
             userResponse[0].get().getBody().getJsonArray("users").getJsonObject(0), User.class));
@@ -1000,12 +1042,12 @@ public class BLUsersAPI implements BlUsers {
           }
 
           if(!aRequestHasFailed[0]){
-            javax.ws.rs.core.Response r = respond.apply(loginResponse[0].get(), cu);
+            javax.ws.rs.core.Response r = respond.apply(loginResponse, cu);
             asyncResultHandler.handle(Future.succeededFuture(r));
           }
         } catch (Exception e) {
           if(!aRequestHasFailed[0]){
-            asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(
+            asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
           logger.error(e.getMessage(), e);
@@ -1013,7 +1055,6 @@ public class BLUsersAPI implements BlUsers {
           client.closeClient();
         }
       });
-    }
   }
 
   private javax.ws.rs.core.Response loginResponseLegacy(Response loginResponse, CompositeUser cu) {
@@ -1161,8 +1202,8 @@ public class BLUsersAPI implements BlUsers {
    * @param okapiHeaders
    * @return
    */
-  private io.vertx.core.Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
-                                                       java.util.Map<String, String> okapiHeaders, String errorKey) {
+  private Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
+                                                       Map<String, String> okapiHeaders, String errorKey) {
     Promise<User> asyncResult = Promise.promise();
     getLocateUserFields(fieldAliasList, okapiHeaders).onComplete(locateUserFieldsAR -> {
       if (!locateUserFieldsAR.succeeded()) {
@@ -1233,7 +1274,9 @@ public class BLUsersAPI implements BlUsers {
    * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "if true personal.email will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.email" }
    */
   @Override
-  public void postBlUsersForgottenPassword(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
+  public void postBlUsersForgottenPassword(Identifier entity, Map<String, String>okapiHeaders,
+                                           Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler,
+                                           Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_PASSWORD_ERROR_KEY)
       .compose(user -> passwordResetLinkService.sendPasswordRestLink(user.getId(), connectionParams))
@@ -1244,7 +1287,9 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersForgottenUsername(Identifier entity, java.util.Map<String, String>okapiHeaders, io.vertx.core.Handler<io.vertx.core.AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
+  public void postBlUsersForgottenUsername(Identifier entity, Map<String, String>okapiHeaders,
+                                           Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler,
+                                           Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     locateUserByAlias(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_USERNAME_ERROR_KEY)
       .compose(user -> {

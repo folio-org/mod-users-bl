@@ -96,7 +96,7 @@ public class GeneratePasswordRestLinkTest {
       .setContentType(ContentType.JSON)
       .setBaseUri("http://localhost:" + port)
       .addHeader(RestVerticle.OKAPI_HEADER_TENANT, TENANT)
-      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, getToken())
+      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, getToken(UUID.randomUUID().toString(),"admin", "diku"))
       .build();
   }
 
@@ -127,7 +127,7 @@ public class GeneratePasswordRestLinkTest {
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
     RestAssured.given()
       .spec(spec)
       .header(mockUrlHeader)
@@ -244,7 +244,7 @@ public class GeneratePasswordRestLinkTest {
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
     RestAssured.given()
       .spec(spec)
       .header(mockUrlHeader)
@@ -290,7 +290,7 @@ public class GeneratePasswordRestLinkTest {
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
     RestAssured.given()
       .spec(spec)
       .header(mockUrlHeader)
@@ -384,7 +384,7 @@ public class GeneratePasswordRestLinkTest {
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN;
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
     RestAssured.given()
       .spec(spec)
       .header(mockUrlHeader)
