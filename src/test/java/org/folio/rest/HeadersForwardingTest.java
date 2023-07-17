@@ -190,7 +190,8 @@ public class HeadersForwardingTest {
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\""))
       .willReturn(WireMock.okJson(users.encode())));
 
-    var accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, "321xyz")
+    var accessToken = getToken(USER_ID, USERNAME, TENANT);
+    var accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, accessToken)
       .setMaxAge(321)
       .setSecure(true)
       .setHttpOnly(true);
@@ -237,7 +238,7 @@ public class HeadersForwardingTest {
           .httpOnly(true)
           .secured(true))
       .cookie(ACCESS_TOKEN, RestAssuredMatchers.detailedCookie()
-          .value("321xyz")
+          .value(accessToken)
           .maxAge(321)
           .httpOnly(true)
           .secured(true))

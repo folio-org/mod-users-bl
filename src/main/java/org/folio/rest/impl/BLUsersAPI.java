@@ -1,11 +1,9 @@
 package org.folio.rest.impl;
 
-import io.vertx.core.AsyncResult;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.vertx.core.*;
 import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
@@ -108,6 +106,8 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String LOGIN_ENDPOINT = "/authn/login-with-expiry";
   private static final String LOGIN_ENDPOINT_LEGACY = "/authn/login";
+  private static final String FOLIO_ACCESS_TOKEN = "folioAccessToken";
+  private static final String SET_COOKIE_HEADER = "Set-Cookie";
 
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
@@ -779,7 +779,7 @@ public class BLUsersAPI implements BlUsers {
 
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
-    if(tokenParts.length == 3) {
+    if (tokenParts.length == 3) {
       String encodedPayload = tokenParts[1];
       byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
       String decodedJson = new String(decodedJsonBytes);
@@ -860,11 +860,10 @@ public class BLUsersAPI implements BlUsers {
             //see 'true' flag passed into the chainedRequest
             handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
 
-             String token = loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER);
-             String tenant = getTenant(token);
+            String token = getToken(loginResponse.getHeaders());
+            String tenant = getTenant(token);
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-
             try {
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, token, tenant, loginResponse, client, respond);
             } catch (Exception e) {
@@ -887,6 +886,19 @@ public class BLUsersAPI implements BlUsers {
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       }
     }
+  }
+
+  private String getToken(MultiMap headers) {
+    // There is a legacy token mode and a non-legacy mode. The non-legacy mode gets the token from a Set-Cookie header.
+    // The legacy mode gets it from the X-Okapi-Token header.
+    for (var header : headers.getAll(SET_COOKIE_HEADER)) {
+      Cookie cookie = ClientCookieDecoder.STRICT.decode(header.trim());
+      if (cookie.name().equals(FOLIO_ACCESS_TOKEN)) {
+        return cookie.value();
+      }
+    }
+
+    return headers.get(OKAPI_TOKEN_HEADER);
   }
 
   private void getUserWithPerms(boolean expandPerms, Map<String, String> okapiHeaders,
