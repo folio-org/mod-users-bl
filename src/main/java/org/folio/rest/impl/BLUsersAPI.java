@@ -1074,12 +1074,14 @@ public class BLUsersAPI implements BlUsers {
       });
   }
 
+  @SuppressWarnings("java:S1874")
   private javax.ws.rs.core.Response loginResponseLegacy(Response loginResponse, CompositeUser cu) {
     String token = String.valueOf(loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER));
     return PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
       PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token));
   }
 
+  @SuppressWarnings("java:S1874")
   private javax.ws.rs.core.Response loginResponse(Response loginResponse, CompositeUser cu) {
     JsonObject body = loginResponse.getBody();
     String refreshTokenExpiration = body.getString("refreshTokenExpiration");
