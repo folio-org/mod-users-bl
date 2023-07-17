@@ -43,7 +43,6 @@ import javax.ws.rs.core.HttpHeaders;
 
 import javax.ws.rs.core.MediaType;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -865,7 +864,7 @@ public class BLUsersAPI implements BlUsers {
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
             try {
-              getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, token, tenant, loginResponse, client, respond);
+              getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
             } catch (Exception e) {
               client.closeClient();
               asyncResultHandler.handle(Future.succeededFuture(
@@ -901,10 +900,15 @@ public class BLUsersAPI implements BlUsers {
     return headers.get(OKAPI_TOKEN_HEADER);
   }
 
-  private void getUserWithPerms(boolean expandPerms, Map<String, String> okapiHeaders,
+  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874"})
+  private void getUserWithPerms(boolean expandPerms,
+                                Map<String, String> okapiHeaders,
                                 Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-                                String userUrl, List<String> include, String token, String tenant,
-                                Response loginResponse, HttpClientInterface client,
+                                String userUrl,
+                                List<String> include,
+                                String tenant,
+                                Response loginResponse,
+                                HttpClientInterface client,
                                 BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
 
       CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
@@ -1070,7 +1074,7 @@ public class BLUsersAPI implements BlUsers {
   }
 
   private javax.ws.rs.core.Response loginResponseLegacy(Response loginResponse, CompositeUser cu) {
-    String token = loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER);
+    String token = String.valueOf(loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER));
     return PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
       PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token));
   }
