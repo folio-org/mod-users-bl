@@ -819,6 +819,7 @@ public class BLUsersAPI implements BlUsers {
         LOGIN_ENDPOINT_LEGACY, this::loginResponseLegacy);
   }
 
+  @SuppressWarnings("java:S1874")
   private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor, //NOSONAR
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       String loginEndpoint, BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) {
