@@ -34,6 +34,8 @@ import org.folio.rest.util.HttpClientUtil;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.PasswordResetLinkService;
 import org.folio.service.PasswordResetLinkServiceImpl;
+import org.folio.service.consortia.ConsortiaService;
+import org.folio.service.consortia.ConsortiaServiceImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 import org.folio.service.transactions.OpenTransactionsService;
@@ -82,9 +84,10 @@ public class BLUsersAPI implements BlUsers {
   public static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
   public static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
 
-  private static final String LOCATE_USER_USERNAME = "userName";
-  private static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
-  private static final String LOCATE_USER_EMAIL = "email";
+  public static final String LOCATE_USER_USERNAME = "userName";
+  public static final String LOCATE_USER_PHONE_NUMBER = "phoneNumber";
+  public static final String LOCATE_USER_MOBILE_PHONE_NUMBER = "mobilePhoneNumber";
+  public static final String LOCATE_USER_EMAIL = "email";
   private static final List<String> DEFAULT_FIELDS_TO_LOCATE_USER =
     Arrays.asList("personal.email", "personal.phone", "personal.mobilePhone", "username");//NOSONAR
 
@@ -93,7 +96,7 @@ public class BLUsersAPI implements BlUsers {
 
   private static final String FORGOTTEN_USERNAME_ERROR_KEY = "forgotten.username.found.multiple.users";
   private static final String FORGOTTEN_PASSWORD_ERROR_KEY = "forgotten.password.found.multiple.users";//NOSONAR
-  private static final String FORGOTTEN_PASSWORD_FOUND_INACTIVE = "forgotten.password.found.inactive";//NOSONAR
+  public static final String FORGOTTEN_PASSWORD_FOUND_INACTIVE = "forgotten.password.found.inactive";//NOSONAR
 
   private static final String QUERY_LIMIT = "&limit=1000";
 
@@ -105,6 +108,8 @@ public class BLUsersAPI implements BlUsers {
   private NotificationClient notificationClient;
   private OpenTransactionsService openTransactionsService;
   private UserModuleClient userClient;
+
+  private ConsortiaService consortiaService;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
@@ -126,6 +131,7 @@ public class BLUsersAPI implements BlUsers {
       new FeesFinesModuleClientImpl(httpClient),
       userClient
     );
+    consortiaService = new ConsortiaServiceImpl(httpClient);
   }
 
   private List<String> getDefaultIncludes(){
@@ -1152,64 +1158,62 @@ public class BLUsersAPI implements BlUsers {
    * @return
    */
   private Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
-                                                       Map<String, String> okapiHeaders, String errorKey) {
+                                         Map<String, String> okapiHeaders, String errorKey) {
+    return getLocateUserFields(fieldAliasList, okapiHeaders)
+      .compose(locateUserFieldsAR -> consortiaService.locateConsortiaUser(entity.getId(), okapiHeaders, errorKey)
+        .compose(user -> {
+          if (user == null) {
+            return locateUser(locateUserFieldsAR, entity, okapiHeaders, errorKey);
+          }
+          return Future.succeededFuture(user);
+          }));
+  }
+
+  private Future<User> locateUser(List<String> locateUserFieldsAR, Identifier entity, Map<String, String> okapiHeaders, String errorKey) {
+    String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
+    String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
     Promise<User> asyncResult = Promise.promise();
-    getLocateUserFields(fieldAliasList, okapiHeaders).onComplete(locateUserFieldsAR -> {
-      if (!locateUserFieldsAR.succeeded()) {
-        asyncResult.fail(locateUserFieldsAR.cause());
-        return;
-      }
-      String query = buildQuery(locateUserFieldsAR.result(), entity.getId());
+    HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+    String query = buildQuery(locateUserFieldsAR, entity.getId());
+    try {
+      String userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2").toString();
 
-      String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
-      String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+      client.request(userUrl, okapiHeaders).thenAccept(userResponse -> {
+        String noUserFoundMessage = "User is not found: ";
 
-      HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+        if(!responseOk(userResponse)) {
+          asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
+          return;
+        }
 
-      okapiHeaders.remove(OKAPI_URL_HEADER);
-
-      try {
-        String userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2").toString();
-
-        client.request(userUrl, okapiHeaders).thenAccept(userResponse -> {
-          String noUserFoundMessage = "User is not found: ";
-
-          if(!responseOk(userResponse)) {
-            asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
-            return;
+        JsonArray users = userResponse.getBody().getJsonArray("users");
+        int arraySize = users.size();
+        if (arraySize == 0) {
+          asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
+          return;
+        } else if (arraySize > 1) {
+          String message = String.format("Multiple users associated with '%s'", entity.getId());
+          UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(errorKey, message);
+          asyncResult.fail(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
+          return;
+        }
+        try {
+          User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
+          if (user != null && !user.getActive()) {
+            String message = String.format("Users associated with '%s' is not active", entity.getId());
+            UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(FORGOTTEN_PASSWORD_FOUND_INACTIVE, message);
+            throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
           }
-
-          JsonArray users = userResponse.getBody().getJsonArray("users");
-          int arraySize = users.size();
-          if (arraySize == 0) {
-            asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
-            return;
-          } else if (arraySize > 1) {
-            String message = String.format("Multiple users associated with '%s'", entity.getId());
-            UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(errorKey, message);
-            asyncResult.fail(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
-            return;
-          }
-          try {
-            User user = (User) Response.convertToPojo(users.getJsonObject(0), User.class);
-            if (user != null && !user.getActive()) {
-              String message = String.format("Users associated with '%s' is not active", entity.getId());
-              UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(FORGOTTEN_PASSWORD_FOUND_INACTIVE, message);
-              throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
-            }
-            asyncResult.complete(user);
-          } catch (Exception e) {
-            asyncResult.fail(e);
-          }
-        });
-
-      } catch (Exception e) {
-        asyncResult.fail(e);
-      } finally {
-        client.closeClient();
-      }
-    });
-
+          asyncResult.complete(user);
+        } catch (Exception e) {
+          asyncResult.fail(e);
+        }
+      });
+    } catch (Exception e) {
+      asyncResult.fail(e);
+    } finally {
+      client.closeClient();
+    }
     return asyncResult.future();
   }
 
