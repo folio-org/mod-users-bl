@@ -25,6 +25,8 @@ import static io.vertx.core.http.HttpMethod.DELETE;
 import static io.vertx.core.http.HttpMethod.GET;
 import static io.vertx.core.http.HttpMethod.POST;
 import static io.vertx.core.http.HttpMethod.PUT;
+import static org.folio.rest.BLUsersAPITest.USER_TEST_ID;
+import static org.folio.rest.BLUsersAPITest.USER_TEST_NAME;
 
 /**
  * @author kurt
@@ -305,8 +307,30 @@ public class MockOkapi extends AbstractVerticle {
 
   private MockResponse handleUserTenants(HttpMethod method, String id, String url,
           String payload, RoutingContext context) throws CQLParseException {
-    return handleBasicCrud(userTenants, "userTenants", method, id, url, payload,
-      context);
+    int code = 200;
+    String response = "";
+    String userName = context.request().params().get("userName");
+    if(USER_TEST_NAME.equals(userName)) {
+      JsonObject result = new JsonObject();
+      JsonArray userTenants = new JsonArray();
+      JsonObject userTenant = new JsonObject();
+      userTenant.put("id", UUID.randomUUID());
+      userTenant.put("userId", USER_TEST_ID);
+      userTenant.put("username", USER_TEST_NAME);
+      userTenant.put("email", "user@gmail.org");
+      userTenant.put("tenantId", "testTenant");
+
+      userTenants.add(userTenant);
+      result.put("userTenants", userTenants);
+      result.put("totalRecords", 1);
+      response = result.encode();
+    } else {
+      MockCollection responseCollection = getCollectionWithContextParams(userTenants,
+        context);
+      JsonObject responseObject = wrapCollection(responseCollection, "userTenants");
+      response = responseObject.encode();
+    }
+    return new MockResponse(code, response);
   }
 
   private MockResponse handlePermsPermissions(HttpMethod method, String id, String url,
