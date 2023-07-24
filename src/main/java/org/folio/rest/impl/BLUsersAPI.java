@@ -34,8 +34,8 @@ import org.folio.rest.util.HttpClientUtil;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.PasswordResetLinkService;
 import org.folio.service.PasswordResetLinkServiceImpl;
+import org.folio.service.consortia.CrossTenantUserService;
 import org.folio.service.consortia.CrossTenantUserServiceImpl;
-import org.folio.service.consortia.CrossTenantUserServiceImplImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 import org.folio.service.transactions.OpenTransactionsService;
@@ -110,7 +110,7 @@ public class BLUsersAPI implements BlUsers {
   private OpenTransactionsService openTransactionsService;
   private UserModuleClient userClient;
 
-  private CrossTenantUserServiceImpl crossTenantUserServiceImpl;
+  private CrossTenantUserService crossTenantUserService;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
@@ -132,7 +132,7 @@ public class BLUsersAPI implements BlUsers {
       new FeesFinesModuleClientImpl(httpClient),
       userClient
     );
-    crossTenantUserServiceImpl = new CrossTenantUserServiceImplImpl(httpClient);
+    crossTenantUserService = new CrossTenantUserServiceImpl(httpClient);
   }
 
   private List<String> getDefaultIncludes(){
@@ -1161,7 +1161,7 @@ public class BLUsersAPI implements BlUsers {
   private Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
                                          Map<String, String> okapiHeaders, String errorKey) {
     return getLocateUserFields(fieldAliasList, okapiHeaders)
-      .compose(locateUserFieldsAR -> crossTenantUserServiceImpl.locateCrossTenantUser(entity.getId(), okapiHeaders, errorKey)
+      .compose(locateUserFieldsAR -> crossTenantUserService.locateCrossTenantUser(entity.getId(), okapiHeaders, errorKey)
         .compose(user -> {
           if (user == null) {
             return locateUser(locateUserFieldsAR, entity, okapiHeaders, errorKey);
