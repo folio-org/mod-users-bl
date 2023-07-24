@@ -34,8 +34,8 @@ import org.folio.rest.util.HttpClientUtil;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.PasswordResetLinkService;
 import org.folio.service.PasswordResetLinkServiceImpl;
-import org.folio.service.consortia.ConsortiaService;
-import org.folio.service.consortia.ConsortiaServiceImpl;
+import org.folio.service.consortia.CrossTenantUserServiceImpl;
+import org.folio.service.consortia.CrossTenantUserServiceImplImpl;
 import org.folio.service.password.UserPasswordService;
 import org.folio.service.password.UserPasswordServiceImpl;
 import org.folio.service.transactions.OpenTransactionsService;
@@ -45,6 +45,7 @@ import org.folio.util.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -109,7 +110,7 @@ public class BLUsersAPI implements BlUsers {
   private OpenTransactionsService openTransactionsService;
   private UserModuleClient userClient;
 
-  private ConsortiaService consortiaService;
+  private CrossTenantUserServiceImpl crossTenantUserServiceImpl;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
@@ -131,7 +132,7 @@ public class BLUsersAPI implements BlUsers {
       new FeesFinesModuleClientImpl(httpClient),
       userClient
     );
-    consortiaService = new ConsortiaServiceImpl(httpClient);
+    crossTenantUserServiceImpl = new CrossTenantUserServiceImplImpl(httpClient);
   }
 
   private List<String> getDefaultIncludes(){
@@ -1160,7 +1161,7 @@ public class BLUsersAPI implements BlUsers {
   private Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
                                          Map<String, String> okapiHeaders, String errorKey) {
     return getLocateUserFields(fieldAliasList, okapiHeaders)
-      .compose(locateUserFieldsAR -> consortiaService.locateConsortiaUser(entity.getId(), okapiHeaders, errorKey)
+      .compose(locateUserFieldsAR -> crossTenantUserServiceImpl.locateCrossTenantUser(entity.getId(), okapiHeaders, errorKey)
         .compose(user -> {
           if (user == null) {
             return locateUser(locateUserFieldsAR, entity, okapiHeaders, errorKey);
@@ -1169,6 +1170,13 @@ public class BLUsersAPI implements BlUsers {
           }));
   }
 
+  /**
+   * Searching user by query
+   * @param locateUserFieldsAR a list of user fields to use for search
+   * @param entity - an identity with a value
+   * @param okapiHeaders request headers
+   * @return User
+   */
   private Future<User> locateUser(List<String> locateUserFieldsAR, Identifier entity, Map<String, String> okapiHeaders, String errorKey) {
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
@@ -1176,7 +1184,8 @@ public class BLUsersAPI implements BlUsers {
     HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
     String query = buildQuery(locateUserFieldsAR, entity.getId());
     try {
-      String userUrl = new StringBuilder("/users?").append("query=").append(URLEncoder.encode(query, "UTF-8")).append("&").append("offset=0&limit=2").toString();
+      String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
+      String userUrl = String.format("/users?query=%s&offset=0&limit=2", encodedQuery);
 
       client.request(userUrl, okapiHeaders).thenAccept(userResponse -> {
         String noUserFoundMessage = "User is not found: ";

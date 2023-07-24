@@ -26,23 +26,23 @@ import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_PHONE_NUMBER;
 import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_EMAIL;
 import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_MOBILE_PHONE_NUMBER;
 
-public class ConsortiaServiceImpl implements ConsortiaService {
-  private static final String USER_TENANT_URL = "/user-tenants?";
+public class CrossTenantUserServiceImplImpl implements CrossTenantUserServiceImpl {
+  private static final String USER_TENANT_URL_WITH_OR_OPERATION = "/user-tenants?queryOp=or&";
   private static final String USERS_URL = "/users/";
   private static final List<String> LOCATE_CONSORTIA_USER_FIELDS = List.of(LOCATE_USER_USERNAME,
     LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL, LOCATE_USER_MOBILE_PHONE_NUMBER);
 
   private final HttpClient httpClient;
 
-  public ConsortiaServiceImpl(HttpClient httpClient) {
+  public CrossTenantUserServiceImplImpl(HttpClient httpClient) {
     this.httpClient = httpClient;
   }
 
   @Override
-  public Future<User> locateConsortiaUser(String entity, Map<String, String> okapiHeaders, String errorKey) {
+  public Future<User> locateCrossTenantUser(String entity, Map<String, String> okapiHeaders, String errorKey) {
     OkapiConnectionParams okapiConnectionParams = new OkapiConnectionParams(okapiHeaders);
     String query = buildQuery(entity);
-    String requestUrl = okapiConnectionParams.getOkapiUrl() + USER_TENANT_URL + query;
+    String requestUrl = okapiConnectionParams.getOkapiUrl() + USER_TENANT_URL_WITH_OR_OPERATION + query;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)

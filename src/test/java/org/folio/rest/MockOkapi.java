@@ -31,6 +31,7 @@ import static io.vertx.core.http.HttpMethod.PUT;
  */
 public class MockOkapi extends AbstractVerticle {
   private JsonStore userStore;
+  private JsonStore userTenants;
   private JsonStore permsUsersStore;
   private JsonStore permsPermissionsStore;
   private JsonStore groupsStore;
@@ -45,6 +46,7 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore manualBlocksStorage;
 
   private static final String USERS_ENDPOINT = "/users";
+  private static final String USER_TENANT_ENDPOINT = "/user-tenants";
   private static final String PASSWORD_VALIDATE_ENDPOINT = "/password/validate";
   private static final String PASSWORD_UPDATE_ENDPOINT = "/authn/update";
   private static final String PERMS_USERS_ENDPOINT = "/perms/users";
@@ -85,6 +87,7 @@ public class MockOkapi extends AbstractVerticle {
 
   public MockOkapi() {
     userStore = new JsonStore();
+    userTenants = new JsonStore();
     permsUsersStore = new JsonStore();
     permsPermissionsStore = new JsonStore();
     groupsStore = new JsonStore();
@@ -102,7 +105,7 @@ public class MockOkapi extends AbstractVerticle {
   private void handleRequest(RoutingContext context) {
     MockResponse mockResponse = null;
 
-    String[] endpoints = {USERS_ENDPOINT, PERMS_USERS_ENDPOINT, PASSWORD_VALIDATE_ENDPOINT, PASSWORD_UPDATE_ENDPOINT,
+    String[] endpoints = {USERS_ENDPOINT, USER_TENANT_ENDPOINT, PERMS_USERS_ENDPOINT, PASSWORD_VALIDATE_ENDPOINT, PASSWORD_UPDATE_ENDPOINT,
       PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT, SERVICE_POINTS_USERS_ENDPOINT,
       SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT, PASSWORD_RESET_ACTION_ENDPOINT, SIGN_TOKEN_ENDPOINT,
       RESET_PASSWORD_ENDPOINT, NOTIFY_ENDPOINT, LOANS_ENDPOINT, REQUESTS_ENDPOINT, ACCOUNTS_ENDPOINT, MANUAL_BLOCKS_ENDPOINT};
@@ -207,6 +210,10 @@ public class MockOkapi extends AbstractVerticle {
           mockResponse = handleManualBlocks(method, id, remainder,
             context.getBodyAsString(), context);
           break;
+        case USER_TENANT_ENDPOINT:
+          mockResponse = handleUserTenants(method, id, remainder,
+            context.getBodyAsString(), context);
+          break;
         default:
           break;
       }
@@ -294,6 +301,12 @@ public class MockOkapi extends AbstractVerticle {
           String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(proxiesStore, "proxiesFor", method, id, url, payload,
             context);
+  }
+
+  private MockResponse handleUserTenants(HttpMethod method, String id, String url,
+          String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(userTenants, "userTenants", method, id, url, payload,
+      context);
   }
 
   private MockResponse handlePermsPermissions(HttpMethod method, String id, String url,
