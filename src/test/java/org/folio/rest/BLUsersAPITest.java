@@ -61,6 +61,9 @@ public class BLUsersAPITest {
   private static final String JWT_TOKEN_PATTERN = "%s.%s.%s";
   private static final String JWT_TOKEN = "dummyJwt";
 
+  public static final String USER_TEST_NAME = "userTest";
+  public static final String USER_TEST_ID = "3ceb2f0e-50a7-4b82-8d78-5e1e87d0318f";
+
   @BeforeClass
   public static void before(TestContext context) {
     vertx = Vertx.vertx();
@@ -103,6 +106,19 @@ public class BLUsersAPITest {
     given().body(userPost.encode()).
     when().post("http://localhost:" + okapiPort + "/users").
     then().statusCode(201);
+
+    userPost = new JsonObject()
+      .put("username", USER_TEST_NAME)
+      .put("id", USER_TEST_ID)
+      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
+      .put("active", true)
+      .put("personal", new JsonObject().put("email", "user@gmail.org").put("lastName", "userLastName"));
+    given()
+      .body(userPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/users")
+      .then()
+      .statusCode(201);
 
     userPost = new JsonObject()
       .put("username", "twin1")
@@ -257,7 +273,7 @@ public class BLUsersAPITest {
             get("/bl-users").
     then().
             statusCode(200).
-            body("compositeUsers.size()", equalTo(5),
+            body("compositeUsers.size()", equalTo(6),
                  "compositeUsers[0].users.username", equalTo("maxi"));
   }
 
@@ -323,6 +339,17 @@ public class BLUsersAPITest {
     given().
       spec(okapi).port(port).
       body(new JsonObject().put("id", "maxi").encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/forgotten/password").
+      then().
+      statusCode(204);
+
+    //find cross tenant user by id
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("id", USER_TEST_NAME).encode()).
       accept("text/plain").
       contentType("application/json").
       when().

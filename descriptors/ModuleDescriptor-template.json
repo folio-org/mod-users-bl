@@ -148,7 +148,8 @@
             "users.item.get",
             "login.password-reset-action.post",
             "auth.signtoken",
-            "notify.item.post"
+            "notify.item.post",
+            "user-tenants.collection.get"
           ]
         },
         {
@@ -160,7 +161,8 @@
             "perms.users.item.put",
             "configuration.entries.collection.get",
             "users.collection.get",
-            "notify.item.post"
+            "notify.item.post",
+            "user-tenants.collection.get"
           ]
         },
         {
