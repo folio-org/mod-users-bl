@@ -1161,7 +1161,7 @@ public class BLUsersAPI implements BlUsers {
   private Future<User> locateUserByAlias(List<String> fieldAliasList, Identifier entity,
                                          Map<String, String> okapiHeaders, String errorKey) {
     return getLocateUserFields(fieldAliasList, okapiHeaders)
-      .compose(locateUserFieldsAR -> crossTenantUserService.locateCrossTenantUser(entity.getId(), okapiHeaders, errorKey)
+      .compose(locateUserFieldsAR -> crossTenantUserService.findCrossTenantUser(entity.getId(), okapiHeaders, errorKey)
         .compose(user -> {
           if (user == null) {
             return locateUser(locateUserFieldsAR, entity, okapiHeaders, errorKey);
@@ -1172,17 +1172,17 @@ public class BLUsersAPI implements BlUsers {
 
   /**
    * Searching user by query
-   * @param locateUserFieldsAR a list of user fields to use for search
+   * @param locateUserFields a list of user fields to use for search
    * @param entity - an identity with a value
    * @param okapiHeaders request headers
    * @return User
    */
-  private Future<User> locateUser(List<String> locateUserFieldsAR, Identifier entity, Map<String, String> okapiHeaders, String errorKey) {
+  private Future<User> locateUser(List<String> locateUserFields, Identifier entity, Map<String, String> okapiHeaders, String errorKey) {
     String tenant = okapiHeaders.get(OKAPI_TENANT_HEADER);
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
     Promise<User> asyncResult = Promise.promise();
     HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-    String query = buildQuery(locateUserFieldsAR, entity.getId());
+    String query = buildQuery(locateUserFields, entity.getId());
     try {
       String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
       String userUrl = String.format("/users?query=%s&offset=0&limit=2", encodedQuery);
@@ -1190,7 +1190,7 @@ public class BLUsersAPI implements BlUsers {
       client.request(userUrl, okapiHeaders).thenAccept(userResponse -> {
         String noUserFoundMessage = "User is not found: ";
 
-        if(!responseOk(userResponse)) {
+        if (!responseOk(userResponse)) {
           asyncResult.fail(new NoSuchElementException(noUserFoundMessage + entity.getId()));
           return;
         }

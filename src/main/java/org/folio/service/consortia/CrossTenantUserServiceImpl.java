@@ -39,7 +39,7 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
   }
 
   @Override
-  public Future<User> locateCrossTenantUser(String entity, Map<String, String> okapiHeaders, String errorKey) {
+  public Future<User> findCrossTenantUser(String entity, Map<String, String> okapiHeaders, String errorKey) {
     OkapiConnectionParams okapiConnectionParams = new OkapiConnectionParams(okapiHeaders);
     String query = buildQuery(entity);
     String requestUrl = okapiConnectionParams.getOkapiUrl() + USER_TENANT_URL_WITH_OR_OPERATION + query;
@@ -63,7 +63,7 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
         String userTenantId = userTenantObject.getString("tenantId");
 
         okapiHeaders.put(XOkapiHeaders.TENANT, userTenantId);
-        OkapiConnectionParams okapiConnection = new OkapiConnectionParams(okapiHeaders);
+        var okapiConnection = new OkapiConnectionParams(okapiHeaders);
         String userRequestUrl = okapiConnection.getOkapiUrl() + USERS_URL + userId;
         return RestUtil.doRequest(httpClient, userRequestUrl,HttpMethod.GET,
           okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)

@@ -16,5 +16,5 @@ public interface CrossTenantUserService {
    * @param errorKey error code
    * @return User
    */
-  Future<User> locateCrossTenantUser(String entity, Map<String, String> okapiHeaders, String errorKey);
+  Future<User> findCrossTenantUser(String entity, Map<String, String> okapiHeaders, String errorKey);
 }
