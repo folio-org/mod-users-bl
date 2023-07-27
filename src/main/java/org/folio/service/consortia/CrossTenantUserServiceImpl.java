@@ -52,7 +52,7 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
         okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
       .compose(resp -> {
-        logger.info("findCrossTenantUser: userTenantResp= {}", resp);
+        logger.info("findCrossTenantUser: userTenantResp= {}", resp.getJson());
         JsonObject userTenantJson = resp.getJson();
         int totalRecords = userTenantJson.getInteger("totalRecords");
         if (totalRecords == 0) {
@@ -68,18 +68,17 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
         String userId = userTenantObject.getString("userId");
         String userTenantId = userTenantObject.getString("tenantId");
 
-        logger.info("findCrossTenantUser: userTenantObject= {}; userId= {}; userTenantId={}", userTenantObject, userId, userTenantId);
+        logger.info("findCrossTenantUser: userId= {}; userTenantId={}", userId, userTenantId);
 
         okapiHeaders.put(XOkapiHeaders.TENANT, userTenantId);
         var okapiConnection = new OkapiConnectionParams(okapiHeaders);
         String userRequestUrl = okapiConnection.getOkapiUrl() + USERS_URL + userId;
 
-        logger.info("findCrossTenantUser: requestUrl= {}; okapiConnectionParams= {}", userRequestUrl, okapiConnectionParams.buildHeaders());
-        logger.info("findCrossTenantUser: okapiConnection= {}", okapiConnection.buildHeaders());
+        logger.info("findCrossTenantUser: requestUrl= {}; okapiConnection= {}", userRequestUrl, okapiConnection.buildHeaders());
 
-        return RestUtil.doRequest(httpClient, userRequestUrl,HttpMethod.GET, okapiConnection.buildHeaders(), StringUtils.EMPTY)
+        return RestUtil.doRequest(httpClient, userRequestUrl, HttpMethod.GET, okapiConnection.buildHeaders(), StringUtils.EMPTY)
           .compose(userResponse -> {
-            logger.info("findCrossTenantUser: userResponse= {}", userResponse);
+            logger.info("findCrossTenantUser: code= {}; userResponse= {}", userResponse.getCode(), userResponse.getJson());
             String noUserFoundMessage = "User is not by id: ";
             if (userResponse.getCode() != HttpStatus.SC_OK) {
               return Future.failedFuture(new NoSuchElementException(noUserFoundMessage + userId));
