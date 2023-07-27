@@ -47,12 +47,9 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
     String query = buildQuery(entity);
     String requestUrl = okapiConnectionParams.getOkapiUrl() + USER_TENANT_URL_WITH_OR_OPERATION + query;
 
-
-    logger.info("findCrossTenantUser: requestUrl= {}; tenant= {}", requestUrl, okapiHeaders.get(XOkapiHeaders.TENANT));
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
-        okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
+      okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
       .compose(resp -> {
-        logger.info("findCrossTenantUser: userTenantResp= {}", resp.getJson());
         JsonObject userTenantJson = resp.getJson();
         int totalRecords = userTenantJson.getInteger("totalRecords");
         if (totalRecords == 0) {
@@ -68,19 +65,15 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
         String userId = userTenantObject.getString("userId");
         String userTenantId = userTenantObject.getString("tenantId");
 
-        logger.info("findCrossTenantUser: userId= {}; userTenantId={}", userId, userTenantId);
-
         okapiHeaders.put(XOkapiHeaders.TENANT, userTenantId);
         var okapiConnection = new OkapiConnectionParams(okapiHeaders);
         String userRequestUrl = okapiConnection.getOkapiUrl() + USERS_URL + userId;
-
-        logger.info("findCrossTenantUser: requestUrl= {}; okapiConnection= {}", userRequestUrl, okapiConnection.buildHeaders());
-
+        logger.info("Finding cross tenant user by userId={} for userTenantId={}", userId, userTenantId);
         return RestUtil.doRequest(httpClient, userRequestUrl, HttpMethod.GET, okapiConnection.buildHeaders(), StringUtils.EMPTY)
           .compose(userResponse -> {
-            logger.info("findCrossTenantUser: code= {}; userResponse= {}", userResponse.getCode(), userResponse.getJson());
             String noUserFoundMessage = "User is not by id: ";
             if (userResponse.getCode() != HttpStatus.SC_OK) {
+              logger.error("User is not found by userId={}", userId);
               return Future.failedFuture(new NoSuchElementException(noUserFoundMessage + userId));
             }
             try {

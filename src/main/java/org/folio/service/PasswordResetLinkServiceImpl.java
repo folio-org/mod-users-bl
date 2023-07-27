@@ -6,8 +6,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.folio.rest.client.AuthTokenClient;
 import org.folio.rest.client.ConfigurationClient;
 import org.folio.rest.client.NotificationClient;
@@ -38,8 +36,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
-
-  private static final Logger logger = LogManager.getLogger(PasswordResetLinkServiceImpl.class);
 
   private static final String MODULE_NAME = "USERSBL";
 
@@ -95,11 +91,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     Holder<Boolean> passwordExistsHolder = new Holder<>();
     Holder<String> linkHolder = new Holder<>();
 
-    logger.info("sendPasswordRestLink: userId={}; username={}; okapiHeaders={}", user.getId(), user.getUsername(), okapiHeaders);
-
     return configurationClient.lookupConfigByModuleName(MODULE_NAME, GENERATE_LINK_REQUIRED_CONFIGURATION, connectionParams)
       .compose(configurations -> {
-        logger.info("sendPasswordRestLink: configMapHolder={};", configMapHolder);
         configMapHolder.value = configurations;
         if (StringUtils.isBlank(user.getUsername())) {
           String message = "User without username cannot reset password";
@@ -182,7 +175,6 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         .add("users-bl.password-reset-link.validate")
         .add("users-bl.password-reset-link.reset")
       );
-    logger.info("signToken: passwordExists={}, connectionParams:{}", passwordExists, connectionParams.buildHeaders());
     return authTokenClient.signToken(tokenPayload, connectionParams);
   }
 

@@ -1164,7 +1164,6 @@ public class BLUsersAPI implements BlUsers {
       .compose(locateUserFieldsAR -> crossTenantUserService.findCrossTenantUser(entity.getId(), okapiHeaders, errorKey)
         .compose(user -> {
           if (user == null) {
-            logger.info("locateUserByAlias: User is null; okapiHeaders: {}", okapiHeaders);
             return locateUser(locateUserFieldsAR, entity, okapiHeaders, errorKey);
           }
           return Future.succeededFuture(user);
