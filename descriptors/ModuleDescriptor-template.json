@@ -161,6 +161,7 @@
             "perms.users.item.put",
             "configuration.entries.collection.get",
             "users.collection.get",
+            "users.item.get",
             "notify.item.post",
             "user-tenants.collection.get"
           ]
