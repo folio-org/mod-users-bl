@@ -6,6 +6,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.okapi.common.XOkapiHeaders;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
@@ -27,6 +29,7 @@ import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_EMAIL;
 import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_MOBILE_PHONE_NUMBER;
 
 public class CrossTenantUserServiceImpl implements CrossTenantUserService {
+  private static final Logger logger = LogManager.getLogger(CrossTenantUserServiceImpl.class);
   private static final String USER_TENANT_URL_WITH_OR_OPERATION = "/user-tenants?queryOp=or&";
   private static final String USERS_URL = "/users/";
   private static final List<String> LOCATE_CONSORTIA_USER_FIELDS = List.of(LOCATE_USER_USERNAME,
@@ -44,9 +47,12 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
     String query = buildQuery(entity);
     String requestUrl = okapiConnectionParams.getOkapiUrl() + USER_TENANT_URL_WITH_OR_OPERATION + query;
 
+
+    logger.info("findCrossTenantUser: requestUrl= {}; tenant= {}", requestUrl, okapiHeaders.get(XOkapiHeaders.TENANT));
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
-      okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
+        okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
       .compose(resp -> {
+        logger.info("findCrossTenantUser: userTenantResp= {}", resp);
         JsonObject userTenantJson = resp.getJson();
         int totalRecords = userTenantJson.getInteger("totalRecords");
         if (totalRecords == 0) {
@@ -62,12 +68,18 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
         String userId = userTenantObject.getString("userId");
         String userTenantId = userTenantObject.getString("tenantId");
 
+        logger.info("findCrossTenantUser: userTenantObject= {}; userId= {}; userTenantId={}", userTenantObject, userId, userTenantId);
+
         okapiHeaders.put(XOkapiHeaders.TENANT, userTenantId);
         var okapiConnection = new OkapiConnectionParams(okapiHeaders);
         String userRequestUrl = okapiConnection.getOkapiUrl() + USERS_URL + userId;
-        return RestUtil.doRequest(httpClient, userRequestUrl,HttpMethod.GET,
-          okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
+
+        logger.info("findCrossTenantUser: requestUrl= {}; okapiConnectionParams= {}", userRequestUrl, okapiConnectionParams.buildHeaders());
+        logger.info("findCrossTenantUser: okapiConnection= {}", okapiConnection.buildHeaders());
+
+        return RestUtil.doRequest(httpClient, userRequestUrl,HttpMethod.GET, okapiConnection.buildHeaders(), StringUtils.EMPTY)
           .compose(userResponse -> {
+            logger.info("findCrossTenantUser: userResponse= {}", userResponse);
             String noUserFoundMessage = "User is not by id: ";
             if (userResponse.getCode() != HttpStatus.SC_OK) {
               return Future.failedFuture(new NoSuchElementException(noUserFoundMessage + userId));
