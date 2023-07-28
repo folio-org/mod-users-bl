@@ -4,6 +4,10 @@ import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.*;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
@@ -64,7 +68,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 
 /**
  * @author shale
@@ -847,7 +850,8 @@ public class BLUsersAPI implements BlUsers {
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
       HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
-      logger.debug("Requesting login from {}", loginEndpoint);
+      String moduleURL = "/authn/login";
+      logger.debug("Requesting login from " + moduleURL);
       //can only be one user with this username - so only one result expected
       var cql = "username==" + StringUtil.cqlEncode(entity.getUsername());
       var userUrl = "/users?query=" + PercentCodec.encode(cql);
@@ -871,6 +875,7 @@ public class BLUsersAPI implements BlUsers {
             String tenant = getTenant(token);
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
+
             try {
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
             } catch (Exception e) {
@@ -1066,7 +1071,7 @@ public class BLUsersAPI implements BlUsers {
           }
 
           if(!aRequestHasFailed[0]){
-            javax.ws.rs.core.Response r = respond.apply(loginResponse, cu);
+            var r = respond.apply(loginResponse, cu);
             asyncResultHandler.handle(Future.succeededFuture(r));
           }
         } catch (Exception e) {
@@ -1306,12 +1311,9 @@ public class BLUsersAPI implements BlUsers {
    * { "module" : "USERSBL", "configName" : "fogottenData", "code" : "email", "description" : "if true personal.email will be used for forgot password and forgot user name search", "default" : false, "enabled" : true, "value" : "personal.email" }
    */
   @Override
-  public void postBlUsersForgottenPassword(Identifier entity, Map<String, String>okapiHeaders,
-                                           Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler,
-                                           Context vertxContext) {
-    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+  public void postBlUsersForgottenPassword(Identifier entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_PASSWORD_ERROR_KEY)
-      .compose(user -> passwordResetLinkService.sendPasswordRestLink(user.getId(), connectionParams))
+      .compose(user -> passwordResetLinkService.sendPasswordResetLink(user, okapiHeaders))
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
@@ -1319,9 +1321,7 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersForgottenUsername(Identifier entity, Map<String, String>okapiHeaders,
-                                           Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler,
-                                           Context vertxContext) {
+  public void postBlUsersForgottenUsername(Identifier entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     locateUserByAlias(Arrays.asList(LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_USERNAME_ERROR_KEY)
       .compose(user -> {
@@ -1399,7 +1399,7 @@ public class BLUsersAPI implements BlUsers {
                                            Map<String, String> okapiHeaders,
                                            Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                            Context vertxContext) {
-    passwordResetLinkService.sendPasswordRestLink(entity.getUserId(), new OkapiConnectionParams(okapiHeaders))
+    passwordResetLinkService.sendPasswordResetLink(entity.getUserId(), okapiHeaders)
       .map(link ->
         PostBlUsersPasswordResetLinkResponse.respond200WithApplicationJson(
           new GenerateLinkResponse().withLink(link)))
