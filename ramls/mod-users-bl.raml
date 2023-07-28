@@ -15,6 +15,7 @@ types:
   usergroup.json: !include usergroup.json
   permissionUser.json: !include permissionUser.json
   proxyfor.json: !include proxyfor.json
+  tokenExpiration: !include tokenExpiration.json
   identifier: !include identifier.json
   errors: !include raml-util/schemas/errors.schema
   updateCredentials: !include updateCredentials.json
@@ -203,6 +204,45 @@ resourceTypes:
               type: compositeUser
           headers:
             x-okapi-token:
+        400:
+          description: "Bad request"
+          body:
+            text/plain:
+              example: "Bad request"
+        422:
+          description: "Unprocessable Entity"
+          body:
+            application/json:
+              type: errors
+        500:
+          description: "Internal server error"
+          body:
+            text/plain:
+              example: "Internal server error"
+  /login-with-expiry:
+    post:
+      description: |
+        Allow a new user to login and return two cookies, one containing the user's refresh token
+        and one containing an access token. Both tokens have an expiration. The expiration time
+        for each is contained in the composite user token expiration property.
+      is: [permissionsExpandable, includeable]
+      headers:
+        User-Agent:
+        X-Forwarded-For:
+      body:
+        application/json:
+          schema: loginCredentials
+      responses:
+        201:
+          description: |
+            Returns a CompositeUser object in addition to two Set-Cookie headers, one containing
+            the refresh token and one containing the access token. Note that the Set-Cookie headers are
+            set in BLUsersAPI.java using the raw response object rather than through RMB code-generation.
+            This is because RMB code generation doesn't let us do multiple headers with the same name,
+            which we need to do here.
+          body:
+            application/json:
+              schema: compositeUser
         400:
           description: "Bad request"
           body:

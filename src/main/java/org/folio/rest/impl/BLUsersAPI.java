@@ -1,6 +1,8 @@
 package org.folio.rest.impl;
 
-import io.vertx.core.AsyncResult;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.vertx.core.*;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -44,6 +46,9 @@ import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
+
+import javax.ws.rs.core.MediaType;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -57,6 +62,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -103,6 +109,11 @@ public class BLUsersAPI implements BlUsers {
 
   private static final Pattern HOST_PORT_PATTERN = Pattern.compile("https?://([^:/]+)(?::?(\\d+)?)");
   private static final String UNDEFINED_USER = "UNDEFINED_USER__";
+
+  private static final String LOGIN_ENDPOINT = "/authn/login-with-expiry";
+  private static final String LOGIN_ENDPOINT_LEGACY = "/authn/login";
+  private static final String FOLIO_ACCESS_TOKEN = "folioAccessToken";
+  private static final String SET_COOKIE_HEADER = "Set-Cookie";
 
   private UserPasswordService userPasswordService;
   private PasswordResetLinkService passwordResetLinkService;
@@ -777,7 +788,7 @@ public class BLUsersAPI implements BlUsers {
 
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
-    if(tokenParts.length == 3) {
+    if (tokenParts.length == 3) {
       String encodedPayload = tokenParts[1];
       byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
       String decodedJson = new String(decodedJsonBytes);
@@ -803,10 +814,25 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,//NOSONAR
-                               LoginCredentials entity, Map<String, String> okapiHeaders,
-                               Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+  public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
+      LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
+    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
+        LOGIN_ENDPOINT, this::loginResponse);
+  }
+
+  @Override
+  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
+      LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      Context vertxContext) {
+    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
+        LOGIN_ENDPOINT_LEGACY, this::loginResponseLegacy);
+  }
+
+  @SuppressWarnings("java:S1874")
+  private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor, //NOSONAR
+      LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+      String loginEndpoint, BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) {
 
     //works on single user, no joins needed , just aggregate
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
@@ -839,19 +865,19 @@ public class BLUsersAPI implements BlUsers {
 
         List<String> finalInclude = include;
 
-        clientForLogin.request(HttpMethod.POST, entity, moduleURL, headers)
+        clientForLogin.request(HttpMethod.POST, entity, loginEndpoint, headers)
           .thenAccept(loginResponse -> {
             //then get user by username, inject okapi headers from the login response into the user request
             //see 'true' flag passed into the chainedRequest
             handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
 
-            String token = loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER);
+            String token = getToken(loginResponse.getHeaders());
             String tenant = getTenant(token);
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
 
             try {
-              getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, token, tenant, client);
+              getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
             } catch (Exception e) {
               client.closeClient();
               asyncResultHandler.handle(Future.succeededFuture(
@@ -874,8 +900,29 @@ public class BLUsersAPI implements BlUsers {
     }
   }
 
-  private void getUserWithPerms(boolean expandPerms, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-                                String userUrl, List<String> include, String token, String tenant, HttpClientInterface client) throws Exception {
+  private String getToken(MultiMap headers) {
+    // There is a legacy token mode and a non-legacy mode. The non-legacy mode gets the token from a Set-Cookie header.
+    // The legacy mode gets it from the X-Okapi-Token header.
+    for (var header : headers.getAll(SET_COOKIE_HEADER)) {
+      Cookie cookie = ClientCookieDecoder.STRICT.decode(header.trim());
+      if (cookie.name().equals(FOLIO_ACCESS_TOKEN)) {
+        return cookie.value();
+      }
+    }
+
+    return headers.get(OKAPI_TOKEN_HEADER);
+  }
+
+  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874"})
+  private void getUserWithPerms(boolean expandPerms,
+                                Map<String, String> okapiHeaders,
+                                Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
+                                String userUrl,
+                                List<String> include,
+                                String tenant,
+                                Response loginResponse,
+                                HttpClientInterface client,
+                                BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
 
       CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
       boolean []aRequestHasFailed = new boolean[]{false};
@@ -1024,9 +1071,8 @@ public class BLUsersAPI implements BlUsers {
           }
 
           if(!aRequestHasFailed[0]){
-            asyncResultHandler.handle(Future.succeededFuture(
-              PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
-                PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token))));
+            var r = respond.apply(loginResponse, cu);
+            asyncResultHandler.handle(Future.succeededFuture(r));
           }
         } catch (Exception e) {
           if(!aRequestHasFailed[0]){
@@ -1038,6 +1084,35 @@ public class BLUsersAPI implements BlUsers {
           client.closeClient();
         }
       });
+  }
+
+  @SuppressWarnings("java:S1874")
+  private javax.ws.rs.core.Response loginResponseLegacy(Response loginResponse, CompositeUser cu) {
+    String token = String.valueOf(loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER));
+    return PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
+      PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token));
+  }
+
+  @SuppressWarnings("java:S1874")
+  private javax.ws.rs.core.Response loginResponse(Response loginResponse, CompositeUser cu) {
+    JsonObject body = loginResponse.getBody();
+    String refreshTokenExpiration = body.getString("refreshTokenExpiration");
+    String accessTokenExpiration = body.getString("accessTokenExpiration");
+    var tokenExpiration = new TokenExpiration();
+    tokenExpiration.setAccessTokenExpiration(accessTokenExpiration);
+    tokenExpiration.setRefreshTokenExpiration(refreshTokenExpiration);
+    cu.setTokenExpiration(tokenExpiration);
+
+    // Use the ResponseBuilder rather than RMB-generated code. We need to do this because
+    // RMB generated-code does not allow multiple headers with the same key, which is what we need
+    // here. This is a permanent workaround as long as mod-users-bl uses RMB.
+    var responseBuilder = javax.ws.rs.core.Response.status(201)
+        .type(MediaType.APPLICATION_JSON)
+        .entity(cu);
+    for (String cookie : loginResponse.getHeaders().getAll("Set-Cookie")) {
+      responseBuilder.header("Set-Cookie", cookie);
+    }
+    return responseBuilder.build();
   }
 
   private CompletableFuture<Response> expandServicePoints(

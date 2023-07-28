@@ -32,6 +32,11 @@
       "description": "Service point user",
       "$ref": "servicepointsexpandeduser.json"
     },
+    "tokenExpiration": {
+      "type": "object",
+      "description": "The token expiration object",
+      "$ref": "tokenExpiration.json"
+    },
     "tenant": {
       "description": "Tenant identifier",
       "type": "string"

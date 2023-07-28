@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "The times after which the refresh token and the access token will expire.",
+  "properties": {
+    "refreshTokenExpiration": {
+      "type": "string",
+      "description": "The time after which the refresh token will expire in ISO 8601 format."
+    },
+    "accessTokenExpiration": {
+      "type": "string",
+      "description": "The time after which the access token will expire in ISO 8601 format."
+    }
+
+  },
+  "required": [
+    "refreshTokenExpiration",
+    "accessTokenExpiration"
+  ]
+}

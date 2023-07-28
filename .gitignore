@@ -8,3 +8,4 @@ bin/
 .project
 .idea
 *.iml
+.vscode/
