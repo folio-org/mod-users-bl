@@ -96,7 +96,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         if (StringUtils.isBlank(user.getUsername())) {
           String message = "User without username cannot reset password";
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
-          throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+          return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
         }
         return isPasswordExists(user.getId(), connectionParams, configMapHolder, passwordResetActionIdHolder);
       })
@@ -114,7 +114,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         if (optionalUser.isEmpty()) {
           String message = String.format("User with id '%s' not found", userId);
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.not-found", message);
-          throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+          return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
         }
         return Future.succeededFuture(optionalUser.get());
       })
