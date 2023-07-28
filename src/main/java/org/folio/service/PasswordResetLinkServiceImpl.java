@@ -83,10 +83,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     this.userPasswordService = userPasswordService;
   }
 
-  @Override
-  public Future<String> sendPasswordRestLink(String userId, OkapiConnectionParams connectionParams) {
+  public Future<String> sendPasswordResetLink(User user, Map<String, String> okapiHeaders) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     Holder<Map<String, String>> configMapHolder = new Holder<>();
-    Holder<User> userHolder = new Holder<>();
     Holder<String> passwordResetActionIdHolder = new Holder<>();
     Holder<Boolean> passwordExistsHolder = new Holder<>();
     Holder<String> linkHolder = new Holder<>();
@@ -94,79 +93,94 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     return configurationClient.lookupConfigByModuleName(MODULE_NAME, GENERATE_LINK_REQUIRED_CONFIGURATION, connectionParams)
       .compose(configurations -> {
         configMapHolder.value = configurations;
-        return userModuleClient.lookupUserById(userId, connectionParams);
-      })
-      .compose(optionalUser -> {
-        if (!optionalUser.isPresent()) {
-          String message = String.format("User with id '%s' not found", userId);
-          UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.not-found", message);
-          throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
-        }
-        if (StringUtils.isBlank(optionalUser.get().getUsername())) {
+        if (StringUtils.isBlank(user.getUsername())) {
           String message = "User without username cannot reset password";
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
-          throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
+          return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
         }
-        userHolder.value = optionalUser.get();
-        String expirationTimeFromConfig =
-          configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT);
-        String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
-          LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
-
-        long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig, expirationUnitOfTimeFromConfig);
-        if (expirationTime > MAXIMUM_EXPIRATION_TIME) {
-          expirationTime = MAXIMUM_EXPIRATION_TIME;
-          configMapHolder.value.put(LINK_EXPIRATION_TIME_CONFIG_KEY, String.valueOf(MAXIMUM_EXPIRATION_TIME_IN_WEEKS));
-          configMapHolder.value.put(LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, ExpirationTimeUnit.WEEKS.name().toLowerCase());
-        }
-
-        passwordResetActionIdHolder.value = UUID.randomUUID().toString();
-        PasswordResetAction actionToCreate = new PasswordResetAction()
-          .withId(passwordResetActionIdHolder.value)
-          .withUserId(userId)
-          .withExpirationTime(new Date(
-            Instant.now()
-              .plusMillis(expirationTime)
-              .toEpochMilli()));
-        return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
+        return isPasswordExists(user.getId(), connectionParams, configMapHolder, passwordResetActionIdHolder);
       })
-      .compose(passwordExists -> {
-        passwordExistsHolder.value = passwordExists;
-        JsonObject tokenPayload = new JsonObject()
-          .put("sub", UNDEFINED_USER_NAME + passwordResetActionIdHolder.value)
-          .put("dummy", true)
-          .put("extra_permissions", new JsonArray()
-            .add("users-bl.password-reset-link.validate")
-            .add("users-bl.password-reset-link.reset")
-          );
-        return authTokenClient.signToken(tokenPayload, connectionParams);
-      })
-      .compose(token -> {
-        String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
-        String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
-        String generatedLink = linkHost + linkPath + '/' + token + "?tenant=" + connectionParams.getTenantId();
-        linkHolder.value = generatedLink;
-
-        String expirationTimeFromConfig =
-          configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT);
-        String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
-          LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
-
-        String eventConfigName = passwordExistsHolder.value ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
-        Notification notification = new Notification()
-          .withEventConfigName(eventConfigName)
-          .withRecipientId(userId)
-          .withContext(
-            new Context()
-              .withAdditionalProperty("user", JsonObject.mapFrom(userHolder.value))
-              .withAdditionalProperty("link", generatedLink)
-              .withAdditionalProperty("expirationTime", expirationTimeFromConfig)
-              .withAdditionalProperty("expirationUnitOfTime", expirationUnitOfTimeFromConfig))
-          .withText(StringUtils.EMPTY)
-          .withLang(DEFAULT_NOTIFICATION_LANG);
-        return notificationClient.sendNotification(notification, connectionParams);
-      })
+      .compose(passwordExists -> signToken(connectionParams, passwordExists, passwordExistsHolder, passwordResetActionIdHolder))
+      .compose(token -> sendNotification(connectionParams, token, configMapHolder, linkHolder, passwordExistsHolder, user))
       .map(v -> linkHolder.value);
+
+  }
+
+  @Override
+  public Future<String> sendPasswordResetLink(String userId, Map<String, String> okapiHeaders) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    return userModuleClient.lookupUserById(userId, connectionParams)
+      .compose(optionalUser -> {
+        if (optionalUser.isEmpty()) {
+          String message = String.format("User with id '%s' not found", userId);
+          UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.not-found", message);
+          return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
+        }
+        return Future.succeededFuture(optionalUser.get());
+      })
+      .compose(user -> sendPasswordResetLink(user, okapiHeaders));
+  }
+
+  private Future<Void> sendNotification(OkapiConnectionParams connectionParams, String token, Holder<Map<String, String>> configMapHolder, Holder<String> linkHolder, Holder<Boolean> passwordExistsHolder, User user) {
+    String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
+    String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
+    String generatedLink = linkHost + linkPath + '/' + token + "?tenant=" + connectionParams.getTenantId();
+    linkHolder.value = generatedLink;
+
+    String expirationTimeFromConfig =
+      configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT);
+    String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
+      LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
+
+    String eventConfigName = passwordExistsHolder.value ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
+    Notification notification = new Notification()
+      .withEventConfigName(eventConfigName)
+      .withRecipientId(user.getId())
+      .withContext(
+        new Context()
+          .withAdditionalProperty("user", JsonObject.mapFrom(user))
+          .withAdditionalProperty("link", generatedLink)
+          .withAdditionalProperty("expirationTime", expirationTimeFromConfig)
+          .withAdditionalProperty("expirationUnitOfTime", expirationUnitOfTimeFromConfig))
+      .withText(StringUtils.EMPTY)
+      .withLang(DEFAULT_NOTIFICATION_LANG);
+    return notificationClient.sendNotification(notification, connectionParams);
+  }
+
+  private Future<String> signToken(OkapiConnectionParams connectionParams, Boolean passwordExists, Holder<Boolean> passwordExistsHolder, Holder<String> passwordResetActionIdHolder) {
+    passwordExistsHolder.value = passwordExists;
+    JsonObject tokenPayload = new JsonObject()
+      .put("sub", UNDEFINED_USER_NAME + passwordResetActionIdHolder.value)
+      .put("dummy", true)
+      .put("extra_permissions", new JsonArray()
+        .add("users-bl.password-reset-link.validate")
+        .add("users-bl.password-reset-link.reset")
+      );
+    return authTokenClient.signToken(tokenPayload, connectionParams);
+  }
+
+  private Future<Boolean> isPasswordExists(String userId, OkapiConnectionParams connectionParams, Holder<Map<String, String>> configMapHolder, Holder<String> passwordResetActionIdHolder) {
+    String expirationTimeFromConfig =
+      configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT);
+    String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
+      LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
+
+    long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig, expirationUnitOfTimeFromConfig);
+    if (expirationTime > MAXIMUM_EXPIRATION_TIME) {
+      expirationTime = MAXIMUM_EXPIRATION_TIME;
+      configMapHolder.value.put(LINK_EXPIRATION_TIME_CONFIG_KEY, String.valueOf(MAXIMUM_EXPIRATION_TIME_IN_WEEKS));
+      configMapHolder.value.put(LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, ExpirationTimeUnit.WEEKS.name().toLowerCase());
+    }
+
+    passwordResetActionIdHolder.value = UUID.randomUUID().toString();
+    PasswordResetAction actionToCreate = new PasswordResetAction()
+      .withId(passwordResetActionIdHolder.value)
+      .withUserId(userId)
+      .withExpirationTime(new Date(
+        Instant.now()
+          .plusMillis(expirationTime)
+          .toEpochMilli()));
+    return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
   }
 
   private long convertDateToMilliseconds(String expirationTimeString, String expirationUnitOfTime) {

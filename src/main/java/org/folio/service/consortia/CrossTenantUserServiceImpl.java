@@ -6,6 +6,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.okapi.common.XOkapiHeaders;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
@@ -27,6 +29,7 @@ import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_EMAIL;
 import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_MOBILE_PHONE_NUMBER;
 
 public class CrossTenantUserServiceImpl implements CrossTenantUserService {
+  private static final Logger logger = LogManager.getLogger(CrossTenantUserServiceImpl.class);
   private static final String USER_TENANT_URL_WITH_OR_OPERATION = "/user-tenants?queryOp=or&";
   private static final String USERS_URL = "/users/";
   private static final List<String> LOCATE_CONSORTIA_USER_FIELDS = List.of(LOCATE_USER_USERNAME,
@@ -65,11 +68,12 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
         okapiHeaders.put(XOkapiHeaders.TENANT, userTenantId);
         var okapiConnection = new OkapiConnectionParams(okapiHeaders);
         String userRequestUrl = okapiConnection.getOkapiUrl() + USERS_URL + userId;
-        return RestUtil.doRequest(httpClient, userRequestUrl,HttpMethod.GET,
-          okapiConnectionParams.buildHeaders(), StringUtils.EMPTY)
+        logger.info("Finding cross tenant user by userId={} for userTenantId={}", userId, userTenantId);
+        return RestUtil.doRequest(httpClient, userRequestUrl, HttpMethod.GET, okapiConnection.buildHeaders(), StringUtils.EMPTY)
           .compose(userResponse -> {
             String noUserFoundMessage = "User is not by id: ";
             if (userResponse.getCode() != HttpStatus.SC_OK) {
+              logger.error("User is not found by userId={}", userId);
               return Future.failedFuture(new NoSuchElementException(noUserFoundMessage + userId));
             }
             try {
