@@ -83,7 +83,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     this.userPasswordService = userPasswordService;
   }
 
-  public Future<String> sendPasswordRestLink(User user, Map<String, String> okapiHeaders) {
+  public Future<String> sendPasswordResetLink(User user, Map<String, String> okapiHeaders) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     Holder<Map<String, String>> configMapHolder = new Holder<>();
     Holder<String> passwordResetActionIdHolder = new Holder<>();
@@ -107,7 +107,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   @Override
-  public Future<String> sendPasswordRestLink(String userId, Map<String, String> okapiHeaders) {
+  public Future<String> sendPasswordResetLink(String userId, Map<String, String> okapiHeaders) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     return userModuleClient.lookupUserById(userId, connectionParams)
       .compose(optionalUser -> {
@@ -118,7 +118,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         }
         return Future.succeededFuture(optionalUser.get());
       })
-      .compose(user -> sendPasswordRestLink(user, okapiHeaders));
+      .compose(user -> sendPasswordResetLink(user, okapiHeaders));
   }
 
   private Future<Void> sendNotification(OkapiConnectionParams connectionParams, String token, Holder<Map<String, String>> configMapHolder, Holder<String> linkHolder, Holder<Boolean> passwordExistsHolder, User user) {

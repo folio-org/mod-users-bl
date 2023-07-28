@@ -1238,7 +1238,7 @@ public class BLUsersAPI implements BlUsers {
   @Override
   public void postBlUsersForgottenPassword(Identifier entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>>asyncResultHandler, Context vertxContext) {
     locateUserByAlias(Arrays.asList(LOCATE_USER_USERNAME, LOCATE_USER_PHONE_NUMBER, LOCATE_USER_EMAIL), entity, okapiHeaders, FORGOTTEN_PASSWORD_ERROR_KEY)
-      .compose(user -> passwordResetLinkService.sendPasswordRestLink(user, okapiHeaders))
+      .compose(user -> passwordResetLinkService.sendPasswordResetLink(user, okapiHeaders))
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
       .otherwise(ExceptionHelper::handleException)
@@ -1324,7 +1324,7 @@ public class BLUsersAPI implements BlUsers {
                                            Map<String, String> okapiHeaders,
                                            Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                            Context vertxContext) {
-    passwordResetLinkService.sendPasswordRestLink(entity.getUserId(), okapiHeaders)
+    passwordResetLinkService.sendPasswordResetLink(entity.getUserId(), okapiHeaders)
       .map(link ->
         PostBlUsersPasswordResetLinkResponse.respond200WithApplicationJson(
           new GenerateLinkResponse().withLink(link)))

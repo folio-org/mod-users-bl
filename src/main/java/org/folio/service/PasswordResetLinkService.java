@@ -17,7 +17,7 @@ public interface PasswordResetLinkService {
    * @param okapiHeaders okapi headers
    * @return Future with generated link
    */
-  Future<String> sendPasswordRestLink(String userId, Map<String, String> okapiHeaders);
+  Future<String> sendPasswordResetLink(String userId, Map<String, String> okapiHeaders);
 
   /**
    * Generates password reset link and sends it to user
@@ -25,7 +25,7 @@ public interface PasswordResetLinkService {
    * @param okapiHeaders okapi headers
    * @return Future with generated link
    */
-  Future<String> sendPasswordRestLink(User user, Map<String, String> okapiHeaders);
+  Future<String> sendPasswordResetLink(User user, Map<String, String> okapiHeaders);
 
   /**
    * Retrieves reset password action id from x-okapi-token connection param, retrieves password reset action,
