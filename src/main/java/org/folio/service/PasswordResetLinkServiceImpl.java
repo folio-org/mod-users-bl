@@ -86,7 +86,6 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   public Future<String> sendPasswordRestLink(User user, Map<String, String> okapiHeaders) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     Holder<Map<String, String>> configMapHolder = new Holder<>();
-    Holder<User> userHolder = new Holder<>();
     Holder<String> passwordResetActionIdHolder = new Holder<>();
     Holder<Boolean> passwordExistsHolder = new Holder<>();
     Holder<String> linkHolder = new Holder<>();
@@ -99,48 +98,30 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
           throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
         }
-        userHolder.value = user;
         return isPasswordExists(user.getId(), connectionParams, configMapHolder, passwordResetActionIdHolder);
       })
       .compose(passwordExists -> signToken(connectionParams, passwordExists, passwordExistsHolder, passwordResetActionIdHolder))
-      .compose(token -> sendNotification(connectionParams, token, configMapHolder, linkHolder, passwordExistsHolder, userHolder))
+      .compose(token -> sendNotification(connectionParams, token, configMapHolder, linkHolder, passwordExistsHolder, user))
       .map(v -> linkHolder.value);
 
   }
 
   @Override
-  public Future<String> sendPasswordRestLink(String userId, OkapiConnectionParams connectionParams) {
-    Holder<Map<String, String>> configMapHolder = new Holder<>();
-    Holder<User> userHolder = new Holder<>();
-    Holder<String> passwordResetActionIdHolder = new Holder<>();
-    Holder<Boolean> passwordExistsHolder = new Holder<>();
-    Holder<String> linkHolder = new Holder<>();
-
-    return configurationClient.lookupConfigByModuleName(MODULE_NAME, GENERATE_LINK_REQUIRED_CONFIGURATION, connectionParams)
-      .compose(configurations -> {
-        configMapHolder.value = configurations;
-        return userModuleClient.lookupUserById(userId, connectionParams);
-      })
+  public Future<String> sendPasswordRestLink(String userId, Map<String, String> okapiHeaders) {
+    OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
+    return userModuleClient.lookupUserById(userId, connectionParams)
       .compose(optionalUser -> {
-        if (!optionalUser.isPresent()) {
+        if (optionalUser.isEmpty()) {
           String message = String.format("User with id '%s' not found", userId);
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.not-found", message);
           throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
         }
-        if (StringUtils.isBlank(optionalUser.get().getUsername())) {
-          String message = "User without username cannot reset password";
-          UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
-          throw new UnprocessableEntityException(Collections.singletonList(entityMessage));
-        }
-        userHolder.value = optionalUser.get();
-        return isPasswordExists(userId, connectionParams, configMapHolder, passwordResetActionIdHolder);
+        return Future.succeededFuture(optionalUser.get());
       })
-      .compose(passwordExists -> signToken(connectionParams, passwordExists, passwordExistsHolder, passwordResetActionIdHolder))
-      .compose(token -> sendNotification(connectionParams, token, configMapHolder, linkHolder, passwordExistsHolder, userHolder))
-      .map(v -> linkHolder.value);
+      .compose(user -> sendPasswordRestLink(user, okapiHeaders));
   }
 
-  private Future<Void> sendNotification(OkapiConnectionParams connectionParams, String token, Holder<Map<String, String>> configMapHolder, Holder<String> linkHolder, Holder<Boolean> passwordExistsHolder, Holder<User> userHolder) {
+  private Future<Void> sendNotification(OkapiConnectionParams connectionParams, String token, Holder<Map<String, String>> configMapHolder, Holder<String> linkHolder, Holder<Boolean> passwordExistsHolder, User user) {
     String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
     String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
     String generatedLink = linkHost + linkPath + '/' + token + "?tenant=" + connectionParams.getTenantId();
@@ -154,10 +135,10 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     String eventConfigName = passwordExistsHolder.value ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
     Notification notification = new Notification()
       .withEventConfigName(eventConfigName)
-      .withRecipientId(userHolder.value.getId())
+      .withRecipientId(user.getId())
       .withContext(
         new Context()
-          .withAdditionalProperty("user", JsonObject.mapFrom(userHolder.value))
+          .withAdditionalProperty("user", JsonObject.mapFrom(user))
           .withAdditionalProperty("link", generatedLink)
           .withAdditionalProperty("expirationTime", expirationTimeFromConfig)
           .withAdditionalProperty("expirationUnitOfTime", expirationUnitOfTimeFromConfig))
