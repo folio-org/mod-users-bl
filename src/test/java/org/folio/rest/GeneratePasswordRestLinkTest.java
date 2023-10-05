@@ -238,7 +238,8 @@ public class GeneratePasswordRestLinkTest {
 
     mockUserFound(mockUser.getId(), mockUser);
     mockConfigModule(MODULE_NAME, configToMock);
-    mockSignAuthToken(MOCK_TOKEN);
+    mockSignAuthTokenLegacy(MOCK_TOKEN);
+    mockSignAuthTokenNotFound(MOCK_TOKEN);
     mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
 
@@ -427,10 +428,21 @@ public class GeneratePasswordRestLinkTest {
       .willReturn(WireMock.created().withBody(response.encode())));
   }
 
+  private void mockSignAuthTokenNotFound(String tokenForResponse) {
+    JsonObject response = new JsonObject().put("token", tokenForResponse);
+    WireMock.stubFor(WireMock.post("/token/sign")
+            .willReturn(WireMock.notFound().withStatus(HttpStatus.SC_NOT_FOUND)));
+  }
   private void mockSignAuthToken(String tokenForResponse) {
     JsonObject response = new JsonObject().put("token", tokenForResponse);
+    WireMock.stubFor(WireMock.post("/token/sign")
+            .willReturn(WireMock.created().withBody(response.encode())));
+  }
+
+  private void mockSignAuthTokenLegacy(String tokenForResponse) {
+    JsonObject response = new JsonObject().put("token", tokenForResponse);
     WireMock.stubFor(WireMock.post("/token")
-      .willReturn(WireMock.created().withBody(response.encode())));
+            .willReturn(WireMock.created().withBody(response.encode())));
   }
 
   private void mockNotificationModule() {
