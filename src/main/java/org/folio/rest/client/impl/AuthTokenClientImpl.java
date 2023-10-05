@@ -26,14 +26,14 @@ public class AuthTokenClientImpl implements AuthTokenClient {
     String requestPayload = new JsonObject().put("payload", tokenPayload).encode();
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST, okapiConnectionParams.buildHeaders(), requestPayload)
-      .map(response -> {
+      .compose(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:
-            return response.getResponse().headers().get(BLUsersAPI.OKAPI_TOKEN_HEADER);
+            return Future.succeededFuture(response.getResponse().headers().get(BLUsersAPI.OKAPI_TOKEN_HEADER));
           case HttpStatus.SC_CREATED:
-            return response.getJson().getString("token");
+            return Future.succeededFuture(response.getJson().getString("token"));
           case HttpStatus.SC_NOT_FOUND:
-            return signTokenLegacy(tokenPayload, okapiConnectionParams).result();
+            return signTokenLegacy(tokenPayload, okapiConnectionParams);
           default:
             String logMessage =
               String.format("Error when signing token. Status: %d, body: %s", response.getCode(), response.getBody());
