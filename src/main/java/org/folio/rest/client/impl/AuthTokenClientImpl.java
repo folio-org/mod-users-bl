@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.AuthTokenClient;
+import org.folio.rest.exception.TokenNotFoundException;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.util.OkapiConnectionParams;
@@ -32,6 +33,10 @@ public class AuthTokenClientImpl implements AuthTokenClient {
             return response.getResponse().headers().get(BLUsersAPI.OKAPI_TOKEN_HEADER);
           case HttpStatus.SC_CREATED:
             return response.getJson().getString("token");
+          case HttpStatus.SC_NOT_FOUND:
+            String notFoundLogMessage =
+                    String.format("Token not found. Status: %d, body: %s", response.getCode(), response.getBody());
+            throw new TokenNotFoundException(notFoundLogMessage);
           default:
             String logMessage =
               String.format("Error when signing token. Status: %d, body: %s", response.getCode(), response.getBody());

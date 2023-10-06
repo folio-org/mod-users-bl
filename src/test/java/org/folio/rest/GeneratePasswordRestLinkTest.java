@@ -167,6 +167,11 @@ public class GeneratePasswordRestLinkTest {
     generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_DAYS,
       EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
   }
+  @Test
+  public void shouldNotGenerateAndSendPasswordWhenTokenReturns404() {
+    shouldNotGenerateAndSendPasswordWhenTokenReturns404(EXPIRATION_TIME_DAYS,
+            EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
+  }
 
   @Test
   public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithWeeksOfExpirationTime() {
@@ -272,6 +277,37 @@ public class GeneratePasswordRestLinkTest {
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
   }
+
+  public void shouldNotGenerateAndSendPasswordWhenTokenReturns404(
+          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+          String expectedExpirationTimeOfUnit) {
+    Map<String, String> configToMock = new HashMap<>();
+    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
+    User mockUser = new User()
+            .withId(UUID.randomUUID().toString())
+            .withUsername(MOCK_USERNAME);
+    boolean passwordExists = true;
+
+    mockUserFound(mockUser.getId(), mockUser);
+    mockConfigModule(MODULE_NAME, configToMock);
+    mockSignAuthTokenNotFound();
+    mockPostPasswordResetAction(passwordExists);
+    mockNotificationModule();
+
+    JsonObject requestBody = new JsonObject()
+            .put("userId", mockUser.getId());
+    RestAssured.given()
+            .spec(spec)
+            .header(mockUrlHeader)
+            .body(requestBody.encode())
+            .when()
+            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+
+      }
 
   @Test
   public void shouldGenerateAndSendCreatePasswordNotificationWhenPasswordExists() {
@@ -431,6 +467,10 @@ public class GeneratePasswordRestLinkTest {
     JsonObject response = new JsonObject().put("token", tokenForResponse);
     WireMock.stubFor(WireMock.post("/token")
       .willReturn(WireMock.created().withBody(response.encode())));
+  }
+  private void mockSignAuthTokenNotFound() {
+    WireMock.stubFor(WireMock.post("/token")
+            .willReturn(WireMock.notFound()));
   }
 
   private void mockNotificationModule() {
