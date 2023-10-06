@@ -7,7 +7,6 @@ import io.vertx.core.json.JsonObject;
 import org.apache.http.HttpStatus;
 import org.folio.rest.client.AuthTokenClient;
 import org.folio.rest.exception.OkapiModuleClientException;
-import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 
