@@ -28,8 +28,6 @@ public class AuthTokenClientImpl implements AuthTokenClient {
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST, okapiConnectionParams.buildHeaders(), requestPayload)
       .compose(response -> {
         switch (response.getCode()) {
-          case HttpStatus.SC_OK:
-            return Future.succeededFuture(response.getResponse().headers().get(BLUsersAPI.OKAPI_TOKEN_HEADER));
           case HttpStatus.SC_CREATED:
             return Future.succeededFuture(response.getJson().getString("token"));
           case HttpStatus.SC_NOT_FOUND:

@@ -162,8 +162,8 @@ public class GeneratePasswordRestLinkTest {
       EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
   @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenNewEndPointReturns404AndUsesLegacyToken() {
-    generateAndSendResetPasswordNotificationWhenPasswordExistsWithWhenNewEndPointReturns404AndUsesLegacyToken(EXPIRATION_TIME_MINUTES,
+  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken() {
+    shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken(EXPIRATION_TIME_MINUTES,
             EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
   @Test
@@ -277,7 +277,7 @@ public class GeneratePasswordRestLinkTest {
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
   }
 
-  public void generateAndSendResetPasswordNotificationWhenPasswordExistsWithWhenNewEndPointReturns404AndUsesLegacyToken(
+  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken(
           String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
           String expectedExpirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
@@ -292,7 +292,7 @@ public class GeneratePasswordRestLinkTest {
     mockUserFound(mockUser.getId(), mockUser);
     mockConfigModule(MODULE_NAME, configToMock);
     mockSignAuthTokenLegacy(MOCK_TOKEN);
-    mockSignAuthTokenNotFound(MOCK_TOKEN);
+    mockSignAuthTokenNotFound();
     mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
 
@@ -325,6 +325,70 @@ public class GeneratePasswordRestLinkTest {
             .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
             .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
+  }
+
+  public void cannotGeneratePasswordWhenTokenSignEndPointReturns500(
+          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+          String expectedExpirationTimeOfUnit) {
+    Map<String, String> configToMock = new HashMap<>();
+    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
+    User mockUser = new User()
+            .withId(UUID.randomUUID().toString())
+            .withUsername(MOCK_USERNAME);
+    boolean passwordExists = true;
+
+    mockUserFound(mockUser.getId(), mockUser);
+    mockConfigModule(MODULE_NAME, configToMock);
+    mockSignAuthTokenNotFound();
+    mockSignAuthTokenServerError();
+    mockPostPasswordResetAction(passwordExists);
+    mockNotificationModule();
+
+    JsonObject requestBody = new JsonObject()
+            .put("userId", mockUser.getId());
+    RestAssured.given()
+            .spec(spec)
+            .header(mockUrlHeader)
+            .body(requestBody.encode())
+            .when()
+            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+  }
+
+  public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500(
+          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+          String expectedExpirationTimeOfUnit) {
+    Map<String, String> configToMock = new HashMap<>();
+    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
+    User mockUser = new User()
+            .withId(UUID.randomUUID().toString())
+            .withUsername(MOCK_USERNAME);
+    boolean passwordExists = true;
+
+    mockUserFound(mockUser.getId(), mockUser);
+    mockConfigModule(MODULE_NAME, configToMock);
+    mockSignAuthTokenNotFound();
+    mockSignAuthTokenLegacyServerError();
+    mockPostPasswordResetAction(passwordExists);
+    mockNotificationModule();
+
+    JsonObject requestBody = new JsonObject()
+            .put("userId", mockUser.getId());
+    RestAssured.given()
+            .spec(spec)
+            .header(mockUrlHeader)
+            .body(requestBody.encode())
+            .when()
+            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
   }
 
   @Test
@@ -450,6 +514,18 @@ public class GeneratePasswordRestLinkTest {
       .body("link", is(expectedLink));
   }
 
+  @Test
+  public void cannotGeneratePasswordWhenTokenSignEndPointReturns500() {
+    cannotGeneratePasswordWhenTokenSignEndPointReturns500(EXPIRATION_TIME_MINUTES,
+            EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
+  }
+
+  @Test
+  public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500() {
+    cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500(EXPIRATION_TIME_MINUTES,
+            EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
+  }
+
   private String toJson(Object object) {
     return JsonObject.mapFrom(object).toString();
   }
@@ -481,7 +557,7 @@ public class GeneratePasswordRestLinkTest {
       .willReturn(WireMock.created().withBody(response.encode())));
   }
 
-  private void mockSignAuthTokenNotFound(String tokenForResponse) {
+  private void mockSignAuthTokenNotFound() {
     WireMock.stubFor(WireMock.post("/token/sign")
             .willReturn(WireMock.notFound()));
   }
@@ -495,6 +571,16 @@ public class GeneratePasswordRestLinkTest {
     JsonObject response = new JsonObject().put("token", tokenForResponse);
     WireMock.stubFor(WireMock.post("/token")
             .willReturn(WireMock.created().withBody(response.encode())));
+  }
+
+  private void mockSignAuthTokenServerError() {
+    WireMock.stubFor(WireMock.post("/token/sign")
+            .willReturn(WireMock.serverError()));
+  }
+
+  private void mockSignAuthTokenLegacyServerError() {
+    WireMock.stubFor(WireMock.post("/token")
+            .willReturn(WireMock.serverError()));
   }
 
   private void mockNotificationModule() {
