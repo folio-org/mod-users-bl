@@ -189,7 +189,7 @@ resourceTypes:
     type: { compositeUserResource: { "typeName" : "self reference" } }
   /login:
     post:
-      description: Allow a new user to login and return an authtoken, along with a composite user record
+      description: Allow a new user to login and return an authtoken, along with a composite user record. Deprecated and will be removed in a future release. Please use /login-with-expiry.
       is: [permissionsExpandable, includeable]
       headers:
         User-Agent:
