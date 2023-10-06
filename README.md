@@ -152,3 +152,16 @@ The built artifacts for this module are available.
 See [configuration](https://dev.folio.org/download/artifacts) for repository access,
 and the [Docker image](https://hub.docker.com/r/folioorg/mod-users-bl/).
 
+### Password reset link expiration
+
+Operators should take care when setting configuration values for `RESET_PASSWORD_LINK_EXPIRATION_TIME` and
+`RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME` to match either the default access token expiration or custom
+configured access token configuration for a given tenant, since the token expiration which is tied to the reset will
+use this expiration which is set in mod-authtoken. The `RESET_PASSWORD_LINK_EXPIRATION_TIME` and
+`RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME` configuration parameters are used in the notification sent
+by the mod-users-bl module.
+
+
+
+
+
