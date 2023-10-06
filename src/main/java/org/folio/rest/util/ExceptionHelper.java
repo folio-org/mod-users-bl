@@ -45,7 +45,7 @@ public final class ExceptionHelper {
         .type(MediaType.TEXT_PLAIN)
         .entity(throwable.getMessage())
         .build();
-    } else if(throwable.getClass() == TokenNotFoundException.class){
+    } else if (throwable.getClass() == TokenNotFoundException.class){
       return Response.status(HttpStatus.SC_NOT_FOUND)
               .type(MediaType.TEXT_PLAIN)
               .entity(throwable.getMessage())

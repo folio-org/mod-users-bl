@@ -391,6 +391,37 @@ public class GeneratePasswordRestLinkTest {
 
   }
 
+  public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404(
+          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+          String expectedExpirationTimeOfUnit) {
+    Map<String, String> configToMock = new HashMap<>();
+    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
+    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
+    User mockUser = new User()
+            .withId(UUID.randomUUID().toString())
+            .withUsername(MOCK_USERNAME);
+    boolean passwordExists = true;
+
+    mockUserFound(mockUser.getId(), mockUser);
+    mockConfigModule(MODULE_NAME, configToMock);
+    mockSignAuthTokenNotFound();
+    mockSignAuthTokenLegacyNotFound();
+    mockPostPasswordResetAction(passwordExists);
+    mockNotificationModule();
+
+    JsonObject requestBody = new JsonObject()
+            .put("userId", mockUser.getId());
+    RestAssured.given()
+            .spec(spec)
+            .header(mockUrlHeader)
+            .body(requestBody.encode())
+            .when()
+            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+
+  }
   @Test
   public void shouldGenerateAndSendCreatePasswordNotificationWhenPasswordExists() {
     Map<String, String> configToMock = new HashMap<>();
@@ -526,6 +557,11 @@ public class GeneratePasswordRestLinkTest {
             EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
 
+  @Test
+  public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404() {
+    shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404(EXPIRATION_TIME_DAYS,
+            EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
+  }
   private String toJson(Object object) {
     return JsonObject.mapFrom(object).toString();
   }
@@ -581,6 +617,11 @@ public class GeneratePasswordRestLinkTest {
   private void mockSignAuthTokenLegacyServerError() {
     WireMock.stubFor(WireMock.post("/token")
             .willReturn(WireMock.serverError()));
+  }
+
+  private void mockSignAuthTokenLegacyNotFound() {
+    WireMock.stubFor(WireMock.post("/token")
+            .willReturn(WireMock.notFound()));
   }
 
   private void mockNotificationModule() {
