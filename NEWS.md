@@ -1,3 +1,16 @@
+## 7.6.0 2023-10-12
+
+* Module needs to respond 404 when 404 is received from /authn/login and /token endpoints (MODUSERBL-180)
+* Needs to use new /token/sign endpoint of mod-at (MODUSERBL-176)
+* Implement /login-with-expiry to expose login expiration to the UI (MODUSERBL-150)
+* Add support of Forgot Password/Forgot Username for Consortia functionality (MODUSERBL-169)
+* Update to Java 17 mod-users-bl (MODUSERBL-172)
+* Add support of Reset Password action for Consortia functionality (MODUSERBL-167)
+* Fetch home tenant during login and extend response with it (MODUSERBL-166)
+* Update feesfines interface version to 18.0 (MODUSERBL-165)
+* Update copyright year (FOLIO-1021)
+* Use GitHub Workflows api-lint, api-schema-lint and api-doc (FOLIO-3678)
+
 ## 7.5.0 2023-02-13
 
 * Added user data form (MODUSERBL-156)
@@ -18,7 +31,7 @@
 * Upgrade to RMB 33.2.4 and addressing log4j security vulverability (MODUSERBL-123, MODUSERBL-137)
 
 ## 7.1.0 2021-10-05
- 
+
 * Optionally requires `feesfines 16.3 or 17.0`
 
 ## 7.0.0 2021-06-15
