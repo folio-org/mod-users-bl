@@ -161,7 +161,18 @@ use this expiration which is set in mod-authtoken. The `RESET_PASSWORD_LINK_EXPI
 `RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME` configuration parameters are used in the notification sent
 by the mod-users-bl module.
 
+`RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME` defaults to `hours` and can be any of `minutes`, `hours`, `days`,
+and `weeks`.
 
+A link expiration time longer than four weeks is truncated to four weeks.
 
+The configuration values are stored in [mod-configuration](https://github.com/folio-org/mod-configuration).
+Example records:
 
+```
+{ "module": "USERSBL", "configName": "", "code": "RESET_PASSWORD_LINK_EXPIRATION_TIME", "value": "12" }
+```
+```
+{ "module": "USERSBL", "configName": "", "code": "RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME", "value": "hours" }
+```
 
