@@ -462,7 +462,7 @@ public class BLUsersAPI implements BlUsers {
           }
         }
 
-        getServicePoint(completedLookup, cu);
+        fillCompositeUserWithServicePoint(completedLookup, cu);
 
         if(mode[0].equals("id")){
           asyncResultHandler.handle(Future.succeededFuture(
@@ -1005,7 +1005,7 @@ public class BLUsersAPI implements BlUsers {
 
           //TODO: Refactor so less copy/paste
 
-          getServicePoint(completedLookup, cu);
+          fillCompositeUserWithServicePoint(completedLookup, cu);
 
           if(!aRequestHasFailed[0]){
             var r = respond.apply(loginResponse, cu);
@@ -1023,7 +1023,7 @@ public class BLUsersAPI implements BlUsers {
       });
   }
 
-  private static void getServicePoint(Map<String, CompletableFuture<Response>> completedLookup, CompositeUser cu) throws Exception {
+  private static void fillCompositeUserWithServicePoint(Map<String, CompletableFuture<Response>> completedLookup, CompositeUser cu) throws Exception {
     CompletableFuture<Response> cf;
     cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
     CompletableFuture<Response> ecf = completedLookup.get(
