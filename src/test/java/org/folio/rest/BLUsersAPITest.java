@@ -327,11 +327,11 @@ public class BLUsersAPITest {
     given().
       spec(okapi).port(port).
       when().
-      get("/bl-users?query=" + StringUtil.urlEncode("id==0bb4f26d-e073-4f93-afbc-dcc24fd88812")).
+      get("/bl-users?query=" + StringUtil.urlEncode("id==0bb4f26d-e073-4f93-afbc-dcc24fd88810")).
       then().
       statusCode(200).
       body("compositeUsers.size()", equalTo(1),
-        "compositeUsers[0].users.id", equalTo(USER_ID_2));
+        "compositeUsers[0].users.id", equalTo(USER_ID));
   }
 
   @Test
