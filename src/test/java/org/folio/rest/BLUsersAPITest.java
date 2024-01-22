@@ -268,13 +268,13 @@ public class BLUsersAPITest {
   @Test
   public void getBlUsers(TestContext context) {
     given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users").
-      then().
-      statusCode(200).
-      body("compositeUsers.size()", equalTo(6),
-        "compositeUsers[0].users.username", equalTo("maxi"));
+            spec(okapi).port(port).
+    when().
+            get("/bl-users").
+    then().
+            statusCode(200).
+            body("compositeUsers.size()", equalTo(6),
+                 "compositeUsers[0].users.username", equalTo("maxi"));
   }
 
   @Test
