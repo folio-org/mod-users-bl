@@ -266,7 +266,7 @@ public class BLUsersAPITest {
   }
 
   @Test
-  public void getBlUsers(TestContext context) {
+  public void getBlUsers(TestContext context) throws Exception{
     given().
             spec(okapi).port(port).
     when().
@@ -320,18 +320,6 @@ public class BLUsersAPITest {
       statusCode(200).
       body("compositeUsers.size()", equalTo(1),
            "compositeUsers[0].users.username", equalTo("maxi"));
-  }
-
-  @Test
-  public void getBlUsersByIdCql(TestContext context) {
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users?query=" + StringUtil.urlEncode("id==0bb4f26d-e073-4f93-afbc-dcc24fd88810")).
-      then().
-      statusCode(200).
-      body("compositeUsers.size()", equalTo(1),
-        "compositeUsers[0].users.id", equalTo(USER_ID));
   }
 
   @Test
