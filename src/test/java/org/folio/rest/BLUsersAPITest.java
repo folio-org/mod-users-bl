@@ -320,6 +320,14 @@ public class BLUsersAPITest {
       statusCode(200).
       body("compositeUsers.size()", equalTo(1),
            "compositeUsers[0].users.username", equalTo("maxi"));
+
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-username/" + "diku_admin11")
+      .then()
+      .statusCode(404);
   }
 
   @Test
