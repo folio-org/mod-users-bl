@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.http.HttpStatus;
+import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.folio.util.PercentCodec;
@@ -33,6 +34,8 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.folio.rest.MockOkapi.getToken;
 import static org.folio.rest.MockOkapi.getTokenWithoutUserId;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 
@@ -266,7 +269,7 @@ public class BLUsersAPITest {
   }
 
   @Test
-  public void getBlUsers(TestContext context) throws Exception{
+  public void getBlUsers(TestContext context) {
     given().
             spec(okapi).port(port).
     when().
@@ -275,6 +278,13 @@ public class BLUsersAPITest {
             statusCode(200).
             body("compositeUsers.size()", equalTo(6),
                  "compositeUsers[0].users.username", equalTo("maxi"));
+
+    given().
+      spec(okapi).port(port).
+      when().
+      get("/bl-users").
+      then().
+      statusCode(500);
   }
 
   @Test
