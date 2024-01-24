@@ -778,6 +778,37 @@ public class BLUsersAPITest {
       .statusCode(204);
   }
 
+
+  @Test
+  public void deleteUserWithTransactionsNoSuccess2() {
+
+    String blockId = UUID.randomUUID().toString();
+    JsonObject manualBlockPost = new JsonObject()
+      .put("id", blockId)
+      .put("userId", USER_ID);
+    given().body(manualBlockPost.encode()).
+      when().post("http://localhost:" + okapiPort + "/manualblocks").
+      then().statusCode(201);
+
+
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
+      .port(port)
+      .when()
+      .delete("/bl-users/by-id/" + "USER_ID")
+      .then()
+      .statusCode(500);
+
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
+      .when()
+      .delete("http://localhost:" + okapiPort + "/manualblocks/" + blockId)
+      .then()
+      .statusCode(204);
+  }
+
   @Test
   public void deleteUserNotExistent() {
     given()
