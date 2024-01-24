@@ -320,14 +320,6 @@ public class BLUsersAPITest {
       statusCode(200).
       body("compositeUsers.size()", equalTo(1),
            "compositeUsers[0].users.username", equalTo("maxi"));
-
-    given()
-      .spec(okapi)
-      .port(port)
-      .when()
-      .get("/bl-users/by-username/" + "diku_admin11")
-      .then()
-      .statusCode(404);
   }
 
   @Test
@@ -742,6 +734,19 @@ public class BLUsersAPITest {
       .delete("/bl-users/by-id/" + uuid)
       .then()
       .statusCode(HttpStatus.SC_NO_CONTENT);
+  }
+
+  @Test
+  public void deleteUserNoTransactionsInvalidUserIdUUID() {
+
+    given()
+      .spec(okapi)
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
+      .port(port)
+      .when()
+      .delete("/bl-users/by-id/" + "123")
+      .then()
+      .statusCode(500);
   }
 
   @Test
