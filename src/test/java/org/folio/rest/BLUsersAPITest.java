@@ -738,10 +738,9 @@ public class BLUsersAPITest {
 
   @Test
   public void deleteUserNoTransactionsInvalidUserIdUUID() {
-
     given()
       .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
+      //.header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
       .port(port)
       .when()
       .delete("/bl-users/by-id/" + "123")
