@@ -736,35 +736,6 @@ public class BLUsersAPITest {
       .statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
-  /*@Test
-  public void deleteUserNoTransactionsInvalidUserIdUUID() {
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .port(port)
-      .when()
-      .delete("/bl-users/by-id/" + "123")
-      .then()
-      .statusCode(500);
-  }*/
-
-    /*@Test
-  public void postBlUsersUpdatePasswordInvalidNewPassword(TestContext context) {
-    given().
-      spec(okapi).port(port).
-      body(new JsonObject().put("username", "superuser")
-        .put("password", "12345")
-        .put("newPassword", "1")   // invalide password   1329
-        .put("userId", "99999999-9999-4999-9999-999999999999")
-        .encode()).
-      accept("text/plain").
-      contentType("application/json").
-      when().
-      post("/bl-users/settings/myprofile/password").
-      then().
-      statusCode(500);
-  }*/
-
   @Test
   public void deleteUserWithTransactionsNoSuccess() {
     String blockId = UUID.randomUUID().toString();
