@@ -279,7 +279,8 @@ public class MockOkapiTest {
   public void doSequentialTests(TestContext context) {
     Async async = context.async();
     Future<WrappedResponse> startFuture;
-    startFuture = getEmptyUsers(context).compose(w -> {
+    startFuture = getEmptyUsers(context)
+      .compose(w -> {
       return postNewUser(context);
     }).compose(w -> {
       return getNewUser(context, w.getJson().getString("id"));
@@ -335,6 +336,8 @@ public class MockOkapiTest {
     }).compose(w -> {
       return getConfigurationsEntires(context);
     });
+
+
 
     startFuture.onComplete(res -> {
       if(res.succeeded()) {
@@ -613,37 +616,40 @@ public class MockOkapiTest {
            promise.fail("Expected 200, got code " + res.result().getCode());
          } else {
            JsonObject cuJson = res.result().getJson();
-           JsonObject spUserJson = cuJson.getJsonObject("servicePointsUser");
-           if(spUserJson == null) {
-             promise.fail("No service points user info found");
-             return;
-           }
-           JsonArray spArray = spUserJson.getJsonArray("servicePoints");
-           if(spArray == null) {
-             promise.fail("No service points array found");
-             return;
-           }
-           boolean foundAll = true;
-           String error = null;
-           for(String spId : expectedServicePointIds) {
-             boolean found = false;
-             for(Object ob : spArray) {
-               JsonObject spJson = (JsonObject)ob;
-               if(spJson.getString("id").equals(spId)) {
-                 found = true;
+           if (cuJson != null) {
+             JsonObject spUserJson = cuJson.getJsonObject("servicePointsUser");
+             if (spUserJson == null) {
+               promise.fail("No service points user info found");
+               return;
+             }
+             JsonArray spArray = spUserJson.getJsonArray("servicePoints");
+             if (spArray == null) {
+               promise.fail("No service points array found");
+               return;
+             }
+
+             boolean foundAll = true;
+             String error = null;
+             for (String spId : expectedServicePointIds) {
+               boolean found = false;
+               for (Object ob : spArray) {
+                 JsonObject spJson = (JsonObject) ob;
+                 if (spJson.getString("id").equals(spId)) {
+                   found = true;
+                   break;
+                 }
+               }
+               if (found == false) {
+                 error = String.format("Unable to find %s in service points", spId);
+                 foundAll = false;
                  break;
                }
              }
-             if(found == false) {
-               error = String.format("Unable to find %s in service points", spId);
-               foundAll = false;
-               break;
+             if (!foundAll) {
+               promise.fail(error);
+             } else {
+               promise.complete(res.result());
              }
-           }
-           if(!foundAll) {
-             promise.fail(error);
-           } else {
-             promise.complete(res.result());
            }
          }
        }

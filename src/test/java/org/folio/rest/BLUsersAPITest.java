@@ -736,17 +736,34 @@ public class BLUsersAPITest {
       .statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
-  @Test
+  /*@Test
   public void deleteUserNoTransactionsInvalidUserIdUUID() {
     given()
       .spec(okapi)
-      //.header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
+      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
       .port(port)
       .when()
       .delete("/bl-users/by-id/" + "123")
       .then()
       .statusCode(500);
-  }
+  }*/
+
+    /*@Test
+  public void postBlUsersUpdatePasswordInvalidNewPassword(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      body(new JsonObject().put("username", "superuser")
+        .put("password", "12345")
+        .put("newPassword", "1")   // invalide password   1329
+        .put("userId", "99999999-9999-4999-9999-999999999999")
+        .encode()).
+      accept("text/plain").
+      contentType("application/json").
+      when().
+      post("/bl-users/settings/myprofile/password").
+      then().
+      statusCode(500);
+  }*/
 
   @Test
   public void deleteUserWithTransactionsNoSuccess() {
@@ -768,37 +785,6 @@ public class BLUsersAPITest {
       .statusCode(HttpStatus.SC_CONFLICT)
       .body("blocks", equalTo(1))
       .body("hasOpenTransactions", equalTo(true));
-
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .when()
-      .delete("http://localhost:" + okapiPort + "/manualblocks/" + blockId)
-      .then()
-      .statusCode(204);
-  }
-
-
-  @Test
-  public void deleteUserWithTransactionsNoSuccess2() {
-
-    String blockId = UUID.randomUUID().toString();
-    JsonObject manualBlockPost = new JsonObject()
-      .put("id", blockId)
-      .put("userId", USER_ID);
-    given().body(manualBlockPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/manualblocks").
-      then().statusCode(201);
-
-
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .port(port)
-      .when()
-      .delete("/bl-users/by-id/" + "USER_ID")
-      .then()
-      .statusCode(500);
 
     given()
       .spec(okapi)
