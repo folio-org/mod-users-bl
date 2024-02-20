@@ -462,7 +462,43 @@ public class BLUsersAPI implements BlUsers {
           }
         }
 
-        fillCompositeUserWithServicePoint (completedLookup, cu);
+        //fillCompositeUserWithServicePoint (completedLookup, cu);
+        cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
+        CompletableFuture<Response> ecf = completedLookup.get(
+          EXPANDED_SERVICEPOINTS_INCLUDE);
+        if(ecf != null && cf != null && cf.get().getBody() != null) {
+          JsonArray array = cf.get().getBody().getJsonArray("servicePointsUsers");
+          if(!array.isEmpty()) {
+            JsonObject spuJson = array.getJsonObject(0);
+            ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson,
+              ServicePointsUser.class);
+            Response resp = null;
+            List<ServicePoint> spList = new ArrayList<>();
+            try {
+              resp = ecf.get();
+            } catch(Exception e) {
+              logger.error(String.format(
+                "Unable to get expanded service point Response: %s",
+                e.getLocalizedMessage()));
+            }
+            if(resp != null) {
+              JsonObject spCollectionJson = resp.getBody();
+              if(spCollectionJson != null) {
+                JsonArray spArray = spCollectionJson.getJsonArray("servicepoints");
+                if(spArray != null) {
+                  for(Object ob: spArray) {
+                    JsonObject json = (JsonObject)ob;
+                    ServicePoint sp = (ServicePoint)Response.convertToPojo(json,
+                      ServicePoint.class);
+                    spList.add(sp);
+                  }
+                  spu.setServicePoints(spList);
+                }
+              }
+            }
+            cu.setServicePointsUser(spu);
+          }
+        }
 
         if(mode[0].equals("id")){
           asyncResultHandler.handle(Future.succeededFuture(
@@ -1005,7 +1041,36 @@ public class BLUsersAPI implements BlUsers {
 
           //TODO: Refactor so less copy/paste
 
-          fillCompositeUserWithServicePoint(completedLookup, cu);
+          //fillCompositeUserWithServicePoint(completedLookup, cu);
+          cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
+          CompletableFuture<Response> ecf = completedLookup.get(
+            EXPANDED_SERVICEPOINTS_INCLUDE);
+          if(ecf != null && cf != null && cf.get().getBody() != null) {
+            JsonArray array = cf.get().getBody().getJsonArray("servicePointsUsers");
+            if(!array.isEmpty()) {
+              JsonObject spuJson = array.getJsonObject(0);
+              ServicePointsUser spu = (ServicePointsUser)Response.convertToPojo(spuJson,
+                ServicePointsUser.class);
+              List<ServicePoint> spList = new ArrayList<>();
+              Response resp = ecf.get();
+              if(resp != null) {
+                JsonObject spCollectionJson = resp.getBody();
+                if(spCollectionJson != null) {
+                  JsonArray spArray = spCollectionJson.getJsonArray("servicepoints");
+                  if(spArray != null) {
+                    for(Object ob: spArray) {
+                      JsonObject json = (JsonObject)ob;
+                      ServicePoint sp = (ServicePoint)Response.convertToPojo(json,
+                        ServicePoint.class);
+                      spList.add(sp);
+                    }
+                    spu.setServicePoints(spList);
+                  }
+                }
+              }
+              cu.setServicePointsUser(spu);
+            }
+          }
 
           if(!aRequestHasFailed[0]){
             var r = respond.apply(loginResponse, cu);
