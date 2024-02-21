@@ -818,6 +818,7 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
+    logger.info("Invoking postBlUsersLoginWithExpiry from test branch");
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
         LOGIN_ENDPOINT, this::loginResponse);
   }
