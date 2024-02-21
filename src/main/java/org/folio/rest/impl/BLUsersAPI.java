@@ -885,6 +885,7 @@ public class BLUsersAPI implements BlUsers {
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
             } finally {
               clientForLogin.closeClient();
+              client.closeClient();
             }
           })
           .exceptionally(throwable -> {
