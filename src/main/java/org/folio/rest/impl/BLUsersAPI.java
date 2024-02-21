@@ -196,13 +196,13 @@ public class BLUsersAPI implements BlUsers {
       if(ok){
         //the status code indicates success, check if the amount of results are acceptable from the
         //previous Response
-        Integer totalRecords = response.getBody().getInteger("totalRecords");
+        Integer totalRecords = 1;
 
         logger.info("test12");
         if(totalRecords == null){
           logger.info("test13");
           //totalRecords = response.getBody().getInteger("total_records");
-          totalRecords = 300;
+          totalRecords = 1;
           logger.info("test14");
         }
         if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
