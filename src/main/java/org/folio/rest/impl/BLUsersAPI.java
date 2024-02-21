@@ -196,7 +196,7 @@ public class BLUsersAPI implements BlUsers {
       if(ok){
         //the status code indicates success, check if the amount of results are acceptable from the
         //previous Response
-        Integer totalRecords = 1;
+        Integer totalRecords = response.getBody().getInteger("totalRecords");
 
         logger.info("test12");
         if(totalRecords == null){
@@ -994,15 +994,19 @@ public class BLUsersAPI implements BlUsers {
       }
 
       if (expandPerms){
+        logger.info(100);
         CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
           client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
             handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
         );
+        logger.info(101);
         CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
           client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
+        logger.info(102);
         requestedIncludes.add(expandPermsResponse);
         completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
+        logger.info(103);
       }
       requestedIncludes.add(userResponse[0]);
 
@@ -1038,7 +1042,7 @@ public class BLUsersAPI implements BlUsers {
               //data coming in from the service isnt returned as required by the composite user schema
               JsonObject j = new JsonObject();
               j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              //cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
