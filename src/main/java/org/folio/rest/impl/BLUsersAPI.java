@@ -186,8 +186,10 @@ public class BLUsersAPI implements BlUsers {
       asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(
             "response is null from one of the services requested")));
+      logger.info("test10");
       previousFailure[0] = true;
     } else {
+      logger.info("test11");
       //check if the previous request failed
       int statusCode = response.getCode();
       boolean ok = Response.isSuccess(statusCode);
@@ -195,11 +197,15 @@ public class BLUsersAPI implements BlUsers {
         //the status code indicates success, check if the amount of results are acceptable from the
         //previous Response
         Integer totalRecords = response.getBody().getInteger("totalRecords");
+        logger.info("test12");
         if(totalRecords == null){
+          logger.info("test13");
           totalRecords = response.getBody().getInteger("total_records");
+          logger.info("test14");
         }
         if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
             && (requireOneResult || requireOneOrMoreResults)) {
+          logger.info("test17");
           previousFailure[0] = true;
           if(stopOnError){
             //the chained requests will not fire the next request if the response's error object of the previous request is not null
@@ -208,10 +214,12 @@ public class BLUsersAPI implements BlUsers {
             response.setError(new JsonObject());
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
+          logger.info("test18");
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond404WithTextPlain("No record found for query '"
                 + response.getEndpoint() + "'")));
         } else if(totalRecords != null && totalRecords > 1 && requireOneResult) {
+          logger.info("test19");
           logger.error("'" + response.getEndpoint() + "' returns multiple results");
           previousFailure[0] = true;
           asyncResultHandler.handle(Future.succeededFuture(
@@ -219,6 +227,7 @@ public class BLUsersAPI implements BlUsers {
                 + "' returns multiple results"))));
         }
       } else {
+        logger.info("test20");
         String message = "";
         String errorMessage;
         Errors errors = null;
@@ -835,22 +844,27 @@ public class BLUsersAPI implements BlUsers {
   private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor, //NOSONAR
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       String loginEndpoint, BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) {
-
+    logger.info("test1");
     //works on single user, no joins needed , just aggregate
     String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
+    logger.info("test2");
     okapiHeaders.remove(OKAPI_URL_HEADER);
+    logger.info("test3");
 
     boolean []aRequestHasFailed = new boolean[]{false};
 
     if(include == null || include.isEmpty()){
       //by default return perms and groups
       include = getDefaultIncludes();
+      logger.info("test4");
     }
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
+      logger.info("test5");
       asyncResultHandler.handle(Future.succeededFuture(
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
+      logger.info("test6");
       HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
       String moduleURL = "/authn/login";
       logger.debug("Requesting login from " + moduleURL);
@@ -864,22 +878,25 @@ public class BLUsersAPI implements BlUsers {
           .ifPresent(header -> headers.put(HttpHeaders.USER_AGENT, header));
         Optional.ofNullable(xForwardedFor)
           .ifPresent(header -> headers.put(X_FORWARDED_FOR_HEADER, header));
-
+        logger.info("test7");
         List<String> finalInclude = include;
-
+        logger.info("test8");
         clientForLogin.request(HttpMethod.POST, entity, loginEndpoint, headers)
           .thenAccept(loginResponse -> {
+            logger.info("test9");
             //then get user by username, inject okapi headers from the login response into the user request
             //see 'true' flag passed into the chainedRequest
             handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
-
+            logger.info("test22");
             String token = getToken(loginResponse.getHeaders());
             String tenant = getTenant(token);
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
 
             try {
+              logger.info("test23");
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
+              logger.info("test24");
             } catch (Exception e) {
               client.closeClient();
               asyncResultHandler.handle(Future.succeededFuture(
