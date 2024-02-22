@@ -992,7 +992,7 @@ public class BLUsersAPI implements BlUsers {
               JsonArray jsonArray = permsResponse.getBody().getJsonArray("permissionNames");
 
               List<Object> permissionNamesList = new ArrayList<>();
-
+              System.out.println("CAling-----------------Calling");
               int batchSize = 20; // Adjust the batch size as needed
               for (int i = 0; i < jsonArray.size(); i += batchSize) {
                 int end = Math.min(i + batchSize, jsonArray.size());
