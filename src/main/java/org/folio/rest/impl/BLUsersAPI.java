@@ -1,5 +1,9 @@
 package org.folio.rest.impl;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.*;
@@ -950,7 +954,7 @@ public class BLUsersAPI implements BlUsers {
       }
       requestedIncludes.add(userResponse[0]);
 
-      CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
+      CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[0]))
       .thenAccept((response) -> {
         try {
           if(requestedIncludes.size() == 1){
@@ -982,7 +986,8 @@ public class BLUsersAPI implements BlUsers {
               //data coming in from the service isnt returned as required by the composite user schema
               JsonObject j = new JsonObject();
               j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              //cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              cu.setPermissions(convertToPermissions(j));
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
@@ -1021,6 +1026,29 @@ public class BLUsersAPI implements BlUsers {
           client.closeClient();
         }
       });
+  }
+
+  private static Permissions convertToPermissions(JsonObject j) throws Exception {
+    Permissions permissions = new Permissions();
+    List<Object> permissionsList = new ArrayList<>();
+
+    try (JsonParser parser = new ObjectMapper().getFactory().createParser(j.encode())) {
+      // Move to the start of the JSON array
+      while (parser.nextToken() != JsonToken.START_ARRAY) {
+        // Continue to the next token
+      }
+
+      // Iterate through the array elements
+      while (parser.nextToken() != JsonToken.END_ARRAY) {
+        // Process each permission entry and add it to the list
+        JsonNode permissionNode = parser.readValueAsTree();
+        permissionsList.add(permissionNode);
+      }
+    }
+
+    permissions.setPermissions(permissionsList);
+
+    return permissions;
   }
 
   private static void fillCompositeUserWithServicePoint(Map<String, CompletableFuture<Response>> completedLookup, CompositeUser cu) throws Exception {
