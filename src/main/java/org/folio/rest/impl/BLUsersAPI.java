@@ -55,15 +55,7 @@ import javax.ws.rs.core.MediaType;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
@@ -986,26 +978,18 @@ public class BLUsersAPI implements BlUsers {
               //data coming in from the service isnt returned as required by the composite user schema
 //              JsonObject j = new JsonObject();
 //              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-//              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
-
-              //cu.setPermissions(convertToPermissions(j));
-              JsonArray jsonArray = permsResponse.getBody().getJsonArray("permissionNames");
-
-              List<Object> permissionNamesList = new ArrayList<>();
-              System.out.println("CAling-----------------Calling");
-              int batchSize = 20; // Adjust the batch size as needed
-              for (int i = 0; i < jsonArray.size(); i += batchSize) {
-                int end = Math.min(i + batchSize, jsonArray.size());
-                for (int j = i; j < end; j++) {
-                  Object permission = jsonArray.getValue(j);
-                  // Process each permission individually or in smaller batches
-                  // Add appropriate logic here
-                  permissionNamesList.add(permission);
+              Iterator iterator = permsResponse.getBody().getJsonArray("permissionNames").stream().iterator();
+              List<Object> objects = new ArrayList<>();
+              while (iterator.hasNext()) {
+                Object element = iterator.next();
+                objects.add(element);
+                if (objects.size()==500) {
+                  break;
                 }
-                // Release resources or perform cleanup after each batch
               }
-
-              cu.setPermissions(new Permissions().withPermissions(permissionNamesList));
+              Permissions permissions = new Permissions();
+              permissions.setPermissions(objects);
+              cu.setPermissions(permissions);
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
