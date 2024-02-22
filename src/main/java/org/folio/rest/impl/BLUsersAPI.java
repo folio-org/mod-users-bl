@@ -983,9 +983,6 @@ public class BLUsersAPI implements BlUsers {
               while (iterator.hasNext()) {
                 Object element = iterator.next();
                 objects.add(element);
-                if (objects.size()==500) {
-                  break;
-                }
               }
               Permissions permissions = new Permissions();
               permissions.setPermissions(objects);
