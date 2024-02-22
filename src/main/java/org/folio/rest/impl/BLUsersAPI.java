@@ -1038,19 +1038,38 @@ public class BLUsersAPI implements BlUsers {
         // Continue to the next token
       }
 
-      // Iterate through the array elements
-      while (parser.nextToken() != JsonToken.END_ARRAY) {
-        // Process each permission entry and add it to the list
+      // Process the JSON array in chunks
+      int batchSize = 10; // Set an appropriate batch size
+      int count = 0;
+
+      while (parser.nextToken() != null) {
         JsonNode permissionNode = parser.readValueAsTree();
         permissionsList.add(permissionNode);
+
+        count++;
+
+        if (count % batchSize == 0) {
+          // Process the batch and clear the list to release memory
+          processPermissionBatch(permissionsList, permissions);
+          permissionsList.clear();
+        }
+      }
+
+      // Process the remaining permissions in the last batch
+      if (!permissionsList.isEmpty()) {
+        processPermissionBatch(permissionsList, permissions);
       }
     }
-
-    permissions.setPermissions(permissionsList);
 
     return permissions;
   }
 
+  // Helper method to process a batch of permissions and add them to the Permissions object
+  private static void processPermissionBatch(List<Object> batch, Permissions permissions) {
+    // Add your logic to process the batch and add it to the Permissions object
+    // For example, you can add them to a database, perform additional filtering, etc.
+    permissions.getPermissions().addAll(batch);
+  }
   private static void fillCompositeUserWithServicePoint(Map<String, CompletableFuture<Response>> completedLookup, CompositeUser cu) throws Exception {
     CompletableFuture<Response> cf;
     cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
