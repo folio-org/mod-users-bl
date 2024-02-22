@@ -984,10 +984,28 @@ public class BLUsersAPI implements BlUsers {
             handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
               //data coming in from the service isnt returned as required by the composite user schema
-              JsonObject j = new JsonObject();
-              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              //cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
-              cu.setPermissions(convertToPermissions(j));
+//              JsonObject j = new JsonObject();
+//              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
+//              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+
+              //cu.setPermissions(convertToPermissions(j));
+              JsonArray jsonArray = permsResponse.getBody().getJsonArray("permissionNames");
+
+              List<Object> permissionNamesList = new ArrayList<>();
+
+              int batchSize = 20; // Adjust the batch size as needed
+              for (int i = 0; i < jsonArray.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, jsonArray.size());
+                for (int j = i; j < end; j++) {
+                  Object permission = jsonArray.getValue(j);
+                  // Process each permission individually or in smaller batches
+                  // Add appropriate logic here
+                  permissionNamesList.add(permission);
+                }
+                // Release resources or perform cleanup after each batch
+              }
+
+              cu.setPermissions(new Permissions().withPermissions(permissionNamesList));
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
@@ -1000,7 +1018,8 @@ public class BLUsersAPI implements BlUsers {
                 //expanded permissions requested and the array of permissions has been populated
                 //add the username
                 p.setUserId(permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0).getString("id"));
-              } else{
+              }
+              else{
                 //data coming in from the service isnt returned as required by the composite user schema
                 JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
                 cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
@@ -1028,48 +1047,6 @@ public class BLUsersAPI implements BlUsers {
       });
   }
 
-  private static Permissions convertToPermissions(JsonObject j) throws Exception {
-    Permissions permissions = new Permissions();
-    List<Object> permissionsList = new ArrayList<>();
-
-    try (JsonParser parser = new ObjectMapper().getFactory().createParser(j.encode())) {
-      // Move to the start of the JSON array
-      while (parser.nextToken() != JsonToken.START_ARRAY) {
-        // Continue to the next token
-      }
-
-      // Process the JSON array in chunks
-      int batchSize = 10; // Set an appropriate batch size
-      int count = 0;
-
-      while (parser.nextToken() != null) {
-        JsonNode permissionNode = parser.readValueAsTree();
-        permissionsList.add(permissionNode);
-
-        count++;
-
-        if (count % batchSize == 0) {
-          // Process the batch and clear the list to release memory
-          processPermissionBatch(permissionsList, permissions);
-          permissionsList.clear();
-        }
-      }
-
-      // Process the remaining permissions in the last batch
-      if (!permissionsList.isEmpty()) {
-        processPermissionBatch(permissionsList, permissions);
-      }
-    }
-
-    return permissions;
-  }
-
-  // Helper method to process a batch of permissions and add them to the Permissions object
-  private static void processPermissionBatch(List<Object> batch, Permissions permissions) {
-    // Add your logic to process the batch and add it to the Permissions object
-    // For example, you can add them to a database, perform additional filtering, etc.
-    permissions.getPermissions().addAll(batch);
-  }
   private static void fillCompositeUserWithServicePoint(Map<String, CompletableFuture<Response>> completedLookup, CompositeUser cu) throws Exception {
     CompletableFuture<Response> cf;
     cf = completedLookup.get(SERVICEPOINTS_INCLUDE);
