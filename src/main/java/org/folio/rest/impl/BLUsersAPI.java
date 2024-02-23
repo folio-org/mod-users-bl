@@ -1,9 +1,5 @@
 package org.folio.rest.impl;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.*;
@@ -49,13 +45,23 @@ import org.folio.service.transactions.OpenTransactionsServiceImpl;
 import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
+import javax.json.Json;
+import javax.json.JsonValue;
 import javax.ws.rs.core.HttpHeaders;
 
 import javax.ws.rs.core.MediaType;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
@@ -64,6 +70,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 /**
  * @author shale
@@ -946,7 +953,7 @@ public class BLUsersAPI implements BlUsers {
       }
       requestedIncludes.add(userResponse[0]);
 
-      CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[0]))
+      CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
       .thenAccept((response) -> {
         try {
           if(requestedIncludes.size() == 1){
@@ -975,18 +982,29 @@ public class BLUsersAPI implements BlUsers {
             Response permsResponse = cf.get();
             handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
-              //data coming in from the service isnt returned as required by the composite user schema
+//              //data coming in from the service isnt returned as required by the composite user schema
 //              JsonObject j = new JsonObject();
 //              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              Iterator iterator = permsResponse.getBody().getJsonArray("permissionNames").stream().iterator();
-              List<Object> objects = new ArrayList<>();
-              while (iterator.hasNext()) {
-                Object element = iterator.next();
-                objects.add(element);
-              }
-              Permissions permissions = new Permissions();
-              permissions.setPermissions(objects);
-              cu.setPermissions(permissions);
+//              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+
+              logger.info("Yes try it....");
+              // Solution 1 -
+              JsonArray jsonArray = permsResponse.getBody().getJsonArray("permissionNames");
+
+              jsonArray.stream()
+                .filter(Permissions.class::isInstance)
+                .map(Permissions.class::cast)
+                .forEach(permissionName -> {
+                  JsonObject j = new JsonObject();
+                  j.put("permissions", Json.createArrayBuilder().add((JsonValue) permissionName).build());
+                  try {
+                    cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+
+logger.info("YES did it....");
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
@@ -999,8 +1017,7 @@ public class BLUsersAPI implements BlUsers {
                 //expanded permissions requested and the array of permissions has been populated
                 //add the username
                 p.setUserId(permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0).getString("id"));
-              }
-              else{
+              } else{
                 //data coming in from the service isnt returned as required by the composite user schema
                 JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
                 cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
