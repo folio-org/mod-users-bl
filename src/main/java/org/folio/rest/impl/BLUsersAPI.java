@@ -984,37 +984,15 @@ public class BLUsersAPI implements BlUsers {
             if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
               //data coming in from the service isnt returned as required by the composite user schema
               JsonObject j = new JsonObject();
-              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              List<Permission> permissions1 = new ArrayList<>();
+//              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
+//              List<Permission> permissions1 = new ArrayList<>();
 //              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
-              Permissions permissions = (Permissions) Response.convertToPojo(j, Permissions.class);
-              permissions.getPermissions().parallelStream().forEach(Permission -> {
-                permissions1.add(Permission);
-                //cu.setPermissions( permissions);
-              });
-              permissions.setPermissions(permissions1);
-              cu.setPermissions(permissions);
 
-//              logger.info("Yes try it....");
-//              // Solution 1 -
-//              JsonArray jsonArray = permsResponse.getBody().getJsonArray("permissionNames");
-//
-//              jsonArray.stream()
-//                .filter(Permissions.class::isInstance)
-//                .map(Permissions.class::cast)
-//                .forEach(permissionName -> {
-//                  JsonObject j = new JsonObject();
-//                  j.put("permissions", Json.createArrayBuilder().add((JsonValue) permissionName).build());
-//                  try {
-//                    cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
-//                  } catch (Exception e) {
-//                    logger.info("Caught it..........");
-//                    throw new RuntimeException(e);
-//                  }
-//                });
-//
-//logger.info("YES did it....");
-            }
+              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
+              Permissions permissions = (Permissions) Response.convertToPojo(j, Permissions.class);
+              permissions.setPermissions(permissions.getPermissions().parallelStream().collect(Collectors.toList()));
+              cu.setPermissions(permissions);
+                        }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
           if(cf != null && cf.get().getBody() != null){
