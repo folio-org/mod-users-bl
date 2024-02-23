@@ -979,10 +979,9 @@ public class BLUsersAPI implements BlUsers {
             Response permsResponse = cf.get();
             handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
-              //data coming in from the service isnt returned as required by the composite user schema
-              JsonObject j = new JsonObject();
-              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              var permissionNames = permsResponse.getBody().getJsonArray("permissionNames").getList();
+              var permissions = new Permissions().withPermissions(permissionNames);
+              cu.setPermissions(permissions);
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);

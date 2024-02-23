@@ -45,10 +45,10 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <raml-module-builder.version>35.0.2</raml-module-builder.version>
-    <mod-configuration-client.version>5.7.6</mod-configuration-client.version>
+    <raml-module-builder.version>35.1.1</raml-module-builder.version>
+    <mod-configuration-client.version>5.9.2</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <vertx-version>4.3.4</vertx-version>
+    <vertx-version>4.4.8</vertx-version>
     <java.version>17</java.version>
     <aspectj.version>1.9.19</aspectj.version>
   </properties>
@@ -59,6 +59,13 @@
         <groupId>io.vertx</groupId>
         <artifactId>vertx-stack-depchain</artifactId>
         <version>${vertx-version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>5.10.2</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -104,7 +111,12 @@
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
-      <version>3.0.7</version>
+      <version>5.4.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -114,14 +126,29 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.folio.okapi</groupId>
       <artifactId>okapi-testing</artifactId>
-      <version>4.14.1</version>
+      <version>5.3.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -131,9 +158,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.tomakehurst</groupId>
+      <groupId>org.wiremock</groupId>
       <artifactId>wiremock</artifactId>
-      <version>2.27.2</version>
+      <version>3.4.1</version>
       <exclusions>
         <exclusion>
           <groupId>net.sf.jopt-simple</groupId>
