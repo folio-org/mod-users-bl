@@ -45,6 +45,8 @@ import org.folio.service.transactions.OpenTransactionsServiceImpl;
 import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
+import javax.json.Json;
+import javax.json.JsonValue;
 import javax.ws.rs.core.HttpHeaders;
 
 import javax.ws.rs.core.MediaType;
@@ -68,6 +70,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 /**
  * @author shale
@@ -981,8 +984,18 @@ public class BLUsersAPI implements BlUsers {
             if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
               //data coming in from the service isnt returned as required by the composite user schema
               JsonObject j = new JsonObject();
+//              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
+//              List<Permission> permissions1 = new ArrayList<>();
+//              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
               j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              Permissions permissions = (Permissions) Response.convertToPojo(j, Permissions.class);
+              List permissionList = permissions.getPermissions()
+                .parallelStream()
+                .collect(Collectors.toList());
+
+              permissions.setPermissions(permissionList);
+              cu.setPermissions(permissions);
+
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
