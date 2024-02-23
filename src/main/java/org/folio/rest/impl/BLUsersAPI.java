@@ -987,12 +987,16 @@ public class BLUsersAPI implements BlUsers {
 //              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
 //              List<Permission> permissions1 = new ArrayList<>();
 //              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
-
               j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
               Permissions permissions = (Permissions) Response.convertToPojo(j, Permissions.class);
-              permissions.setPermissions(permissions.getPermissions().parallelStream().collect(Collectors.toList()));
+              List permissionList = permissions.getPermissions()
+                .parallelStream()
+                .collect(Collectors.toList());
+
+              permissions.setPermissions(permissionList);
               cu.setPermissions(permissions);
-                        }
+
+            }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
           if(cf != null && cf.get().getBody() != null){
