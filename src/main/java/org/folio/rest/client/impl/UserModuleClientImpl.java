@@ -6,7 +6,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 import org.folio.rest.client.UserModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.jaxrs.model.User;

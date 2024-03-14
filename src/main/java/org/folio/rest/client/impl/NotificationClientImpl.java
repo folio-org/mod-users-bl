@@ -1,6 +1,7 @@
 package org.folio.rest.client.impl;
 
-import org.apache.http.HttpStatus;
+
+import org.apache.hc.core5.http.HttpStatus;
 import org.folio.rest.client.NotificationClient;
 import org.folio.rest.jaxrs.model.Notification;
 import org.folio.rest.util.OkapiConnectionParams;
@@ -15,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 public class NotificationClientImpl implements NotificationClient {
 
-  private static final Logger LOG = LogManager.getLogger(NotificationClientImpl.class); 
+  private static final Logger LOG = LogManager.getLogger(NotificationClientImpl.class);
   private HttpClient httpClient;
 
   public NotificationClientImpl(HttpClient httpClient) {
