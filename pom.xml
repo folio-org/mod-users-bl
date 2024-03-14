@@ -46,7 +46,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <raml-module-builder.version>35.1.1</raml-module-builder.version>
-    <mod-configuration-client.version>5.9.2</mod-configuration-client.version>
+    <mod-configuration-client.version>5.10.0</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
     <vertx-version>4.4.8</vertx-version>
     <java.version>17</java.version>
