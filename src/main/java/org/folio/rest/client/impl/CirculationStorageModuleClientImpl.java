@@ -4,7 +4,8 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
+
+import org.apache.hc.core5.http.HttpStatus;
 import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.util.OkapiConnectionParams;
