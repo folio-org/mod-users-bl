@@ -44,12 +44,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathTemplate;
 import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
 import static junit.framework.TestCase.assertTrue;
 import static org.folio.rest.MockOkapi.getToken;
 import static org.folio.rest.MockOkapi.getTokenWithoutTenant;
 import static org.folio.rest.impl.BLUsersAPI.OKAPI_TOKEN_HEADER;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasKey;
 
 @RunWith(VertxUnitRunner.class)
@@ -149,8 +151,6 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(201);
 
-    // WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
-    //   .withQueryParam("query", equalTo("username==" + USERNAME)));
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
@@ -208,11 +208,17 @@ public class HeadersForwardingTest {
       .withBody(tokenExpiration.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
-      .put("permissionUsers", new JsonArray().add(new JsonObject()));
+      .put("permissionUsers", new JsonArray().add(new JsonObject().put("id", USER_ID)));
 
     WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID))
       .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(201)));
+
+    JsonObject permsNames = new JsonObject()
+        .put("permissionNames", new JsonArray().add("read").add("write"));
+
+    WireMock.stubFor(get(urlPathTemplate("/perms/users/{userid}/permissions"))
+        .willReturn(WireMock.okJson(permsNames.encode()).withStatus(201)));
 
     JsonObject jsonObject = new JsonObject()
       .put("servicePointsUsers", new JsonArray());
@@ -228,7 +234,7 @@ public class HeadersForwardingTest {
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
       .body(JsonObject.mapFrom(credentials).encode())
       .when()
-      .post(BL_USERS_LOGIN)
+      .post(BL_USERS_LOGIN + "?expandPermissions=true")
       .then()
       .statusCode(201)
       .cookie(REFRESH_TOKEN, RestAssuredMatchers.detailedCookie()
@@ -243,13 +249,16 @@ public class HeadersForwardingTest {
           .httpOnly(true)
           .secured(true))
       .body(TOKEN_EXPIRATION, hasKey(ACCESS_TOKEN_EXPIRATION))
-      .body(TOKEN_EXPIRATION, hasKey(REFRESH_TOKEN_EXPIRATION));
+      .body(TOKEN_EXPIRATION, hasKey(REFRESH_TOKEN_EXPIRATION))
+      .body("permissions.permissions", contains("read", "write"));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
-    WireMock.verify(1, getRequestedFor(urlPathEqualTo("/perms/users"))
+    WireMock.verify(2, getRequestedFor(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID)));
+
+    WireMock.verify(1, getRequestedFor(urlPathTemplate("/perms/users/{userid}/permissions")));
 
     WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
 
