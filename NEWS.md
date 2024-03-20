@@ -1,3 +1,9 @@
+## 7.7.0 2024-03-20
+
+* Update 'feesfines' interface version to 19.0 (MODUSERBL-178)
+* Remove duplicated code (MODUSERBL-170)
+* mod-users-bl Quesnelia 2024 R1 - RMB v35.2.x update (MODUSERBL-187)
+
 ## 7.6.0 2023-10-12
 
 * Module needs to respond 404 when 404 is received from /authn/login and /token endpoints (MODUSERBL-180)
