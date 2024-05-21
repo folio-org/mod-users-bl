@@ -1,3 +1,7 @@
+## 7.7.1 2024-05-21
+
+* Missing interface dependencies in module descriptor (MODUSERBL-189)
+
 ## 7.7.0 2024-03-20
 
 * Update 'feesfines' interface version to 19.0 (MODUSERBL-178)
