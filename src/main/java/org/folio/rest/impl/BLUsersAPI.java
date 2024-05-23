@@ -430,8 +430,7 @@ public class BLUsersAPI implements BlUsers {
           permissionsJson.put("permissions", cf.get().getBody().getJsonArray("permissionUsers").getJsonObject(0).getJsonArray("permissions"));
           cu.setPermissions((Permissions)Response.convertToPojo(permissionsJson, Permissions.class));
         } else {
-          Permissions permissions = new Permissions();
-          cu.setPermissions(permissions);
+          cu.setPermissions(new Permissions());
         }
 
         cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
