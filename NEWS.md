@@ -1,4 +1,4 @@
-## 7.7.2 2024-05-27
+## 7.7.3 2024-05-27
 
 * 500 response when calling GET /bl-users/by-username/{username} (MODUSERBL-190)
 
