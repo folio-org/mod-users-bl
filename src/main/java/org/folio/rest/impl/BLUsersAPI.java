@@ -425,11 +425,14 @@ public class BLUsersAPI implements BlUsers {
           cu.setPatronGroup((PatronGroup)cf.get().convertToPojo(PatronGroup.class) );
         }
         cf = completedLookup.get(PERMISSIONS_INCLUDE);
-        if(cf != null && cf.get().getBody() != null){
+        if(cf != null && cf.get().getBody() != null && !cf.get().getBody().getJsonArray("permissionUsers").isEmpty()) {
           JsonObject permissionsJson = new JsonObject();
           permissionsJson.put("permissions", cf.get().getBody().getJsonArray("permissionUsers").getJsonObject(0).getJsonArray("permissions"));
           cu.setPermissions((Permissions)Response.convertToPojo(permissionsJson, Permissions.class));
+        } else {
+          cu.setPermissions(new Permissions());
         }
+
         cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
         if(cf != null && cf.get().getBody() != null){
           //data coming in from the service isnt returned as required by the composite user schema
