@@ -177,6 +177,8 @@ public class BLUsersAPI implements BlUsers {
       boolean requireOneOrMoreResults, boolean stopOnError, boolean previousFailure[],
       Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
 
+    logger.info("The resposne is {}", response);
+    logger.info("The response body is {}", response.getBody());
     if(previousFailure[0]){
       return;
     }
@@ -200,6 +202,7 @@ public class BLUsersAPI implements BlUsers {
         if(totalRecords == null){
           logger.info("No totalRecords");
           totalRecords = response.getBody().getInteger("total_records");
+          logger.info("The total records is {}", totalRecords);
         }
         if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
             && (requireOneResult || requireOneOrMoreResults)) {
@@ -758,6 +761,7 @@ public class BLUsersAPI implements BlUsers {
     if (payload == null) {
       return null;
     }
+    logger.info("Getting the tenant");
     return payload.getString("tenant");
   }
 
@@ -847,12 +851,12 @@ public class BLUsersAPI implements BlUsers {
             //then get user by username, inject okapi headers from the login response into the user request
             //see 'true' flag passed into the chainedRequest
             handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
-
+logger.info("Here 7 ");
             String token = getToken(loginResponse.getHeaders());
             String tenant = getTenant(token);
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-
+logger.info("Here 8");
             try {
               logger.info("Get users with permission");
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
@@ -889,6 +893,7 @@ public class BLUsersAPI implements BlUsers {
         return cookie.value();
       }
     }
+    logger.info("Getting the token");
 
     return headers.get(OKAPI_TOKEN_HEADER);
   }
