@@ -188,6 +188,7 @@ public class BLUsersAPI implements BlUsers {
             "response is null from one of the services requested")));
       previousFailure[0] = true;
     } else {
+      logger.info("Here 2 !!");
       //check if the previous request failed
       int statusCode = response.getCode();
       boolean ok = Response.isSuccess(statusCode);
@@ -263,6 +264,7 @@ public class BLUsersAPI implements BlUsers {
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond403WithTextPlain(message)));
         } else{
+          logger.info("Here 4 !!");
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond500WithTextPlain(message)));
         }
@@ -785,6 +787,7 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
+    logger.info("Here 1");
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
         LOGIN_ENDPOINT, this::loginResponse);
   }
@@ -824,6 +827,7 @@ public class BLUsersAPI implements BlUsers {
       var cql = "username==" + StringUtil.cqlEncode(entity.getUsername());
       var userUrl = "/users?query=" + PercentCodec.encode(cql);
       //run login
+      logger.info("The userUrl {}", userUrl);
       try {
         Map<String, String> headers = new CaseInsensitiveMap<>(okapiHeaders);
         Optional.ofNullable(userAgent)
@@ -845,9 +849,11 @@ public class BLUsersAPI implements BlUsers {
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
 
             try {
+              logger.info("Get users with permission");
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
             } catch (Exception e) {
               client.closeClient();
+              logger.info("The error is {}", e.getMessage());
               asyncResultHandler.handle(Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
             } finally {
@@ -862,6 +868,7 @@ public class BLUsersAPI implements BlUsers {
           });
       } catch (Exception ex) {
         clientForLogin.closeClient();
+        logger.info("The error is {}", ex.getMessage());
         asyncResultHandler.handle(Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       }
@@ -893,6 +900,7 @@ public class BLUsersAPI implements BlUsers {
                                 BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
 
       CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
+      logger.info("The users Response is {}",userResponse[0]);
       boolean []aRequestHasFailed = new boolean[]{false};
       ArrayList<CompletableFuture<Response>> requestedIncludes
           = new ArrayList<>();
@@ -941,13 +949,16 @@ public class BLUsersAPI implements BlUsers {
       }
 
       if (expandPerms){
+        logger.info("Expand the permissions ");
         CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
           client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
             handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
         );
+        logger.info("The permission users is {}", permUserResponse);
         CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
           client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
+        logger.info("Got the expanded permissions");
         requestedIncludes.add(expandPermsResponse);
         completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
       }
