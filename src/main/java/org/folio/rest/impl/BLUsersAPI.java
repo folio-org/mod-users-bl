@@ -890,9 +890,15 @@ logger.info("Here 8");
     // The legacy mode gets it from the X-Okapi-Token header.
     for (var header : headers.getAll(SET_COOKIE_HEADER)) {
       logger.info("Inside the for");
-      Cookie cookie = ClientCookieDecoder.STRICT.decode(header.trim());
-      if (cookie.name().equals(FOLIO_ACCESS_TOKEN)) {
-        return cookie.value();
+      try {
+        Cookie cookie = ClientCookieDecoder.STRICT.decode(header.trim());
+        if (cookie.name().equals(FOLIO_ACCESS_TOKEN)) {
+          logger.info("Inside this if");
+          return cookie.value();
+        }
+      }
+      catch (Exception e) {
+        logger.info("The exception is {}", e.getMessage());
       }
     }
     logger.info("Getting the token");
