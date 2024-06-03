@@ -773,7 +773,8 @@ public class BLUsersAPI implements BlUsers {
       String encodedPayload = tokenParts[1];
       logger.info("The encoded Payload {}", encodedPayload);
         byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
-        String decodedJson = new String(decodedJsonBytes, StandardCharsets.UTF_8);
+        logger.info("Reached here too");
+        String decodedJson = new String(decodedJsonBytes);
         return new JsonObject(decodedJson);
     } else {
       return null;
