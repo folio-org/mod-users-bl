@@ -852,6 +852,7 @@ public class BLUsersAPI implements BlUsers {
             //see 'true' flag passed into the chainedRequest
             handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
 logger.info("Here 7 ");
+logger.info("The login response headers {}", loginResponse.getHeaders().toString());
             String token = getToken(loginResponse.getHeaders());
             String tenant = getTenant(token);
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
@@ -888,6 +889,7 @@ logger.info("Here 8");
     // There is a legacy token mode and a non-legacy mode. The non-legacy mode gets the token from a Set-Cookie header.
     // The legacy mode gets it from the X-Okapi-Token header.
     for (var header : headers.getAll(SET_COOKIE_HEADER)) {
+      logger.info("Inside the for");
       Cookie cookie = ClientCookieDecoder.STRICT.decode(header.trim());
       if (cookie.name().equals(FOLIO_ACCESS_TOKEN)) {
         return cookie.value();
