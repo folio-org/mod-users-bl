@@ -757,6 +757,7 @@ public class BLUsersAPI implements BlUsers {
   }
 
   private String getTenant(String token) {
+    logger.info("Getting the tenant start");
     JsonObject payload = parseTokenPayload(token);
     if (payload == null) {
       return null;
@@ -768,10 +769,17 @@ public class BLUsersAPI implements BlUsers {
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if (tokenParts.length == 3) {
+      logger.info("Inside the tokenParts");
       String encodedPayload = tokenParts[1];
-      byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
-      String decodedJson = new String(decodedJsonBytes);
-      return new JsonObject(decodedJson);
+      logger.info("The encoded Payload {}", encodedPayload);
+      try {
+        byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
+        String decodedJson = new String(decodedJsonBytes);
+        return new JsonObject(decodedJson);
+      }catch (Exception e){
+        logger.info("The decode exception is {}", e.getMessage());
+        return  null;
+      }
     } else {
       return null;
     }
