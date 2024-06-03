@@ -772,14 +772,9 @@ public class BLUsersAPI implements BlUsers {
       logger.info("Inside the tokenParts");
       String encodedPayload = tokenParts[1];
       logger.info("The encoded Payload {}", encodedPayload);
-      try {
         byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
-        String decodedJson = new String(decodedJsonBytes);
+        String decodedJson = new String(decodedJsonBytes, StandardCharsets.UTF_8);
         return new JsonObject(decodedJson);
-      }catch (Exception e){
-        logger.info("The decode exception is {}", e.getMessage());
-        return  null;
-      }
     } else {
       return null;
     }
