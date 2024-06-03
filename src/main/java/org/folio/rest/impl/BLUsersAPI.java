@@ -775,6 +775,7 @@ public class BLUsersAPI implements BlUsers {
         byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
         logger.info("Reached here too");
         String decodedJson = new String(decodedJsonBytes);
+        logger.info("Here tooo");
         return new JsonObject(decodedJson);
     } else {
       return null;
