@@ -195,8 +195,10 @@ public class BLUsersAPI implements BlUsers {
       if(ok){
         //the status code indicates success, check if the amount of results are acceptable from the
         //previous Response
+        logger.info("Inside here ok");
         Integer totalRecords = response.getBody().getInteger("totalRecords");
         if(totalRecords == null){
+          logger.info("No totalRecords");
           totalRecords = response.getBody().getInteger("total_records");
         }
         if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
@@ -206,6 +208,7 @@ public class BLUsersAPI implements BlUsers {
             //the chained requests will not fire the next request if the response's error object of the previous request is not null
             //so set the response's error object of the previous request to not null so that the calls that are to fire after this
             //are not called
+            logger.info("Inside Stop on error");
             response.setError(new JsonObject());
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
@@ -220,19 +223,21 @@ public class BLUsersAPI implements BlUsers {
                 + "' returns multiple results"))));
         }
       } else {
+        logger.info("Inside the else");
         String message = "";
         String errorMessage;
         Errors errors = null;
         if(response.getError() != null){
           statusCode = response.getError().getInteger("statusCode");
           message = response.getError().encodePrettily();
+          logger.info("The message {}", message);
           try {
             errorMessage = response.getError().getString("errorMessage");
             if (StringUtils.isNotEmpty(errorMessage)) {
               errors = (new JsonObject(errorMessage)).mapTo(Errors.class);
             }
           } catch (Exception e) {
-            logger.debug(e.getMessage(), e);
+            logger.info(e.getMessage(), e);
           }
         } else{
           Throwable e = response.getException();
