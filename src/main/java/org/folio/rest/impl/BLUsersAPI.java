@@ -774,7 +774,7 @@ public class BLUsersAPI implements BlUsers {
       logger.info("The encoded Payload {}", encodedPayload);
         byte[] decodedJsonBytes = Base64.getUrlDecoder().decode(encodedPayload);
         logger.info("Reached here too");
-        String decodedJson = new String(decodedJsonBytes);
+        String decodedJson = new String(decodedJsonBytes, StandardCharsets.UTF_8);
         logger.info("Here tooo");
         return new JsonObject(decodedJson);
     } else {
@@ -801,7 +801,7 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
-    logger.info("Here 1");
+    logger.info("Here 1 the call");
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
         LOGIN_ENDPOINT, this::loginResponse);
   }
@@ -810,6 +810,7 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
+    logger.info("Here 2 the call");
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
         LOGIN_ENDPOINT_LEGACY, this::loginResponseLegacy);
   }
