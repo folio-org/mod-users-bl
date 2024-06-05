@@ -33,6 +33,7 @@ import static io.restassured.RestAssured.given;
 import static org.folio.rest.MockOkapi.getToken;
 import static org.folio.rest.MockOkapi.getTokenWithoutUserId;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 
 
 @RunWith(VertxUnitRunner.class)
@@ -118,6 +119,19 @@ public class BLUsersAPITest {
       .statusCode(201);
 
     userPost = new JsonObject()
+      .put("username", "tst")
+      .put("id", "b4b5e97a-0a99-4db9-97df-5fdf406ec74d")
+      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
+      .put("active", true)
+      .put("personal", new JsonObject().put("email", "user@gmail.org").put("lastName", "userLastName"));
+    given()
+      .body(userPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/users")
+      .then()
+      .statusCode(201);
+
+    userPost = new JsonObject()
       .put("username", "twin1")
       .put("id", USER_ID_2)
       .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
@@ -163,7 +177,6 @@ public class BLUsersAPITest {
     given().body(groupPost.encode()).
     when().post("http://localhost:" + okapiPort + "/groups").
     then().statusCode(201);
-
 
     JsonObject permission = new JsonObject().
         put("permissionName", "ui-checkin.all").
@@ -270,8 +283,19 @@ public class BLUsersAPITest {
             get("/bl-users").
     then().
             statusCode(200).
-            body("compositeUsers.size()", equalTo(6),
+            body("compositeUsers.size()", equalTo(7),
                  "compositeUsers[0].users.username", equalTo("maxi"));
+  }
+
+  @Test
+  public void getBlUserByUserNameWithEmptyPermissionSet(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      when().
+      get("/bl-users/by-username/tst").
+      then().
+      statusCode(200).
+      body("permissions.permissions", hasSize(0));
   }
 
   @Test

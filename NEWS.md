@@ -1,3 +1,11 @@
+## 7.7.3 2024-05-27
+
+* 500 response when calling GET /bl-users/by-username/{username} (MODUSERBL-190)
+
+## 7.7.1 2024-05-21
+
+* Missing interface dependencies in module descriptor (MODUSERBL-189)
+
 ## 7.7.0 2024-03-20
 
 * Update 'feesfines' interface version to 19.0 (MODUSERBL-178)
