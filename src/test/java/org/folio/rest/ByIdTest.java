@@ -1,9 +1,9 @@
 package org.folio.rest;
 
-import static io.restassured.RestAssured.given;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.hamcrest.Matchers.is;
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
 
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -16,6 +16,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import java.util.List;
+import org.apache.http.HttpStatus;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +30,6 @@ class ByIdTest {
 
   private static final String userId = "9d4e1ab4-5ee5-49eb-831b-36d9b16576bc";
   private static final String patronGroup = "c1c9bb5c-bcf9-4f1d-9b0e-c3b270f99e21";
-  private static final String servicePointId = "e8b5a1b2-781a-48e5-a401-73f193d239e7";
   private static String urlById;
 
   private String okapiUrl;
@@ -36,7 +37,7 @@ class ByIdTest {
   @BeforeAll
   static void beforeAll(Vertx vertx, VertxTestContext vtc) {
     var port = NetworkUtils.nextFreePort();
-    urlById = "http://localhost:" + port + "/bl-users/by-id/" + userId;
+    urlById = "http://localhost:" + port + "/bl-users/by-id";
     var deploymentOptions = new DeploymentOptions()
         .setConfig(new JsonObject().put("http.port", port));
     vertx.deployVerticle(RestVerticle.class, deploymentOptions)
@@ -49,7 +50,7 @@ class ByIdTest {
   }
 
   @Test
-  void emptyPermissonArrays() {
+  void getUserWithExpandPermissions() {
     stubFor(get("/users/" + userId).willReturn(okJson("id", userId, "patronGroup", patronGroup)));
     stubFor(get("/groups/" + patronGroup).willReturn(okJson("id", patronGroup, "group", "myGroup")));
     stubFor(get("/service-points-users?query=userId==" + userId + "&limit=1000")
@@ -60,10 +61,50 @@ class ByIdTest {
     stubFor(get("/perms/users/" + userId + "/permissions?expanded=true&full=true").willReturn(okJson(
         new JsonObject().put("permissionNames", new JsonArray().add("read").add("write")))));
 
-    whenGetById().
-    then().statusCode(200)
-    .body("user.patronGroup", is(patronGroup))
-    .body("permissions.permissions", contains("read", "write"));
+    whenGetById()
+      .then()
+      .statusCode(200)
+      .body("user.patronGroup", is(patronGroup))
+      .body("permissions.permissions", contains("read", "write"));
+  }
+
+  @Test
+  void deleteUserThatDoesNotExist() {
+    whenDeleteById()
+      .then()
+      .statusCode(HttpStatus.SC_NOT_FOUND);
+  }
+
+  @Test
+  void deleteUserThatExists() {
+    stubFor(get("/users/" + userId).willReturn(okJson("id", userId, "patronGroup", patronGroup)));
+    stubOpenTransactions(0);
+    stubFor(delete("/users/" + userId).willReturn(status(204)));
+
+    whenDeleteById()
+      .then()
+      .statusCode(HttpStatus.SC_NO_CONTENT);
+  }
+
+  @Test
+  void deleteUserWithOpenTransactions() {
+    stubFor(get("/users/" + userId).willReturn(okJson("id", userId, "patronGroup", patronGroup)));
+    stubOpenTransactions(1);
+
+    whenDeleteById()
+      .then()
+      .statusCode(HttpStatus.SC_CONFLICT);
+  }
+
+  private void stubOpenTransactions(int totalRecords) {
+    var paths = List.of(
+        "/loan-storage/loans",
+        "/request-storage/requests",
+        "/accounts",
+        "/manualblocks",
+        "/proxiesfor");
+    paths.forEach(path ->
+        stubFor(get(urlPathEqualTo(path)).willReturn(okJson("totalRecords", totalRecords))));
   }
 
   private Response whenGetById() {
@@ -71,7 +112,16 @@ class ByIdTest {
         log().ifValidationFails().
         headers("X-Okapi-Tenant", "diku").
         headers("X-Okapi-Url", okapiUrl).
-        when().get(urlById + "?expandPermissions=true");
+        when().get(urlById + "/" + userId + "?expandPermissions=true");
+  }
+
+  private Response whenDeleteById() {
+    return given().
+        log().ifValidationFails().
+        headers("X-Okapi-Tenant", "diku").
+        headers("X-Okapi-Token", "a.b.c").
+        headers("X-Okapi-Url", okapiUrl).
+        when().delete(urlById + "/" + userId);
   }
 
   private static ResponseDefinitionBuilder okJson(JsonObject jsonObject) {
