@@ -177,8 +177,6 @@ public class BLUsersAPI implements BlUsers {
       boolean requireOneOrMoreResults, boolean stopOnError, boolean previousFailure[],
       Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler) {
 
-    logger.info("The resposne is {}", response);
-    logger.info("The response body is {}", response.getBody());
     if(previousFailure[0]){
       return;
     }
@@ -190,19 +188,15 @@ public class BLUsersAPI implements BlUsers {
             "response is null from one of the services requested")));
       previousFailure[0] = true;
     } else {
-      logger.info("Here 2 !!");
       //check if the previous request failed
       int statusCode = response.getCode();
       boolean ok = Response.isSuccess(statusCode);
       if(ok){
         //the status code indicates success, check if the amount of results are acceptable from the
         //previous Response
-        logger.info("Inside here ok");
         Integer totalRecords = response.getBody().getInteger("totalRecords");
         if(totalRecords == null){
-          logger.info("No totalRecords");
           totalRecords = response.getBody().getInteger("total_records");
-          logger.info("The total records is {}", totalRecords);
         }
         if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
             && (requireOneResult || requireOneOrMoreResults)) {
@@ -211,7 +205,6 @@ public class BLUsersAPI implements BlUsers {
             //the chained requests will not fire the next request if the response's error object of the previous request is not null
             //so set the response's error object of the previous request to not null so that the calls that are to fire after this
             //are not called
-            logger.info("Inside Stop on error");
             response.setError(new JsonObject());
           }
           logger.error("No record found for query '" + response.getEndpoint() + "'");
@@ -226,21 +219,19 @@ public class BLUsersAPI implements BlUsers {
                 + "' returns multiple results"))));
         }
       } else {
-        logger.info("Inside the else");
         String message = "";
         String errorMessage;
         Errors errors = null;
         if(response.getError() != null){
           statusCode = response.getError().getInteger("statusCode");
           message = response.getError().encodePrettily();
-          logger.info("The message {}", message);
           try {
             errorMessage = response.getError().getString("errorMessage");
             if (StringUtils.isNotEmpty(errorMessage)) {
               errors = (new JsonObject(errorMessage)).mapTo(Errors.class);
             }
           } catch (Exception e) {
-            logger.info(e.getMessage(), e);
+            logger.debug(e.getMessage(), e);
           }
         } else{
           Throwable e = response.getException();
@@ -272,7 +263,6 @@ public class BLUsersAPI implements BlUsers {
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond403WithTextPlain(message)));
         } else{
-          logger.info("Here 4 !!");
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond500WithTextPlain(message)));
         }
@@ -757,26 +747,20 @@ public class BLUsersAPI implements BlUsers {
   }
 
   private String getTenant(String token) {
-    logger.info("Getting the tenant start");
     JsonObject payload = parseTokenPayload(token);
     if (payload == null) {
       return null;
     }
-    logger.info("Getting the tenant");
     return payload.getString("tenant");
   }
 
   private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if (tokenParts.length == 3) {
-      logger.info("Inside the tokenParts");
       String encodedPayload = tokenParts[1];
-      logger.info("The encoded Payload {}", encodedPayload);
       byte[] decodedJsonBytes = Base64.getUrlDecoder().decode(encodedPayload);
-      logger.info("Reached here too");
       String decodedJson = new String(decodedJsonBytes, StandardCharsets.UTF_8);
-      logger.info("Here tooo");
-        return new JsonObject(decodedJson);
+      return new JsonObject(decodedJson);
     } else {
       return null;
     }
@@ -801,7 +785,6 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersLoginWithExpiry(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
-    logger.info("Here 1 the call");
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
         LOGIN_ENDPOINT, this::loginResponse);
   }
@@ -810,7 +793,6 @@ public class BLUsersAPI implements BlUsers {
   public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
-    logger.info("Here 2 the call");
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
         LOGIN_ENDPOINT_LEGACY, this::loginResponseLegacy);
   }
@@ -842,7 +824,6 @@ public class BLUsersAPI implements BlUsers {
       var cql = "username==" + StringUtil.cqlEncode(entity.getUsername());
       var userUrl = "/users?query=" + PercentCodec.encode(cql);
       //run login
-      logger.info("The userUrl {}", userUrl);
       try {
         Map<String, String> headers = new CaseInsensitiveMap<>(okapiHeaders);
         Optional.ofNullable(userAgent)
@@ -857,19 +838,16 @@ public class BLUsersAPI implements BlUsers {
             //then get user by username, inject okapi headers from the login response into the user request
             //see 'true' flag passed into the chainedRequest
             handleResponse(loginResponse, false, false, true, aRequestHasFailed, asyncResultHandler);
-logger.info("Here 7 ");
-logger.info("The login response headers {}", loginResponse.getHeaders().toString());
+
             String token = getToken(loginResponse.getHeaders());
             String tenant = getTenant(token);
             okapiHeaders.put(OKAPI_TENANT_HEADER, tenant);
             HttpClientInterface client = HttpClientFactory.getHttpClient(okapiURL, tenant);
-logger.info("Here 8");
+
             try {
-              logger.info("Get users with permission");
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
             } catch (Exception e) {
               client.closeClient();
-              logger.info("The error is {}", e.getMessage());
               asyncResultHandler.handle(Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
             } finally {
@@ -884,7 +862,6 @@ logger.info("Here 8");
           });
       } catch (Exception ex) {
         clientForLogin.closeClient();
-        logger.info("The error is {}", ex.getMessage());
         asyncResultHandler.handle(Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       }
@@ -895,19 +872,11 @@ logger.info("Here 8");
     // There is a legacy token mode and a non-legacy mode. The non-legacy mode gets the token from a Set-Cookie header.
     // The legacy mode gets it from the X-Okapi-Token header.
     for (var header : headers.getAll(SET_COOKIE_HEADER)) {
-      logger.info("Inside the for");
-      try {
-        Cookie cookie = ClientCookieDecoder.STRICT.decode(header.trim());
-        if (cookie.name().equals(FOLIO_ACCESS_TOKEN)) {
-          logger.info("Inside this if");
-          return cookie.value();
-        }
-      }
-      catch (Exception e) {
-        logger.info("The exception is {}", e.getMessage());
+      Cookie cookie = ClientCookieDecoder.STRICT.decode(header.trim());
+      if (cookie.name().equals(FOLIO_ACCESS_TOKEN)) {
+        return cookie.value();
       }
     }
-    logger.info("Getting the token");
 
     return headers.get(OKAPI_TOKEN_HEADER);
   }
@@ -924,7 +893,6 @@ logger.info("Here 8");
                                 BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
 
       CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
-      logger.info("The users Response is {}",userResponse[0]);
       boolean []aRequestHasFailed = new boolean[]{false};
       ArrayList<CompletableFuture<Response>> requestedIncludes
           = new ArrayList<>();
@@ -973,16 +941,13 @@ logger.info("Here 8");
       }
 
       if (expandPerms){
-        logger.info("Expand the permissions ");
         CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
           client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
             handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
         );
-        logger.info("The permission users is {}", permUserResponse);
         CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
           client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
             handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
-        logger.info("Got the expanded permissions");
         requestedIncludes.add(expandPermsResponse);
         completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
       }
