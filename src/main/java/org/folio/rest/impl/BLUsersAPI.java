@@ -1268,10 +1268,9 @@ public class BLUsersAPI implements BlUsers {
       });
     } catch (Exception e) {
       asyncResult.fail(e);
-    } finally {
-      client.closeClient();
     }
-    return asyncResult.future();
+    return asyncResult.future()
+        .onComplete(x -> client.closeClient());
   }
 
   /*
