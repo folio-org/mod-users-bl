@@ -48,7 +48,7 @@
     <raml-module-builder.version>35.2.0</raml-module-builder.version>
     <mod-configuration-client.version>5.10.0</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <vertx-version>4.5.4</vertx-version>
+    <vertx-version>4.5.8</vertx-version>
     <java.version>17</java.version>
     <aspectj.version>1.9.21.1</aspectj.version>
   </properties>
