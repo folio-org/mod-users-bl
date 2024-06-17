@@ -758,8 +758,8 @@ public class BLUsersAPI implements BlUsers {
     String[] tokenParts = token.split("\\.");
     if (tokenParts.length == 3) {
       String encodedPayload = tokenParts[1];
-      byte[] decodedJsonBytes = Base64.getDecoder().decode(encodedPayload);
-      String decodedJson = new String(decodedJsonBytes);
+      byte[] decodedJsonBytes = Base64.getUrlDecoder().decode(encodedPayload);
+      String decodedJson = new String(decodedJsonBytes, StandardCharsets.UTF_8);
       return new JsonObject(decodedJson);
     } else {
       return null;
@@ -1268,10 +1268,9 @@ public class BLUsersAPI implements BlUsers {
       });
     } catch (Exception e) {
       asyncResult.fail(e);
-    } finally {
-      client.closeClient();
     }
-    return asyncResult.future();
+    return asyncResult.future()
+        .onComplete(x -> client.closeClient());
   }
 
   /*
