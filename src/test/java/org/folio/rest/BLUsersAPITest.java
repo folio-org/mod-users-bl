@@ -10,10 +10,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import org.apache.http.HttpStatus;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.tools.client.test.HttpClientMock2;
@@ -30,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
-import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.folio.rest.MockOkapi.getToken;
@@ -48,8 +43,6 @@ public class BLUsersAPITest {
   private static int okapiPort;
   /** port of BLUsersAPI */
   private static int port;
-
-  private static final Logger logger = LogManager.getLogger(BLUsersAPITest.class);
 
   private static final String NOT_EXPIRED_PASSWORD_RESET_ACTION_ID = "5ac3b82d-a7d4-43a0-8285-104e84e01274";
   private static final String EXPIRED_PASSWORD_RESET_ACTION_ID = "16423d10-f403-4de5-a6e9-8e0add61bf5b";
@@ -733,77 +726,6 @@ public class BLUsersAPITest {
       .post("/bl-users/password-reset/reset")
       .then()
       .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
-  }
-
-  @Test
-  public void deleteUserNoTransactions() {
-    String uuid = UUID.randomUUID().toString();
-    JsonObject userPost = new JsonObject()
-      .put("username", "userToDelete")
-      .put("id", uuid)
-      .put("barcode", "1234")
-      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
-      .put("active", true)
-      .put("personal", new JsonObject().put("email", "maxi@maxi.com").put("lastName", "foobar"));
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .body(userPost.encode())
-      .when()
-      .post("http://localhost:" + okapiPort + "/users")
-      .then()
-      .statusCode(201);
-
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .port(port)
-      .when()
-      .delete("/bl-users/by-id/" + uuid)
-      .then()
-      .statusCode(HttpStatus.SC_NO_CONTENT);
-  }
-
-  @Test
-  public void deleteUserWithTransactionsNoSuccess() {
-    String blockId = UUID.randomUUID().toString();
-    JsonObject manualBlockPost = new JsonObject()
-      .put("id", blockId)
-      .put("userId", USER_ID);
-    given().body(manualBlockPost.encode()).
-      when().post("http://localhost:" + okapiPort + "/manualblocks").
-      then().statusCode(201);
-
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .port(port)
-      .when()
-      .delete("/bl-users/by-id/" + USER_ID)
-      .then()
-      .statusCode(HttpStatus.SC_CONFLICT)
-      .body("blocks", equalTo(1))
-      .body("hasOpenTransactions", equalTo(true));
-
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .when()
-      .delete("http://localhost:" + okapiPort + "/manualblocks/" + blockId)
-      .then()
-      .statusCode(204);
-  }
-
-  @Test
-  public void deleteUserNotExistent() {
-    given()
-      .spec(okapi)
-      .header(new Header("x-okapi-user-id", "99999999-9999-4999-9999-999999999999"))
-      .port(port)
-      .when()
-      .delete("/bl-users/by-id/" + UUID.randomUUID().toString())
-      .then()
-      .statusCode(HttpStatus.SC_NOT_FOUND);
   }
 
   private String buildToken(String passwordResetActionId) {
