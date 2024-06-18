@@ -847,6 +847,7 @@ public class BLUsersAPI implements BlUsers {
             try {
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
             } catch (Exception e) {
+              logger.warn("Cannot get user with permissions", e);
               client.closeClient();
               asyncResultHandler.handle(Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
