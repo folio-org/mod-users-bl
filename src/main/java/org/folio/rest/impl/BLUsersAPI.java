@@ -315,6 +315,7 @@ public class BLUsersAPI implements BlUsers {
         mode[0] = "username";
       }
     } catch (Exception ex) {
+      logger.warn("Cannot find user, message = {}", ex.getMessage(), ex);
       client.closeClient();
       asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
@@ -384,6 +385,7 @@ public class BLUsersAPI implements BlUsers {
 
       }
     } catch (Exception ex) {
+      logger.warn(ex.getMessage(), ex);
       client.closeClient();
       asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
@@ -856,12 +858,14 @@ public class BLUsersAPI implements BlUsers {
             }
           })
           .exceptionally(throwable -> {
+            logger.warn("Cannot proceed login user", throwable);
             clientForLogin.closeClient();
             asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
             return null;
           });
       } catch (Exception ex) {
+        logger.warn("Cannot proceed login user", ex);
         clientForLogin.closeClient();
         asyncResultHandler.handle(Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
