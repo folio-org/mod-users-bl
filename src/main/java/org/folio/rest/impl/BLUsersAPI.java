@@ -1,5 +1,7 @@
 package org.folio.rest.impl;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.*;
@@ -753,7 +755,13 @@ public class BLUsersAPI implements BlUsers {
     if (payload == null) {
       return null;
     }
-    return payload.getString("tenant");
+    String tenant = payload.getString("tenant");
+    if (isNotBlank(tenant)) {
+      return tenant;
+    }
+    String iss = payload.getString("iss");
+    int lastSlashIndex = iss.lastIndexOf('/');
+    return iss.substring(lastSlashIndex + 1);
   }
 
   private JsonObject parseTokenPayload(String token) {
