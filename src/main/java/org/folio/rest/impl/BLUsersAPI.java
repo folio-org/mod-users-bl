@@ -1,6 +1,8 @@
 package org.folio.rest.impl;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -760,8 +762,11 @@ public class BLUsersAPI implements BlUsers {
       return tenant;
     }
     String iss = payload.getString("iss");
-    int lastSlashIndex = iss.lastIndexOf('/');
-    return iss.substring(lastSlashIndex + 1);
+
+    if (isBlank(iss)) {
+      return null;
+    }
+    return substringAfterLast(iss, "/");
   }
 
   private JsonObject parseTokenPayload(String token) {
@@ -784,7 +789,7 @@ public class BLUsersAPI implements BlUsers {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
     String userId = getUserId(token);
-    if (StringUtils.isBlank(username) || username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
+    if (isBlank(username) || username.startsWith(UNDEFINED_USER) || isBlank(userId)) {
       run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
     } else {
       run(userId, null, expandPerms, include, okapiHeaders, asyncResultHandler);
