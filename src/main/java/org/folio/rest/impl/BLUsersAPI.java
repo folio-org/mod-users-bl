@@ -1021,11 +1021,11 @@ public class BLUsersAPI implements BlUsers {
             asyncResultHandler.handle(Future.succeededFuture(r));
           }
         } catch (Exception e) {
+          logger.warn(e.getMessage(), e);
           if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
-          logger.error(e.getMessage(), e);
         } finally {
           client.closeClient();
         }
