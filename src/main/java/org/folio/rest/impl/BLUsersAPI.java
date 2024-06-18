@@ -904,6 +904,7 @@ public class BLUsersAPI implements BlUsers {
       Map<String, CompletableFuture<Response>> completedLookup
           = new HashMap<>();
 
+      logger.info("Okapi headers: {}", okapiHeaders);
       userResponse[0] = client.request(HttpMethod.GET, userUrl, okapiHeaders);
 
       for (int i = 0; i < include.size(); i++) {
