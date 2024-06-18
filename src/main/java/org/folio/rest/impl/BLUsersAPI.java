@@ -243,7 +243,7 @@ public class BLUsersAPI implements BlUsers {
           }
         }
 
-        logger.error(message);
+        logger.error("Error has been handled, message = {}", message, response.getException());
         previousFailure[0] = true;
         if(statusCode == 404){
           asyncResultHandler.handle(Future.succeededFuture(
