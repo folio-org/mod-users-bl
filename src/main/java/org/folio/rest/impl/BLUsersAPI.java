@@ -202,10 +202,8 @@ public class BLUsersAPI implements BlUsers {
         if(totalRecords == null){
           totalRecords = response.getBody().getInteger("total_records");
         }
-        logger.info("response = {}, stopOnError = {}, requireOneResult = {}, requireOneOrMoreResults = {}",
-          response.getBody().toString(), stopOnError, requireOneResult, requireOneOrMoreResults);
-        if (((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty()) && (requireOneResult || requireOneOrMoreResults)) {
-          logger.info("condition was passed...");
+        if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
+          && (requireOneResult || requireOneOrMoreResults)) {
           previousFailure[0] = true;
           if(stopOnError){
             //the chained requests will not fire the next request if the response's error object of the previous request is not null
@@ -321,7 +319,6 @@ public class BLUsersAPI implements BlUsers {
         mode[0] = "username";
       }
     } catch (Exception ex) {
-      logger.warn("Cannot find user, message = {}", ex.getMessage(), ex);
       client.closeClient();
       asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
@@ -391,7 +388,6 @@ public class BLUsersAPI implements BlUsers {
 
       }
     } catch (Exception ex) {
-      logger.warn(ex.getMessage(), ex);
       client.closeClient();
       asyncResultHandler.handle(Future.succeededFuture(
         GetBlUsersByIdByIdResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
@@ -760,12 +756,12 @@ public class BLUsersAPI implements BlUsers {
       return null;
     }
     String tenant = payload.getString("tenant");
-    if (isNotBlank(tenant)) {
+    if (StringUtils.isNotBlank(tenant)) {
       return tenant;
     }
     String iss = payload.getString("iss");
 
-    if (isBlank(iss)) {
+    if (StringUtils.isBlank(iss)) {
       return null;
     }
     return substringAfterLast(iss, "/");
@@ -791,7 +787,7 @@ public class BLUsersAPI implements BlUsers {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
     String userId = getUserId(token);
-    if (isBlank(username) || username.startsWith(UNDEFINED_USER) || isBlank(userId)) {
+    if (StringUtils.isBlank(username) || username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
       run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
     } else {
       run(userId, null, expandPerms, include, okapiHeaders, asyncResultHandler);
@@ -864,7 +860,6 @@ public class BLUsersAPI implements BlUsers {
             try {
               getUserWithPerms(expandPerms, okapiHeaders, asyncResultHandler, userUrl, finalInclude, tenant, loginResponse, client, respond);
             } catch (Exception e) {
-              logger.warn("Cannot get user with permissions", e);
               client.closeClient();
               asyncResultHandler.handle(Future.succeededFuture(
                 PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
@@ -873,14 +868,12 @@ public class BLUsersAPI implements BlUsers {
             }
           })
           .exceptionally(throwable -> {
-            logger.warn("Cannot proceed login user", throwable);
             clientForLogin.closeClient();
             asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
             return null;
           });
       } catch (Exception ex) {
-        logger.warn("Cannot proceed login user", ex);
         clientForLogin.closeClient();
         asyncResultHandler.handle(Future.succeededFuture(
           PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
@@ -919,7 +912,6 @@ public class BLUsersAPI implements BlUsers {
       Map<String, CompletableFuture<Response>> completedLookup
           = new HashMap<>();
 
-      logger.info("Okapi headers: {}", okapiHeaders);
       userResponse[0] = client.request(HttpMethod.GET, userUrl, okapiHeaders);
 
       for (int i = 0; i < include.size(); i++) {
@@ -1040,11 +1032,11 @@ public class BLUsersAPI implements BlUsers {
             asyncResultHandler.handle(Future.succeededFuture(r));
           }
         } catch (Exception e) {
-          logger.warn(e.getMessage(), e);
           if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
+          logger.warn(e.getMessage(), e);
         } finally {
           client.closeClient();
         }
