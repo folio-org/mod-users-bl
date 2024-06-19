@@ -202,8 +202,10 @@ public class BLUsersAPI implements BlUsers {
         if(totalRecords == null){
           totalRecords = response.getBody().getInteger("total_records");
         }
-        if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
-            && (requireOneResult || requireOneOrMoreResults)) {
+        logger.info("response = {}, stopOnError = {}, requireOneResult = {}, requireOneOrMoreResults = {}",
+          response.getBody().toString(), stopOnError, requireOneResult, requireOneOrMoreResults);
+        if (((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty()) && (requireOneResult || requireOneOrMoreResults)) {
+          logger.info("condition was passed...");
           previousFailure[0] = true;
           if(stopOnError){
             //the chained requests will not fire the next request if the response's error object of the previous request is not null
