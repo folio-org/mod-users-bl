@@ -1016,14 +1016,17 @@ public class BLUsersAPI implements BlUsers {
             handleResponse(permsResponse, false, false, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0]){
               Permissions p = cu.getPermissions();
-              if(p != null){
-                //expanded permissions requested and the array of permissions has been populated
-                //add the username
-                p.setUserId(permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0).getString("id"));
-              } else{
-                //data coming in from the service isnt returned as required by the composite user schema
-                JsonObject j = permsResponse.getBody().getJsonArray("permissionUsers").getJsonObject(0);
-                cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+              JsonArray permissionUsers = permsResponse.getBody().getJsonArray("permissionUsers");
+              if (permissionUsers != null && !permissionUsers.isEmpty()) {
+                if(p != null){
+                  //expanded permissions requested and the array of permissions has been populated
+                  //add the username
+                  p.setUserId(permissionUsers.getJsonObject(0).getString("id"));
+                } else{
+                  //data coming in from the service isnt returned as required by the composite user schema
+                  JsonObject j = permissionUsers.getJsonObject(0);
+                  cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
+                }
               }
             }
           }
