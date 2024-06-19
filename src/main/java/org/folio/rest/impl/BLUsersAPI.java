@@ -1,7 +1,5 @@
 package org.folio.rest.impl;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
@@ -203,7 +201,7 @@ public class BLUsersAPI implements BlUsers {
           totalRecords = response.getBody().getInteger("total_records");
         }
         if(((totalRecords != null && totalRecords < 1) || response.getBody().isEmpty())
-          && (requireOneResult || requireOneOrMoreResults)) {
+            && (requireOneResult || requireOneOrMoreResults)) {
           previousFailure[0] = true;
           if(stopOnError){
             //the chained requests will not fire the next request if the response's error object of the previous request is not null
@@ -1036,7 +1034,7 @@ public class BLUsersAPI implements BlUsers {
             asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
-          logger.warn(e.getMessage(), e);
+          logger.error(e.getMessage(), e);
         } finally {
           client.closeClient();
         }
