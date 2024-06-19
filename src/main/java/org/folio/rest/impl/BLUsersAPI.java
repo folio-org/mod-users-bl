@@ -944,7 +944,6 @@ public class BLUsersAPI implements BlUsers {
             completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
             requestedIncludes.add(expandSPUResponse);
           } catch (Exception ex) {
-            logger.warn(ex.getMessage(), ex);
             client.closeClient();
             asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
