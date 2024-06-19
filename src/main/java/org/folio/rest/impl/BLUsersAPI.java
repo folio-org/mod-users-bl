@@ -926,7 +926,7 @@ public class BLUsersAPI implements BlUsers {
           //call perms once the /users?query=username={username} (same as creds) completes
           CompletableFuture<Response> permResponse = userResponse[0].thenCompose(
                 client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
-                  handlePreviousResponse(false, true, false, aRequestHasFailed, asyncResultHandler)));
+                  handlePreviousResponse(false, false, false, aRequestHasFailed, asyncResultHandler)));
           requestedIncludes.add(permResponse);
           completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
         }
