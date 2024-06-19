@@ -1013,7 +1013,7 @@ public class BLUsersAPI implements BlUsers {
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
           if(cf != null && cf.get().getBody() != null){
             Response permsResponse = cf.get();
-            handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
+            handleResponse(permsResponse, false, false, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0]){
               Permissions p = cu.getPermissions();
               if(p != null){
