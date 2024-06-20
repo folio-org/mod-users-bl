@@ -1,4 +1,6 @@
-## 7.7.4 (in progress)
+## 7.9.0 in progress
+
+## 7.8.0 2024-06-20
 
 * Fixed 500 error while login POST /bl-users/login in Eureka mode (MODUSERBL-191)
 
