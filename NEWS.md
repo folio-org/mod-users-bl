@@ -1,3 +1,7 @@
+## 7.7.4 2024-07-04
+
+* Vert.x 4.5.8 fixing Netty form POST OOM CVE-2024-29025 (MODUSERBL-195)
+
 ## 7.7.3 2024-05-27
 
 * 500 response when calling GET /bl-users/by-username/{username} (MODUSERBL-190)
