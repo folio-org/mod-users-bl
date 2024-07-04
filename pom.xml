@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>7.7.4-SNAPSHOT</version>
+  <version>7.7.5-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -48,7 +48,7 @@
     <raml-module-builder.version>35.2.0</raml-module-builder.version>
     <mod-configuration-client.version>5.10.0</mod-configuration-client.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <vertx-version>4.5.4</vertx-version>
+    <vertx-version>4.5.8</vertx-version>
     <java.version>17</java.version>
     <aspectj.version>1.9.21.1</aspectj.version>
   </properties>
