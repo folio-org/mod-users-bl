@@ -6,8 +6,11 @@ import io.vertx.core.http.HttpMethod;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
+import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 import org.folio.util.StringUtil;
@@ -15,6 +18,8 @@ import org.folio.util.StringUtil;
 import java.util.Collections;
 
 public class CirculationStorageModuleClientImpl implements CirculationStorageModuleClient {
+
+  private static final Logger logger = LogManager.getLogger(CirculationStorageModuleClientImpl.class);
 
   public static final String REQUEST_PREFERENCES_ENDPOINT = "/request-preference-storage/request-preference";
 
@@ -92,8 +97,9 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
         connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
+        logger.info("getUserRequestPreferenceIdByUserId:: response: code: {}, body: {}", response.getCode(), response.getBody());
         int totalRecords = response.getJson().getInteger("totalRecords");
-        if(totalRecords == 0) {
+        if(response.getCode()!=HttpStatus.SC_OK || totalRecords == 0) {
           String logMessage =
             String.format("getUserRequestPreferenceIdByUserId:: [DELETE_GET_USER_REQUEST_PREFERENCE] Error while " +
               "fetching request preference for userId: %s. " +
