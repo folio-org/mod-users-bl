@@ -20,8 +20,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.folio.rest.RestVerticle;
+import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.client.ConfigurationsClient;
+import org.folio.rest.client.LoginAuthnCredentialsClient;
 import org.folio.rest.client.NotificationClient;
+import org.folio.rest.client.PermissionModuleClient;
 import org.folio.rest.client.UserModuleClient;
 import org.folio.rest.client.impl.*;
 import org.folio.rest.exception.UnprocessableEntityException;
@@ -124,6 +127,9 @@ public class BLUsersAPI implements BlUsers {
   private UserModuleClient userClient;
 
   private CrossTenantUserService crossTenantUserService;
+  private CirculationStorageModuleClient circulationStorageModuleClient;
+  private PermissionModuleClient permissionModuleClient;
+  private LoginAuthnCredentialsClient loginAuthnCredentialsClient;
 
   public BLUsersAPI(Vertx vertx, String tenantId) { //NOSONAR
     this.userPasswordService = UserPasswordService
@@ -140,12 +146,16 @@ public class BLUsersAPI implements BlUsers {
       userClient,
       new UserPasswordServiceImpl(httpClient));
 
+    circulationStorageModuleClient = new CirculationStorageModuleClientImpl(httpClient);
+
     openTransactionsService = new OpenTransactionsServiceImpl(
-      new CirculationStorageModuleClientImpl(httpClient),
+      circulationStorageModuleClient,
       new FeesFinesModuleClientImpl(httpClient),
       userClient
     );
     crossTenantUserService = new CrossTenantUserServiceImpl(httpClient);
+    this.permissionModuleClient = new PermissionModuleClientImpl(httpClient);
+    this.loginAuthnCredentialsClient = new LoginAuthnCredentialsClientImpl(httpClient);
   }
 
   private List<String> getDefaultIncludes(){
@@ -695,14 +705,32 @@ public class BLUsersAPI implements BlUsers {
                   DeleteBlUsersByIdByIdResponse.respond409WithApplicationJson(userTransactions)
                 ));
               } else {
-                userClient.deleteUserById(user.get().getId(), connectionParams)
-                  .onSuccess(boolResult ->
-                    asyncResultHandler.handle(Future.succeededFuture(
-                      DeleteBlUsersByIdByIdResponse.respond204()
-                    )))
-                .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(
-                  DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())
-                  )));
+
+                List<Future<Boolean>> deleteAPIFutures =
+                  List.of(circulationStorageModuleClient.deleteUserRequestPreferenceByUserId(user.get().getId(),
+                      connectionParams),
+                    loginAuthnCredentialsClient.deleteAuthnCredentialsByUserId(user.get().getId(), connectionParams),
+                    permissionModuleClient.deleteModPermissionByUserId(user.get().getId(), connectionParams));
+
+                Future.all(deleteAPIFutures)
+                    .onComplete(result -> {
+
+                      if(result.failed()) {
+                        deleteAPIFutures.stream().filter(Future::failed).forEach(deleteAPIfuture -> {
+                          logger.error("deleteBlUsersByIdById: unable to delete orphan records: {}",
+                            deleteAPIfuture.cause().getCause().getMessage());
+                        });
+                      }
+
+                      userClient.deleteUserById(user.get().getId(), connectionParams)
+                        .onSuccess(boolResult ->
+                          asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204()))
+                        )
+                        .onFailure(error ->
+                          asyncResultHandler.handle(Future.succeededFuture(
+                          DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())))
+                        );
+                    });
               }
             })
           .onFailure(error ->
