@@ -717,7 +717,7 @@ public class BLUsersAPI implements BlUsers {
 
                       if(result.failed()) {
                         deleteAPIFutures.stream().filter(Future::failed).forEach(deleteAPIfuture -> {
-                          logger.error("deleteBlUsersByIdById: unable to delete orphan records: {}",
+                          logger.error("deleteBlUsersByIdById:: unable to delete orphan records: {}",
                             deleteAPIfuture.cause().getCause().getMessage());
                         });
                       }

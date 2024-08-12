@@ -31,7 +31,7 @@ public class PermissionModuleClientImpl implements PermissionModuleClient {
             if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
               return true;
             }
-            String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId: [DELETE_MOD_PERMISSION] Error " +
+            String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: [DELETE_MOD_PERMISSION] Error " +
                 "while deleting modPermission for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
               response.getBody());
             throw new OkapiModuleClientException(errorLogMsg);
@@ -50,7 +50,7 @@ public class PermissionModuleClientImpl implements PermissionModuleClient {
         int totalRecords = response.getJson().getInteger("totalRecords");
         if(totalRecords == 0) {
           String logMessage =
-            String.format("getUserRequestPreferenceIdByUserId: [DELETE_GET_MOD_PERMISSION] Error while fetching " +
+            String.format("getUserRequestPreferenceIdByUserId:: [DELETE_GET_MOD_PERMISSION] Error while fetching " +
               "modPermissions for userId: %s. Status: %d, body: %s", userId, response.getCode(), response.getBody());
           throw new OkapiModuleClientException(logMessage);
         }

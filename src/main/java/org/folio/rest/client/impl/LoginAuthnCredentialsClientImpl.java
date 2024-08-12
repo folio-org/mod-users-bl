@@ -9,7 +9,6 @@ import org.folio.rest.client.LoginAuthnCredentialsClient;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
-import org.folio.util.StringUtil;
 
 public class LoginAuthnCredentialsClientImpl implements LoginAuthnCredentialsClient {
   public static final String AUTHN_CREDENTIALS_ENDPOINT = "/authn/credentials";
@@ -21,7 +20,7 @@ public class LoginAuthnCredentialsClientImpl implements LoginAuthnCredentialsCli
 
   @Override
   public Future<Boolean> deleteAuthnCredentialsByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String query = StringUtil.urlEncode("?query=userId==" + StringUtil.cqlEncode(userId));
+    String query = "?userId=" + userId;
     String requestUrl = connectionParams.getOkapiUrl() + AUTHN_CREDENTIALS_ENDPOINT + query;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.DELETE,
         connectionParams.buildHeaders(), StringUtils.EMPTY)
@@ -29,7 +28,7 @@ public class LoginAuthnCredentialsClientImpl implements LoginAuthnCredentialsCli
         if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
           return true;
         }
-        String errorLogMsg = String.format("deleteAuthnCredentialsByUserId: [DELETE_AUTHN_CREDENTIAL] Error while " +
+        String errorLogMsg = String.format("deleteAuthnCredentialsByUserId:: [DELETE_AUTHN_CREDENTIAL] Error while " +
             "deleting authnCredentials for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
           response.getBody());
         throw new OkapiModuleClientException(errorLogMsg);

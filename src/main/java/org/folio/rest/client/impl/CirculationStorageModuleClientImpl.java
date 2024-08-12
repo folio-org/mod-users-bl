@@ -76,8 +76,8 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
             if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
               return true;
             }
-            String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId: [DELETE_USER_REQUEST_PREFERENCE]" +
-                " Error while deleting  " +
+            String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: " +
+                "[DELETE_USER_REQUEST_PREFERENCE] Error while deleting  " +
                 "UserRequestPreference for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
               response.getBody());
             throw new OkapiModuleClientException(errorLogMsg);
@@ -95,10 +95,9 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
         int totalRecords = response.getJson().getInteger("totalRecords");
         if(totalRecords == 0) {
           String logMessage =
-            String.format("getUserRequestPreferenceIdByUserId: [DELETE_GET_USER_REQUEST_PREFERENCE] Error while " +
-              "fetching request preference for userId: " +
-              "%s." +
-              " Status: %d, body: %s", userId, response.getCode(), response.getBody());
+            String.format("getUserRequestPreferenceIdByUserId:: [DELETE_GET_USER_REQUEST_PREFERENCE] Error while " +
+              "fetching request preference for userId: %s. " +
+              "Status: %d, body: %s", userId, response.getCode(), response.getBody());
           throw new OkapiModuleClientException(logMessage);
         }
         return response.getJson().getJsonArray("requestPreferences").getJsonObject(0).getString("id");
