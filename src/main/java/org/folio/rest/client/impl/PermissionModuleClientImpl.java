@@ -27,18 +27,19 @@ public class PermissionModuleClientImpl implements PermissionModuleClient {
   public Future<Boolean> deleteModPermissionByUserId(String userId, OkapiConnectionParams connectionParams) {
     return this.getModPermissionIdByUserId(userId, connectionParams)
       .compose(modPermissionId-> {
-        String query = StringUtil.urlEncode(StringUtil.cqlEncode(modPermissionId));
-        String requestUrl = connectionParams.getOkapiUrl() + MOD_PERMISSION_ENDPOINT + FORWARD_SLASH + query;
+        String requestUrl = connectionParams.getOkapiUrl() + MOD_PERMISSION_ENDPOINT + FORWARD_SLASH + modPermissionId;
         return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.DELETE,
             connectionParams.buildHeaders(), StringUtils.EMPTY)
           .map(response -> {
             if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
               logger.info("deleteModPermissionByUserId:: [DELETE_MOD_PERMISSION] Successfully " +
-                "deleted the modPermissions with UserId: {}", userId);
+                "deleted the modPermissions with UserId: {} and modPermissionId: {}", userId, modPermissionId);
               return true;
             }
             String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: [DELETE_MOD_PERMISSION] Error " +
-                "while deleting modPermission for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
+                "while deleting modPermission for userId: %s and modPermissionId: %s. Status: %d, body: %s", userId,
+              modPermissionId,
+              response.getCode(),
               response.getBody());
             logger.error(errorLogMsg);
             throw new OkapiModuleClientException(errorLogMsg);
@@ -58,7 +59,7 @@ public class PermissionModuleClientImpl implements PermissionModuleClient {
         int totalRecords = response.getJson().getInteger("totalRecords");
         if(response.getCode()!=HttpStatus.SC_OK || totalRecords == 0) {
           String logMessage =
-            String.format("getUserRequestPreferenceIdByUserId:: [DELETE_GET_MOD_PERMISSION] Error while fetching " +
+            String.format("getModPermissionIdByUserId:: [DELETE_GET_MOD_PERMISSION] Error while fetching " +
               "modPermissions for userId: %s. Status: %d, body: %s", userId, response.getCode(), response.getBody());
           throw new OkapiModuleClientException(logMessage);
         }

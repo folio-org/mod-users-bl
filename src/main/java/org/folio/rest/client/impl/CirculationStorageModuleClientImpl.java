@@ -74,19 +74,20 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
   public Future<Boolean> deleteUserRequestPreferenceByUserId(String userId, OkapiConnectionParams connectionParams) {
     return this.getUserRequestPreferenceIdByUserId(userId, connectionParams)
       .compose(requestPreferencesId-> {
-        String query = StringUtil.urlEncode(StringUtil.cqlEncode(requestPreferencesId));
-        String requestUrl = connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + FORWARD_SLASH + query;
+        String requestUrl = connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + FORWARD_SLASH + requestPreferencesId;
         return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.DELETE,
             connectionParams.buildHeaders(), StringUtils.EMPTY)
           .map(response -> {
             if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
               logger.info("deleteUserRequestPreferenceByUserId:: [DELETE_USER_REQUEST_PREFERENCE] Successfully " +
-                "deleted the UserRequestPreference with UserId: {}", userId);
+                "deleted the UserRequestPreference with UserId: {}, requestPreferencesId: {}", userId, requestPreferencesId);
               return true;
             }
             String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: " +
                 "[DELETE_USER_REQUEST_PREFERENCE] Error while deleting  " +
-                "UserRequestPreference for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
+                "UserRequestPreference for userId: %s and requestPreferencesId: %s. Status: %d, body: %s", userId,
+              requestPreferencesId,
+              response.getCode(),
               response.getBody());
             logger.error(errorLogMsg);
             throw new OkapiModuleClientException(errorLogMsg);
