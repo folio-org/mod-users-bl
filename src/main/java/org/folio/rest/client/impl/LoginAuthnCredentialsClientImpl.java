@@ -13,7 +13,7 @@ import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 
 public class LoginAuthnCredentialsClientImpl implements LoginAuthnCredentialsClient {
-  private static final Logger logger = LogManager.getLogger(PermissionModuleClientImpl.class);
+  private static final Logger logger = LogManager.getLogger(LoginAuthnCredentialsClientImpl.class);
   public static final String AUTHN_CREDENTIALS_ENDPOINT = "/authn/credentials";
   private HttpClient httpClient;
 
@@ -36,6 +36,7 @@ public class LoginAuthnCredentialsClientImpl implements LoginAuthnCredentialsCli
         String errorLogMsg = String.format("deleteAuthnCredentialsByUserId:: [DELETE_AUTHN_CREDENTIAL] Error while " +
             "deleting authnCredentials for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
           response.getBody());
+        logger.error(errorLogMsg);
         throw new OkapiModuleClientException(errorLogMsg);
       });
   }

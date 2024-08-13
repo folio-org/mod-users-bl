@@ -714,7 +714,7 @@ public class BLUsersAPI implements BlUsers {
                     loginAuthnCredentialsClient.deleteAuthnCredentialsByUserId(user.get().getId(), connectionParams),
                     permissionModuleClient.deleteModPermissionByUserId(user.get().getId(), connectionParams));
 
-                Future.all(deleteAPIFutures)
+                Future.join(deleteAPIFutures)
                     .onComplete(result -> {
 
                       if(result.failed()) {

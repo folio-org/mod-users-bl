@@ -40,6 +40,7 @@ public class PermissionModuleClientImpl implements PermissionModuleClient {
             String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: [DELETE_MOD_PERMISSION] Error " +
                 "while deleting modPermission for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
               response.getBody());
+            logger.error(errorLogMsg);
             throw new OkapiModuleClientException(errorLogMsg);
           });
       });
