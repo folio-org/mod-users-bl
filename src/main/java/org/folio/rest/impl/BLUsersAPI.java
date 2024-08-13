@@ -12,6 +12,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.impl.future.CompositeFutureImpl;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -64,6 +65,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -716,9 +718,9 @@ public class BLUsersAPI implements BlUsers {
                     .onComplete(result -> {
 
                       if(result.failed()) {
-                        deleteAPIFutures.stream().filter(Future::failed).forEach(deleteAPIfuture -> {
+                        ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture -> {
                           logger.error("deleteBlUsersByIdById:: unable to delete orphan records: {}",
-                            deleteAPIfuture.cause().getCause().getMessage());
+                            deleteAPIfuture.getMessage());
                         });
                       }
 

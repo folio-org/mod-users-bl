@@ -22,6 +22,7 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
   private static final Logger logger = LogManager.getLogger(CirculationStorageModuleClientImpl.class);
 
   public static final String REQUEST_PREFERENCES_ENDPOINT = "/request-preference-storage/request-preference";
+  private static final String FORWARD_SLASH = "/";
 
   private HttpClient httpClient;
 
@@ -73,12 +74,14 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
   public Future<Boolean> deleteUserRequestPreferenceByUserId(String userId, OkapiConnectionParams connectionParams) {
     return this.getUserRequestPreferenceIdByUserId(userId, connectionParams)
       .compose(requestPreferencesId-> {
-        String query = StringUtil.urlEncode("/" + StringUtil.cqlEncode(requestPreferencesId));
-        String requestUrl = connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + query;
+        String query = StringUtil.urlEncode(StringUtil.cqlEncode(requestPreferencesId));
+        String requestUrl = connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + FORWARD_SLASH + query;
         return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.DELETE,
             connectionParams.buildHeaders(), StringUtils.EMPTY)
           .map(response -> {
             if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
+              logger.info("deleteUserRequestPreferenceByUserId:: [DELETE_USER_REQUEST_PREFERENCE] Successfully " +
+                "deleted the UserRequestPreference with UserId: {}", userId);
               return true;
             }
             String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: " +
@@ -92,8 +95,8 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
   }
 
   private Future<String> getUserRequestPreferenceIdByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String query = StringUtil.urlEncode("?query=userId==" + StringUtil.cqlEncode(userId));
-    String requestUrl = connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + query;
+    String query = StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId));
+    String requestUrl = connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + "?query=" + query;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
         connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
