@@ -719,7 +719,8 @@ public class BLUsersAPI implements BlUsers {
 
                       if(result.failed()) {
                         ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture -> {
-                          logger.error("deleteBlUsersByIdById:: unable to delete orphan records: {}",
+                          logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
+                            user.get().getId(),
                             deleteAPIfuture.getMessage());
                         });
                       }

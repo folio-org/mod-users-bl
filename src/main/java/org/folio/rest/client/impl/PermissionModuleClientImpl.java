@@ -36,7 +36,7 @@ public class PermissionModuleClientImpl implements PermissionModuleClient {
                 "deleted the modPermissions with UserId: {} and modPermissionId: {}", userId, modPermissionId);
               return true;
             }
-            String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: [DELETE_MOD_PERMISSION] Error " +
+            String errorLogMsg = String.format("deleteModPermissionByUserId:: [DELETE_MOD_PERMISSION] Error " +
                 "while deleting modPermission for userId: %s and modPermissionId: %s. Status: %d, body: %s", userId,
               modPermissionId,
               response.getCode(),
