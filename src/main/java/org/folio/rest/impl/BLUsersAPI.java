@@ -714,26 +714,25 @@ public class BLUsersAPI implements BlUsers {
                     loginAuthnCredentialsClient.deleteAuthnCredentialsByUserId(user.get().getId(), connectionParams),
                     permissionModuleClient.deleteModPermissionByUserId(user.get().getId(), connectionParams));
 
-                Future.join(deleteAPIFutures)
-                    .onComplete(result -> {
+                userClient.deleteUserById(user.get().getId(), connectionParams)
+                  .onSuccess(boolResult -> {
+                    Future.join(deleteAPIFutures)
+                      .onComplete(result -> {
+                        if (result.failed()) {
+                          ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture -> {
+                            logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
+                              user.get().getId(),
+                              deleteAPIfuture.getMessage());
+                          });
+                        }
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204()));
+                      });
+                  }).onFailure(error ->
+                    asyncResultHandler.handle(Future.succeededFuture(
+                      DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())))
+                  );
 
-                      if(result.failed()) {
-                        ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture -> {
-                          logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
-                            user.get().getId(),
-                            deleteAPIfuture.getMessage());
-                        });
-                      }
 
-                      userClient.deleteUserById(user.get().getId(), connectionParams)
-                        .onSuccess(boolResult ->
-                          asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204()))
-                        )
-                        .onFailure(error ->
-                          asyncResultHandler.handle(Future.succeededFuture(
-                          DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())))
-                        );
-                    });
               }
             })
           .onFailure(error ->

@@ -2,6 +2,9 @@ package org.folio.rest;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static io.restassured.RestAssured.given;
+import static org.folio.rest.client.impl.CirculationStorageModuleClientImpl.REQUEST_PREFERENCES_ENDPOINT;
+import static org.folio.rest.client.impl.LoginAuthnCredentialsClientImpl.AUTHN_CREDENTIALS_ENDPOINT;
+import static org.folio.rest.client.impl.PermissionModuleClientImpl.MOD_PERMISSION_ENDPOINT;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
@@ -17,8 +20,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.util.List;
+import java.util.UUID;
+
 import org.apache.http.HttpStatus;
 import org.folio.rest.tools.utils.NetworkUtils;
+import org.folio.util.StringUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,6 +86,111 @@ class ByIdTest {
     stubFor(get("/users/" + userId).willReturn(okJson("id", userId, "patronGroup", patronGroup)));
     stubOpenTransactions(0);
     stubFor(delete("/users/" + userId).willReturn(status(204)));
+
+    whenDeleteById()
+      .then()
+      .statusCode(HttpStatus.SC_NO_CONTENT);
+  }
+
+  @Test
+  void deleteUserThatExistsAndSuccessfullyDeletedOraphanRecords() {
+    stubFor(get("/users/" + userId).willReturn(okJson("id", userId, "patronGroup", patronGroup)));
+    stubOpenTransactions(0);
+    stubFor(delete("/users/" + userId).willReturn(status(204)));
+
+    //Stubbing for deleting request-preference-storage
+    String requestPreferenceId = UUID.randomUUID().toString();
+    JsonObject requestPreferenceStorageRes = new JsonObject().put("totalRecords", 1)
+      .put("requestPreferences", new JsonArray().add(new JsonObject().put("id", requestPreferenceId)));
+    stubFor(get(REQUEST_PREFERENCES_ENDPOINT + "?query=" +
+      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
+      .willReturn(okJson(requestPreferenceStorageRes)));
+    stubFor(delete(REQUEST_PREFERENCES_ENDPOINT + "/" + requestPreferenceId)
+      .willReturn(status(204)));
+
+    //Stubbing for deleting login Auth Credentials
+    stubFor(delete(AUTHN_CREDENTIALS_ENDPOINT + "?userId=" + userId)
+      .willReturn(status(204)));
+
+    //Stubbing for deleting /perms/users
+    String permsRandomId = UUID.randomUUID().toString();
+    JsonObject permsUsersRes = new JsonObject().put("totalRecords", 1)
+      .put("permissionUsers", new JsonArray().add(new JsonObject().put("id", permsRandomId)));
+    stubFor(get(MOD_PERMISSION_ENDPOINT + "?query=" +
+      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
+      .willReturn(okJson(permsUsersRes)));
+    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + permsRandomId)
+      .willReturn(status(204)));
+
+    whenDeleteById()
+      .then()
+      .statusCode(HttpStatus.SC_NO_CONTENT);
+  }
+
+  @Test
+  void deleteUserThatExistsAndFailedToGetOraphanRecords() {
+    stubFor(get("/users/" + userId).willReturn(okJson("id", userId, "patronGroup", patronGroup)));
+    stubOpenTransactions(0);
+    stubFor(delete("/users/" + userId).willReturn(status(204)));
+
+    //Stubbing for deleting request-preference-storage
+    String requestPreferenceId = UUID.randomUUID().toString();
+    JsonObject requestPreferenceStorageRes = new JsonObject().put("totalRecords", 0)
+      .put("requestPreferences", new JsonArray());
+    stubFor(get(REQUEST_PREFERENCES_ENDPOINT + "?query=" +
+      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
+      .willReturn(okJson(requestPreferenceStorageRes).withStatus(200)));
+    stubFor(delete(REQUEST_PREFERENCES_ENDPOINT + "/" + requestPreferenceId)
+      .willReturn(status(404).withBody("Not found")));
+
+    //Stubbing for deleting login Auth Credentials
+    stubFor(delete(AUTHN_CREDENTIALS_ENDPOINT + "?userId=" + userId)
+      .willReturn(status(404)));
+
+    //Stubbing for deleting /perms/users
+    String permsRandomId = UUID.randomUUID().toString();
+    JsonObject permsUsersRes = new JsonObject().put("totalRecords", 0)
+      .put("permissionUsers", new JsonArray());
+    stubFor(get(MOD_PERMISSION_ENDPOINT + "?query=" +
+      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
+      .willReturn(okJson(permsUsersRes)));
+    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + permsRandomId)
+      .willReturn(status(404).withBody("Not found")));
+
+    whenDeleteById()
+      .then()
+      .statusCode(HttpStatus.SC_NO_CONTENT);
+  }
+
+  @Test
+  void deleteUserThatExistsAndFailedToDeleteOraphanRecords() {
+    stubFor(get("/users/" + userId).willReturn(okJson("id", userId, "patronGroup", patronGroup)));
+    stubOpenTransactions(0);
+    stubFor(delete("/users/" + userId).willReturn(status(204)));
+
+    //Stubbing for deleting request-preference-storage
+    String requestPreferenceId = UUID.randomUUID().toString();
+    JsonObject requestPreferenceStorageRes = new JsonObject().put("totalRecords", 1)
+      .put("requestPreferences", new JsonArray().add(new JsonObject().put("id", requestPreferenceId)));
+    stubFor(get(REQUEST_PREFERENCES_ENDPOINT + "?query=" +
+      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
+      .willReturn(okJson(requestPreferenceStorageRes)));
+    stubFor(delete(REQUEST_PREFERENCES_ENDPOINT + "/" + requestPreferenceId)
+      .willReturn(status(404).withBody("Not found")));
+
+    //Stubbing for deleting login Auth Credentials
+    stubFor(delete(AUTHN_CREDENTIALS_ENDPOINT + "?userId=" + userId)
+      .willReturn(status(404).withBody("Not found")));
+
+    //Stubbing for deleting /perms/users
+    String permsRandomId = UUID.randomUUID().toString();
+    JsonObject permsUsersRes = new JsonObject().put("totalRecords", 1)
+      .put("permissionUsers", new JsonArray().add(new JsonObject().put("id", permsRandomId)));
+    stubFor(get(MOD_PERMISSION_ENDPOINT + "?query=" +
+      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
+      .willReturn(okJson(permsUsersRes)));
+    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + permsRandomId)
+      .willReturn(status(404).withBody("Not found")));
 
     whenDeleteById()
       .then()
