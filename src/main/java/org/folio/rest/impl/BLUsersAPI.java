@@ -736,18 +736,9 @@ public class BLUsersAPI implements BlUsers {
                     permissionModuleClient.deleteModPermissionByUserId(user.get().getId(), connectionParams));
 
                 userClient.deleteUserById(user.get().getId(), connectionParams)
-                  .onSuccess(boolResult -> Future.join(deleteConnectedForeignRecordsFutures)
-                    .onComplete(result -> {
-                      // As per requirement, We just have to do 1 attempt to delete the foreigner records
-                      // and ignoring whether record was really deleted or not
-                      if (result.failed()) {
-                        ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture ->
-                          logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
-                            user.get().getId(),
-                            deleteAPIfuture.getMessage()));
-                      }
-                      asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204()));
-                    })).onFailure(error ->
+                  .onSuccess(boolResult ->
+                    deleteConnectedForeignRecords(asyncResultHandler, user.get(), deleteConnectedForeignRecordsFutures))
+                  .onFailure(error ->
                     asyncResultHandler.handle(Future.succeededFuture(
                       DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())))
                   );
@@ -765,6 +756,21 @@ public class BLUsersAPI implements BlUsers {
       })
       .onFailure(error -> asyncResultHandler.handle(Future.succeededFuture(
         DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
+  }
+
+  private void deleteConnectedForeignRecords(Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, User user, List<Future<Boolean>> deleteConnectedForeignRecordsFutures) {
+    Future.join(deleteConnectedForeignRecordsFutures)
+      .onComplete(result -> {
+        // As per requirement, We just have to do 1 attempt to delete the foreigner records
+        // and ignoring whether record was really deleted or not
+        if (result.failed()) {
+          ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture ->
+            logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
+              user.getId(),
+              deleteAPIfuture.getMessage()));
+        }
+        asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204()));
+      });
   }
 
   private boolean responseOk(Response r){
