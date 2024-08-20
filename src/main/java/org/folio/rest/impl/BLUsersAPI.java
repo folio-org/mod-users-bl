@@ -761,7 +761,7 @@ public class BLUsersAPI implements BlUsers {
     var compositeFuture = Future.join(deleteConnectedForeignRecordsFutures);
     return compositeFuture
       .recover(e -> {
-        // As per requirement, We just have to do 1 attempt to delete the foreigner records
+        // As per requirement, We just have to do 1 attempt to delete the foreign records
         // and ignoring whether record was really deleted or not
         compositeFuture.causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture ->
           logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
