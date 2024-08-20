@@ -13,6 +13,9 @@ import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
 import org.folio.util.StringUtil;
 
+import java.util.Objects;
+import java.util.Optional;
+
 
 public class CirculationStorageModuleClientImpl implements CirculationStorageModuleClient {
 
@@ -70,15 +73,28 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
   @Override
   public Future<Boolean> deleteUserRequestPreferenceByUserId(String userId, OkapiConnectionParams connectionParams) {
     return this.getUserRequestPreferenceIdByUserId(userId, connectionParams)
-      .compose(requestPreferencesId-> {
-        String requestUrl = connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + FORWARD_SLASH + requestPreferencesId;
+      .compose(requestPreferencesId -> {
+        if (Objects.isNull(requestPreferencesId)) {
+          logger.error("deleteUserRequestPreferenceByUserId:: [DELETE_USER_REQUEST_PREFERENCE] " +
+              "No requestPreferenceStorage record found with UserId: {} and requestPreferencesId: {}", userId,
+            requestPreferencesId);
+          return Future.succeededFuture(false);
+        }
+        String requestUrl =
+          connectionParams.getOkapiUrl() + REQUEST_PREFERENCES_ENDPOINT + FORWARD_SLASH + requestPreferencesId;
         return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.DELETE,
             connectionParams.buildHeaders(), StringUtils.EMPTY)
           .map(response -> {
             if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
               logger.info("deleteUserRequestPreferenceByUserId:: [DELETE_USER_REQUEST_PREFERENCE] Successfully " +
-                "deleted the UserRequestPreference with UserId: {}, requestPreferencesId: {}", userId, requestPreferencesId);
+                  "deleted the UserRequestPreference with UserId: {}, requestPreferencesId: {}", userId,
+                requestPreferencesId);
               return true;
+            } else if (response.getCode() == HttpStatus.SC_NOT_FOUND) {
+              logger.error("deleteUserRequestPreferenceByUserId:: [DELETE_USER_REQUEST_PREFERENCE] " +
+                  "No requestPreferenceStorage found with UserId: {} and requestPreferencesId: {}", userId,
+                requestPreferencesId);
+              return false;
             }
             String errorLogMsg = String.format("deleteUserRequestPreferenceByUserId:: " +
                 "[DELETE_USER_REQUEST_PREFERENCE] Error while deleting  " +
@@ -99,9 +115,10 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
         connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
-        logger.info("getUserRequestPreferenceIdByUserId:: response: code: {}, body: {}", response.getCode(), response.getBody());
-        int totalRecords = response.getJson().getInteger("totalRecords");
-        if(response.getCode()!=HttpStatus.SC_OK || totalRecords == 0) {
+        logger.info("getUserRequestPreferenceIdByUserId:: [DELETE_GET_USER_REQUEST_PREFERENCE] response: code: {}, " +
+            "body: {}",
+          response.getCode(), response.getBody());
+        if (response.getCode() != HttpStatus.SC_OK) {
           String errorLogMsg =
             String.format("getUserRequestPreferenceIdByUserId:: [DELETE_GET_USER_REQUEST_PREFERENCE] Error while " +
               "fetching request preference for userId: %s. " +
@@ -109,7 +126,10 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
           logger.error(errorLogMsg);
           throw new OkapiModuleClientException(errorLogMsg);
         }
-        return response.getJson().getJsonArray("requestPreferences").getJsonObject(0).getString("id");
+        return Optional.ofNullable(response.getJson().getJsonArray("requestPreferences"))
+          .filter(arr -> !arr.isEmpty())
+          .map(arr -> arr.getJsonObject(0))
+          .map(jsonObject -> jsonObject.getString("id")).orElse(null);
       });
   }
 }

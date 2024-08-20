@@ -1,13 +1,12 @@
 package org.folio.rest.impl;
 
-import static org.apache.commons.lang3.StringUtils.substringAfterLast;
-
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
@@ -15,11 +14,10 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.future.CompositeFutureImpl;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.client.ConfigurationsClient;
@@ -27,10 +25,34 @@ import org.folio.rest.client.LoginAuthnCredentialsClient;
 import org.folio.rest.client.NotificationClient;
 import org.folio.rest.client.PermissionModuleClient;
 import org.folio.rest.client.UserModuleClient;
-import org.folio.rest.client.impl.*;
+import org.folio.rest.client.impl.AuthTokenClientImpl;
+import org.folio.rest.client.impl.CirculationStorageModuleClientImpl;
+import org.folio.rest.client.impl.ConfigurationClientImpl;
+import org.folio.rest.client.impl.FeesFinesModuleClientImpl;
+import org.folio.rest.client.impl.LoginAuthnCredentialsClientImpl;
+import org.folio.rest.client.impl.NotificationClientImpl;
+import org.folio.rest.client.impl.PasswordResetActionClientImpl;
+import org.folio.rest.client.impl.PermissionModuleClientImpl;
+import org.folio.rest.client.impl.UserModuleClientImpl;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
-import org.folio.rest.jaxrs.model.*;
+import org.folio.rest.jaxrs.model.CompositeUser;
+import org.folio.rest.jaxrs.model.CompositeUserListObject;
+import org.folio.rest.jaxrs.model.Errors;
+import org.folio.rest.jaxrs.model.GenerateLinkRequest;
+import org.folio.rest.jaxrs.model.GenerateLinkResponse;
+import org.folio.rest.jaxrs.model.Identifier;
+import org.folio.rest.jaxrs.model.LoginCredentials;
+import org.folio.rest.jaxrs.model.Notification;
+import org.folio.rest.jaxrs.model.PasswordReset;
+import org.folio.rest.jaxrs.model.PatronGroup;
+import org.folio.rest.jaxrs.model.Permissions;
+import org.folio.rest.jaxrs.model.ProxiesFor;
+import org.folio.rest.jaxrs.model.ServicePoint;
+import org.folio.rest.jaxrs.model.ServicePointsUser;
+import org.folio.rest.jaxrs.model.TokenExpiration;
+import org.folio.rest.jaxrs.model.UpdateCredentials;
+import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.jaxrs.resource.BlUsers;
 import org.folio.rest.tools.client.BuildCQL;
 import org.folio.rest.tools.client.HttpClientFactory;
@@ -52,9 +74,7 @@ import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
-
 import javax.ws.rs.core.MediaType;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -75,6 +95,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 
 /**
  * @author shale
@@ -707,32 +729,28 @@ public class BLUsersAPI implements BlUsers {
                   DeleteBlUsersByIdByIdResponse.respond409WithApplicationJson(userTransactions)
                 ));
               } else {
-
-                List<Future<Boolean>> deleteAPIFutures =
+                List<Future<Boolean>> deleteConnectedForeignRecordsFutures =
                   List.of(circulationStorageModuleClient.deleteUserRequestPreferenceByUserId(user.get().getId(),
                       connectionParams),
                     loginAuthnCredentialsClient.deleteAuthnCredentialsByUserId(user.get().getId(), connectionParams),
                     permissionModuleClient.deleteModPermissionByUserId(user.get().getId(), connectionParams));
 
                 userClient.deleteUserById(user.get().getId(), connectionParams)
-                  .onSuccess(boolResult -> {
-                    Future.join(deleteAPIFutures)
-                      .onComplete(result -> {
-                        if (result.failed()) {
-                          ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture -> {
-                            logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
-                              user.get().getId(),
-                              deleteAPIfuture.getMessage());
-                          });
-                        }
-                        asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204()));
-                      });
-                  }).onFailure(error ->
+                  .onSuccess(boolResult -> Future.join(deleteConnectedForeignRecordsFutures)
+                    .onComplete(result -> {
+                      // As per requirement, We just have to do 1 attempt to delete the foreigner records
+                      // and ignoring whether record was really deleted or not
+                      if (result.failed()) {
+                        ((CompositeFutureImpl) result).causes().stream().filter(Objects::nonNull).forEach(deleteAPIfuture ->
+                          logger.error("deleteBlUsersByIdById:: For userId: {}, unable to delete orphan records: {}",
+                            user.get().getId(),
+                            deleteAPIfuture.getMessage()));
+                      }
+                      asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204()));
+                    })).onFailure(error ->
                     asyncResultHandler.handle(Future.succeededFuture(
                       DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage())))
                   );
-
-
               }
             })
           .onFailure(error ->

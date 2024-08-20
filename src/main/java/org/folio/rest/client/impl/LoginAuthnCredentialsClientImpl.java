@@ -32,9 +32,13 @@ public class LoginAuthnCredentialsClientImpl implements LoginAuthnCredentialsCli
           logger.info("deleteAuthnCredentialsByUserId:: [DELETE_AUTHN_CREDENTIAL] Successfully " +
             "deleted the authnCredentials with UserId: {}", userId);
           return true;
+        } else if (response.getCode() == HttpStatus.SC_NOT_FOUND) {
+          logger.error("deleteAuthnCredentialsByUserId:: [DELETE_AUTHN_CREDENTIAL] " +
+            "No authnCredentials found with UserId: {}", userId);
+          return false;
         }
         String errorLogMsg = String.format("deleteAuthnCredentialsByUserId:: [DELETE_AUTHN_CREDENTIAL] Error while " +
-            "deleting authnCredentials for userId: %s. Status: %d, body: %s", userId,  response.getCode(),
+            "deleting authnCredentials for userId: %s. Status: %d, body: %s", userId, response.getCode(),
           response.getBody());
         logger.error(errorLogMsg);
         throw new OkapiModuleClientException(errorLogMsg);
