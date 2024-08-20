@@ -23,8 +23,8 @@ public class LoginAuthnCredentialsClientImpl implements LoginAuthnCredentialsCli
 
   @Override
   public Future<Boolean> deleteAuthnCredentialsByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String query = "?userId=" + userId;
-    String requestUrl = connectionParams.getOkapiUrl() + AUTHN_CREDENTIALS_ENDPOINT + query;
+    String param = "?userId=" + userId;
+    String requestUrl = connectionParams.getOkapiUrl() + AUTHN_CREDENTIALS_ENDPOINT + param;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.DELETE,
         connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
