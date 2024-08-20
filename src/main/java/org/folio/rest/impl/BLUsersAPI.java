@@ -729,7 +729,7 @@ public class BLUsersAPI implements BlUsers {
                 ));
               } else {
                 userClient.deleteUserById(user.get().getId(), connectionParams)
-                  .compose(x -> deleteConnectedForeignRecords(asyncResultHandler, user.get(), connectionParams))
+                  .compose(x -> deleteConnectedForeignRecords(user.get(), connectionParams))
                   .onSuccess(boolResult ->
                     asyncResultHandler.handle(Future.succeededFuture(DeleteBlUsersByIdByIdResponse.respond204())))
                   .onFailure(error ->
@@ -752,7 +752,7 @@ public class BLUsersAPI implements BlUsers {
         DeleteBlUsersByIdByIdResponse.respond500WithTextPlain(error.getLocalizedMessage()))));
   }
 
-  private Future<Void> deleteConnectedForeignRecords(Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler, User user, OkapiConnectionParams connectionParams) {
+  private Future<Void> deleteConnectedForeignRecords(User user, OkapiConnectionParams connectionParams) {
     List<Future<Boolean>> deleteConnectedForeignRecordsFutures =
       List.of(circulationStorageModuleClient.deleteUserRequestPreferenceByUserId(user.getId(),
           connectionParams),
