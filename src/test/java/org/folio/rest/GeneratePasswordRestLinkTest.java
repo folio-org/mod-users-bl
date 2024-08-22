@@ -148,9 +148,9 @@ public class GeneratePasswordRestLinkTest {
       .withContext(
         new Context()
           .withAdditionalProperty("user", mockUser)
-          .withAdditionalProperty("link", expectedLink)
-          .withAdditionalProperty("expirationTime", EXPIRATION_TIME_HOURS)
-          .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME_HOURS))
+          .withAdditionalProperty("link", expectedLink))
+//          .withAdditionalProperty("expirationTime", EXPIRATION_TIME_HOURS)
+//          .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME_HOURS))
       .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));

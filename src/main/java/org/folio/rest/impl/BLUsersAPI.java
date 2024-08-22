@@ -1437,6 +1437,9 @@ public class BLUsersAPI implements BlUsers {
                                            Map<String, String> okapiHeaders,
                                            Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                            Context vertxContext) {
+    logger.info("postBlUsersPasswordResetLink");
+    logger.info(entity.getUserId());
+    logger.info(entity.getAdditionalProperties());
     passwordResetLinkService.sendPasswordResetLink(entity.getUserId(), okapiHeaders)
       .map(link ->
         PostBlUsersPasswordResetLinkResponse.respond200WithApplicationJson(
