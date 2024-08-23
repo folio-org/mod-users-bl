@@ -1437,9 +1437,9 @@ public class BLUsersAPI implements BlUsers {
                                            Map<String, String> okapiHeaders,
                                            Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                            Context vertxContext) {
-    logger.info("postBlUsersPasswordResetLink");
+    logger.info("postBlUsersPasswordResetLink for account activation and password reset");
     logger.info(entity.getUserId());
-    logger.info(entity.getAdditionalProperties());
+    logger.info(entity.getAdditionalProperties());    //for both the activate account and reset password
     passwordResetLinkService.sendPasswordResetLink(entity.getUserId(), okapiHeaders)
       .map(link ->
         PostBlUsersPasswordResetLinkResponse.respond200WithApplicationJson(
@@ -1454,6 +1454,9 @@ public class BLUsersAPI implements BlUsers {
                                             Map<String, String> okapiHeaders,
                                             Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                             Context vertxContext) {
+    logger.info("postBlUsersPasswordResetReset");
+    logger.info(userAgent);
+    logger.info(xForwardedFor);
     JsonObject request = JsonObject.mapFrom(entity);
     Map<String, String> requestHeaders = new CaseInsensitiveMap<>(okapiHeaders);
     Optional.ofNullable(userAgent)

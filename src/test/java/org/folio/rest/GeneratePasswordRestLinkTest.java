@@ -149,6 +149,7 @@ public class GeneratePasswordRestLinkTest {
         new Context()
           .withAdditionalProperty("user", mockUser)
           .withAdditionalProperty("link", expectedLink))
+
 //          .withAdditionalProperty("expirationTime", EXPIRATION_TIME_HOURS)
 //          .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME_HOURS))
       .withRecipientId(mockUser.getId());
