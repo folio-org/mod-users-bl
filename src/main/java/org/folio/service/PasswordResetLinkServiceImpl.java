@@ -177,6 +177,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         .add("users-bl.password-reset-link.validate")
         .add("users-bl.password-reset-link.reset")
       );
+    logger.info("token payload");
+    logger.info(tokenPayload);
     return authTokenClient.signToken(tokenPayload, connectionParams);
   }
 
@@ -205,6 +207,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
          .plusMillis(expirationTime)
           .toEpochMilli()));
     logger.info("expirationtime" + actionToCreate.getExpirationTime());
+    logger.info("expirationtime" + actionToCreate.getId());
+    logger.info("expirationtime" + actionToCreate.getUserId());
     return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
   }
 
