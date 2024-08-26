@@ -207,8 +207,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
          .plusMillis(expirationTime)
           .toEpochMilli()));
     logger.info("expirationtime" + actionToCreate.getExpirationTime());
-    logger.info("expirationtime" + actionToCreate.getId());
-    logger.info("expirationtime" + actionToCreate.getUserId());
+    logger.info("action id" + actionToCreate.getId());
+    logger.info("user id" + actionToCreate.getUserId());
     return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
   }
 
@@ -346,6 +346,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     String passwordResetActionId) {
     return pwdResetAction -> {
       if (pwdResetAction.getExpirationTime().toInstant().isAfter(Instant.now())) {
+        System.out.println("pwdResetAction.getExpirationTime()" + pwdResetAction.getExpirationTime());
         return Future.succeededFuture(pwdResetAction);
       } else {
         UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_EXPIRED_STATUS_CODE,
