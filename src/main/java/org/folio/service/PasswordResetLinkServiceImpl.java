@@ -48,9 +48,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String LINK_EXPIRATION_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
   private static final String LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY = "RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME";
   private static final Set<String> GENERATE_LINK_REQUIRED_CONFIGURATION = Collections.emptySet();
-  private static final String LINK_EXPIRATION_TIME_DEFAULT = "24";
+//  private static final String LINK_EXPIRATION_TIME_DEFAULT = "24";
   private static final String FOLIO_HOST_DEFAULT = "http://localhost:3000";
-  private static final String LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT = "hours";
+//  private static final String LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT = "hours";
 
   private static final String CREATE_PASSWORD_EVENT_CONFIG_NAME = "CREATE_PASSWORD_EVENT";//NOSONAR
   private static final String RESET_PASSWORD_EVENT_CONFIG_NAME = "RESET_PASSWORD_EVENT";//NOSONAR
@@ -184,28 +184,28 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private Future<Boolean> isPasswordExists(String userId, OkapiConnectionParams connectionParams, Holder<Map<String, String>> configMapHolder, Holder<String> passwordResetActionIdHolder) {
     logger.info("isPasswordExists");
-    String expirationTimeFromConfig =
-      configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT);
-    String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
-      LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
+//    String expirationTimeFromConfig =
+//      configMapHolder.value.getOrDefault(LINK_EXPIRATION_TIME_CONFIG_KEY, LINK_EXPIRATION_TIME_DEFAULT);
+//    String expirationUnitOfTimeFromConfig = configMapHolder.value.getOrDefault(
+//      LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, LINK_EXPIRATION_UNIT_OF_TIME_DEFAULT);
 
-    logger.info("expirationTimeFromConfig" + expirationTimeFromConfig);
-    logger.info("expirationUnitOfTimeFromConfig" + expirationUnitOfTimeFromConfig);
-    long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig, expirationUnitOfTimeFromConfig);
-    if (expirationTime > MAXIMUM_EXPIRATION_TIME) {
-      expirationTime = MAXIMUM_EXPIRATION_TIME;
-      configMapHolder.value.put(LINK_EXPIRATION_TIME_CONFIG_KEY, String.valueOf(MAXIMUM_EXPIRATION_TIME_IN_WEEKS));
-      configMapHolder.value.put(LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, ExpirationTimeUnit.WEEKS.name().toLowerCase());
-    }
+//    logger.info("expirationTimeFromConfig" + expirationTimeFromConfig);
+//    logger.info("expirationUnitOfTimeFromConfig" + expirationUnitOfTimeFromConfig);
+//    long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig, expirationUnitOfTimeFromConfig);
+//    if (expirationTime > MAXIMUM_EXPIRATION_TIME) {
+//      expirationTime = MAXIMUM_EXPIRATION_TIME;
+//      configMapHolder.value.put(LINK_EXPIRATION_TIME_CONFIG_KEY, String.valueOf(MAXIMUM_EXPIRATION_TIME_IN_WEEKS));
+//      configMapHolder.value.put(LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, ExpirationTimeUnit.WEEKS.name().toLowerCase());
+//    }
 
     passwordResetActionIdHolder.value = UUID.randomUUID().toString();
     PasswordResetAction actionToCreate = new PasswordResetAction()
       .withId(passwordResetActionIdHolder.value)
-      .withUserId(userId)
-      .withExpirationTime(new Date(
-        Instant.now()
-         .plusMillis(expirationTime)
-          .toEpochMilli()));
+      .withUserId(userId);
+//      .withExpirationTime(new Date(
+//        Instant.now()
+//         .plusMillis(expirationTime)
+//          .toEpochMilli()));
     logger.info("expirationtime" + actionToCreate.getExpirationTime());
     logger.info("action id" + actionToCreate.getId());
     logger.info("user id" + actionToCreate.getUserId());
