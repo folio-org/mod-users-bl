@@ -163,6 +163,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   private Future<String> signToken(OkapiConnectionParams connectionParams, Holder<String> passwordResetActionIdHolder) {
+    passwordResetActionIdHolder.value = UUID.randomUUID().toString();
 //    Boolean passwordExists, Holder<Boolean> passwordExistsHolder,
 //    logger.info(passwordExists);
 //    passwordExistsHolder.value = passwordExists;
@@ -387,6 +388,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     String passwordResetActionId) {
     return pwdResetAction -> {
       if (pwdResetAction.isPresent()) {
+        System.out.println("checkPasswordResetActionPresence");
+        System.out.println(pwdResetAction.get());
         return Future.succeededFuture(pwdResetAction.get());
       } else {
         UnprocessableEntityMessage message = new UnprocessableEntityMessage(LINK_USED_STATUS_CODE,
