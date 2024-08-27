@@ -192,7 +192,6 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 //      configMapHolder.value.put(LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, ExpirationTimeUnit.WEEKS.name().toLowerCase());
 //    }
 
-    passwordResetActionIdHolder.value = UUID.randomUUID().toString();
     PasswordResetAction actionToCreate = new PasswordResetAction()
       .withId(passwordResetActionIdHolder.value)
       .withUserId(userId)
@@ -285,6 +284,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   @Override
   public Future<Void> validateLink(OkapiConnectionParams okapiConnectionParams) {
+    logger.info("validateLink");
     return getPasswordResetActionId(okapiConnectionParams)
       .compose(passwordResetActionId -> passwordResetActionClient.getAction(passwordResetActionId, okapiConnectionParams)
         .compose(checkPasswordResetActionPresence(passwordResetActionId))
