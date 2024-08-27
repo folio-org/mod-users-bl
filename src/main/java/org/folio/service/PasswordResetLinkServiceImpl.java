@@ -180,7 +180,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private Future<Boolean> isPasswordExists(String userId, String token, Holder<String> tokenHolder, OkapiConnectionParams connectionParams, Holder<Map<String, String>> configMapHolder, Holder<String> passwordResetActionIdHolder) {
     logger.info("isPasswordExists");
-    Date expirationDate = tokenDecoder(tokenHolder);
+    tokenHolder.value = token;
+    Date expirationDate = tokenDecoder(token);
 
 
 //    long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig, expirationUnitOfTimeFromConfig);
@@ -201,8 +202,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
   }
 
-  private Date tokenDecoder(Holder<String> tokenHolder) {
-    String token = tokenHolder.value;
+  private Date tokenDecoder( String token) {
+
     Date expirationDate = new Date();
     System.out.println("exp1" + expirationDate);
     try {
@@ -217,6 +218,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       JsonNode payloadJson = objectMapper.readTree(decodedPayload);
 
       long exp = payloadJson.path("exp").asLong();
+      System.out.println("exp" + exp );
       expirationDate = new Date(exp * 1000);
 
     } catch (Exception e) {
