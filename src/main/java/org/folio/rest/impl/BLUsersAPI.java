@@ -167,7 +167,7 @@ public class BLUsersAPI implements BlUsers {
       this.notificationClient,
       new PasswordResetActionClientImpl(httpClient),
       userClient,
-      new UserPasswordServiceImpl(httpClient),vertx);
+      new UserPasswordServiceImpl(httpClient));
 
     circulationStorageModuleClient = new CirculationStorageModuleClientImpl(httpClient);
 
