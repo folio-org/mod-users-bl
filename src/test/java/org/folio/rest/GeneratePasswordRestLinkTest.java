@@ -21,6 +21,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +69,8 @@ public class GeneratePasswordRestLinkTest {
   private static final String RESET_PASSWORD_LINK_EXPIRATION_TIME = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
   private static final String MOCK_FOLIO_UI_HOST = "http://localhost:3000";
   private static final String DEFAULT_UI_URL = "/reset-password";
+  private static final String DEFAULT_FORGOT_PASSWORD_URL = "/forgot-password";
+  private static final String SAMPLE_TOKEN = "eyJhbGciOiJIUzM4NCJ9.eyJkdW1teSI6dHJ1ZSwic3ViIjoiVU5ERUZJTkVEX1VTRVJfX1JFU0VUX1BBU1NXT1JEXzRkMjMzOWZmLWI0ZDktNDU4MC1hNTc0LThiYWM3YWI2YjBhZiIsInR5cGUiOiJkdW1teS1leHBpcmluZyIsImV4dHJhX3Blcm1pc3Npb25zIjpbInVzZXJzLWJsLnBhc3N3b3JkLXJlc2V0LWxpbmsudmFsaWRhdGUiLCJ1c2Vycy1ibC5wYXNzd29yZC1yZXNldC1saW5rLnJlc2V0Il0sImV4cCI6MTcyNDY2NjE3MywidGVuYW50IjoiZGlrdSJ9.L7h_vsh47dFo537KeO8MYZV1xSmHJ5E7XR_9uhPYs30orGBACoydq-uJZrtFB-JK";
   private static final String MOCK_TOKEN = "eyJhbGciOiJIUzM4NCJ9.eyJkdW1teSI6dHJ1ZSwic3ViIjoiVU5ERUZJTkVEX1VTRVJfX1JFU0VUX1BBU1NXT1JEXzRkMjMzOWZmLWI0ZDktNDU4MC1hNTc0LThiYWM3YWI2YjBhZiIsInR5cGUiOiJkdW1teS1leHBpcmluZyIsImV4dHJhX3Blcm1pc3Npb25zIjpbInVzZXJzLWJsLnBhc3N3b3JkLXJlc2V0LWxpbmsudmFsaWRhdGUiLCJ1c2Vycy1ibC5wYXNzd29yZC1yZXNldC1saW5rLnJlc2V0Il0sImV4cCI6MTcyNDY2NjE3MywidGVuYW50IjoiZGlrdSJ9.L7h_vsh47dFo537KeO8MYZV1xSmHJ5E7XR_9uhPYs30orGBACoydq-uJZrtFB-JK";
   private static final String MOCK_USERNAME = "username";
   private static final String PASSWORD_RESET_ACTION_PATH = "/authn/password-reset-action";
@@ -111,7 +115,7 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithDefaultExpirationTime() {
+  public void shouldGenerateAndSendPasswordNotificationContainResetLinkWithExpirationTimeOfToken() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
@@ -121,13 +125,14 @@ public class GeneratePasswordRestLinkTest {
 
     mockUserFound(mockUser.getId(), mockUser);
     mockConfigModule(MODULE_NAME, configToMock);
-    mockSignAuthToken(MOCK_TOKEN);
+    mockSignAuthToken(SAMPLE_TOKEN);
     mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + SAMPLE_TOKEN + "?tenant=" + TENANT;
+    String expectedForgotPasswordLink = MOCK_FOLIO_UI_HOST + DEFAULT_FORGOT_PASSWORD_URL;
     RestAssured.given()
       .spec(spec)
       .header(mockUrlHeader)
@@ -143,56 +148,19 @@ public class GeneratePasswordRestLinkTest {
     assertThat(requestBodyByUrl, hasSize(1));
     assertThat(requestBodyByUrl.get(0).getUserId(), is(mockUser.getId()));
 
+
     Notification expectedNotification = new Notification()
       .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
+      .withText(StringUtils.EMPTY)
+      .withLang("en")
       .withContext(
         new Context()
           .withAdditionalProperty("user", mockUser)
-          .withAdditionalProperty("link", expectedLink))
-
-//          .withAdditionalProperty("expirationTime", EXPIRATION_TIME_HOURS)
-//          .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME_HOURS))
+          .withAdditionalProperty("link", expectedLink)
+          .withAdditionalProperty("forgotPasswordLink",expectedForgotPasswordLink))
       .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
-      .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
-  }
-
-  @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTime() {
-    generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_MINUTES,
-      EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
-  }
-  @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken() {
-    shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken(EXPIRATION_TIME_MINUTES,
-            EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
-  }
-  @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithDaysOfExpirationTime() {
-    generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_DAYS,
-      EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
-  }
-
-  @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithWeeksOfExpirationTime() {
-    generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_WEEKS,
-      EXPIRATION_UNIT_OF_TIME_WEEKS, EXPIRATION_TIME_WEEKS, EXPIRATION_UNIT_OF_TIME_WEEKS);
-  }
-
-  @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenExpirationTimeIsBiggerThanMax() {
-    generateAndSendResetPasswordNotificationWhenPasswordExistsWith(EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_WEEKS,
-      EXPIRATION_TIME_WEEKS_MAX, EXPIRATION_UNIT_OF_TIME_WEEKS);
-  }
-
-  @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenExpirationTimeIsIncorrect() {
-    shouldHandleExceptionWhenConvertTime("TEST", EXPIRATION_UNIT_OF_TIME_MINUTES);
-  }
-
-  @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenExpirationOfUnitTimeIsIncorrect() {
-    shouldHandleExceptionWhenConvertTime(EXPIRATION_TIME_WEEKS, EXPIRATION_UNIT_OF_TIME_INCORRECT);
+      .withRequestBody(WireMock.equalToJson(toJson(expectedNotification))));
   }
 
   public void shouldHandleExceptionWhenConvertTime(
@@ -278,13 +246,11 @@ public class GeneratePasswordRestLinkTest {
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
   }
 
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken(
-          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-          String expectedExpirationTimeOfUnit) {
+  @Test
+  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
+
     User mockUser = new User()
             .withId(UUID.randomUUID().toString())
             .withUsername(MOCK_USERNAME);
@@ -320,9 +286,7 @@ public class GeneratePasswordRestLinkTest {
             .withContext(
                     new Context()
                             .withAdditionalProperty("user", mockUser)
-                            .withAdditionalProperty("link", expectedLink)
-                            .withAdditionalProperty("expirationTime", expectedExpirationTime)
-                            .withAdditionalProperty("expirationUnitOfTime", expectedExpirationTimeOfUnit))
+                            .withAdditionalProperty("link", expectedLink))
             .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
             .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
@@ -441,6 +405,7 @@ public class GeneratePasswordRestLinkTest {
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
     String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
+    String expectedForgotPasswordLink = MOCK_FOLIO_UI_HOST + DEFAULT_FORGOT_PASSWORD_URL;
     RestAssured.given()
       .spec(spec)
       .header(mockUrlHeader)
@@ -462,8 +427,7 @@ public class GeneratePasswordRestLinkTest {
         new Context()
           .withAdditionalProperty("user", mockUser)
           .withAdditionalProperty("link", expectedLink)
-          .withAdditionalProperty("expirationTime", EXPIRATION_TIME_HOURS)
-          .withAdditionalProperty("expirationUnitOfTime", EXPIRATION_UNIT_OF_TIME_HOURS))
+          .withAdditionalProperty("forgotPasswordLink", expectedForgotPasswordLink))
       .withLang("en")
       .withRecipientId(mockUser.getId())
       .withText(StringUtils.EMPTY);

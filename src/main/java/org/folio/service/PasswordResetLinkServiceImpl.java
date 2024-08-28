@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -17,6 +18,7 @@ import org.folio.rest.client.PasswordResetActionClient;
 import org.folio.rest.client.UserModuleClient;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
+import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Context;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.jaxrs.model.Notification;
@@ -38,6 +40,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 
 public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
@@ -75,9 +78,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private String resetPasswordUIPathDefault;
   private String forgotPasswordUIPathDefault;
 
+  private Vertx vertx;
+
   public PasswordResetLinkServiceImpl(ConfigurationClient configurationClient, AuthTokenClient authTokenClient,
                                       NotificationClient notificationClient, PasswordResetActionClient passwordResetActionClient,
-                                      UserModuleClient userModuleClient, UserPasswordService userPasswordService) {
+                                      UserModuleClient userModuleClient, UserPasswordService userPasswordService, Vertx vertx) {
     this.configurationClient = configurationClient;
     this.authTokenClient = authTokenClient;
     this.notificationClient = notificationClient;
@@ -86,6 +91,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     this.resetPasswordUIPathDefault = System.getProperty("reset-password.ui-path.default", "/reset-password");
     this.forgotPasswordUIPathDefault = System.getProperty("forgot-password.ui-path.default","/forgot-password");
     this.userPasswordService = userPasswordService;
+    this.vertx = vertx;
   }
 
   public Future<String> sendPasswordResetLink(User user, Map<String, String> okapiHeaders) {
@@ -105,7 +111,6 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
           return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
         }
-
        return signToken(connectionParams, passwordResetActionIdHolder);
       })
       .compose(token -> isPasswordExists(user.getId(), token, tokenHolder,  connectionParams, configMapHolder, passwordResetActionIdHolder))
@@ -179,64 +184,29 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     return authTokenClient.signToken(tokenPayload, connectionParams);
   }
 
-  private Future<Boolean> isPasswordExists(String userId, String token, Holder<String> tokenHolder, OkapiConnectionParams connectionParams, Holder<Map<String, String>> configMapHolder, Holder<String> passwordResetActionIdHolder) {
+  public Future<Boolean> isPasswordExists(String userId, String token, Holder<String> tokenHolder, OkapiConnectionParams connectionParams, Holder<Map<String, String>> configMapHolder, Holder<String> passwordResetActionIdHolder) {
     logger.info("isPasswordExists");
     tokenHolder.value = token;
-    Date expirationDate = tokenDecoder(token);
 
+    BLUsersAPI blUsersAPI = new BLUsersAPI(vertx, null);
+    JsonObject tokenPayload = blUsersAPI.parseTokenPayload(token);
+    Long exp = tokenPayload.getLong("exp");
 
-//    long expirationTime = convertDateToMilliseconds(expirationTimeFromConfig, expirationUnitOfTimeFromConfig);
-//    if (expirationTime > MAXIMUM_EXPIRATION_TIME) {
-//      expirationTime = MAXIMUM_EXPIRATION_TIME;
-//      configMapHolder.value.put(LINK_EXPIRATION_TIME_CONFIG_KEY, String.valueOf(MAXIMUM_EXPIRATION_TIME_IN_WEEKS));
-//      configMapHolder.value.put(LINK_EXPIRATION_UNIT_OF_TIME_CONFIG_KEY, ExpirationTimeUnit.WEEKS.name().toLowerCase());
-//    }
+    System.out.println("exp value" + tokenPayload.getLong("exp") );
+    Date expirationDate1 = new Date(exp);
+    Date expirationDate2 = new Date(exp * 1000);
+
+    System.out.println("sreeja" + expirationDate1);
 
     PasswordResetAction actionToCreate = new PasswordResetAction()
       .withId(passwordResetActionIdHolder.value)
       .withUserId(userId)
-      .withExpirationTime(expirationDate);
+     .withExpirationTime(expirationDate2);
+
     logger.info("expirationtime" + actionToCreate.getExpirationTime());
     logger.info("action id" + actionToCreate.getId());
     logger.info("user id" + actionToCreate.getUserId());
     return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
-  }
-
-  private Date tokenDecoder( String token) {
-
-    Date expirationDate = new Date();
-    System.out.println("exp1" + expirationDate);
-    try {
-      String[] parts = token.split("\\.");
-      if (parts.length != 3) {
-        throw new IllegalArgumentException("JWT does not have 3 parts");
-      }
-      String payload = parts[1];
-      String decodedPayload = base64UrlDecode(payload);
-
-      ObjectMapper objectMapper = new ObjectMapper();
-      JsonNode payloadJson = objectMapper.readTree(decodedPayload);
-
-      long exp = payloadJson.path("exp").asLong();
-      System.out.println("exp" + exp );
-      expirationDate = new Date(exp * 1000);
-
-    } catch (Exception e) {
-      System.err.println("Error decoding token: " + e.getMessage());
-    }
-    System.out.println("exp2" + expirationDate);
-    return expirationDate;
-  }
-
-  private String base64UrlDecode(String input) {
-    // Replace URL-safe characters with standard Base64 characters
-    String base64 = input.replace('-', '+').replace('_', '/');
-    // Pad Base64 string to make its length a multiple of 4
-    int padding = 4 - (base64.length() % 4);
-    if (padding != 4) {
-      base64 += "=".repeat(padding);
-    }
-    return new String(Base64.getDecoder().decode(base64));
   }
 
   private long convertDateToMilliseconds(String expirationTimeString, String expirationUnitOfTime) {

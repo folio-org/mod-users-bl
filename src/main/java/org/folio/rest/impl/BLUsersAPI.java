@@ -167,7 +167,7 @@ public class BLUsersAPI implements BlUsers {
       this.notificationClient,
       new PasswordResetActionClientImpl(httpClient),
       userClient,
-      new UserPasswordServiceImpl(httpClient));
+      new UserPasswordServiceImpl(httpClient),vertx);
 
     circulationStorageModuleClient = new CirculationStorageModuleClientImpl(httpClient);
 
@@ -817,7 +817,7 @@ public class BLUsersAPI implements BlUsers {
     return substringAfterLast(iss, "/");
   }
 
-  private JsonObject parseTokenPayload(String token) {
+  public JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if (tokenParts.length == 3) {
       String encodedPayload = tokenParts[1];
