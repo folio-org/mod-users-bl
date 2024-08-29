@@ -21,8 +21,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

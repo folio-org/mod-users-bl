@@ -6,6 +6,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.rest.client.AuthTokenClient;
 import org.folio.rest.client.ConfigurationClient;
 import org.folio.rest.client.NotificationClient;
@@ -34,8 +36,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-
 public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
+
+  private static final Logger LOG = LogManager.getLogger(PasswordResetLinkServiceImpl.class);
 
   private static final String MODULE_NAME = "USERSBL";
   private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
@@ -76,6 +79,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   public Future<String> sendPasswordResetLink(User user, Map<String, String> okapiHeaders) {
+    LOG.info("sendPasswordResetLink:: user details {}", user);
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     Holder<Map<String, String>> configMapHolder = new Holder<>();
     Holder<String> passwordResetActionIdHolder = new Holder<>();
@@ -86,6 +90,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .compose(configurations -> {
         configMapHolder.value = configurations;
         if (StringUtils.isBlank(user.getUsername())) {
+          LOG.info("sendPasswordResetLink:: Error,User without username cannot reset password");
           String message = "User without username cannot reset password";
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage("user.absent-username", message);
           return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
@@ -113,6 +118,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   private Future<Void> sendNotification(OkapiConnectionParams connectionParams, Boolean passwordExists, Holder<String> tokenHolder, Holder<Map<String, String>> configMapHolder, Holder<String> linkHolder, User user) {
+    LOG.info("sendNotification:: passwordExistValue {}, User details {}", passwordExists, user);
     String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
     String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
     String generatedLink = linkHost + linkPath + '/' + tokenHolder.value + "?tenant=" + connectionParams.getTenantId();
@@ -138,8 +144,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   private Future<String> signToken(OkapiConnectionParams connectionParams, Holder<String> passwordResetActionIdHolder) {
+    LOG.info("signToken:: passwordResetActionIdHolder {}" , passwordResetActionIdHolder.value);
     passwordResetActionIdHolder.value = UUID.randomUUID().toString();
-
     JsonObject tokenPayload = new JsonObject()
       .put("sub", UNDEFINED_USER_NAME + passwordResetActionIdHolder.value)
       .put("dummy", true)
@@ -147,12 +153,16 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         .add("users-bl.password-reset-link.validate")
         .add("users-bl.password-reset-link.reset")
       );
-
     return authTokenClient.signToken(tokenPayload, connectionParams);
   }
 
+  /**
+   * This method will create PasswordResetAction object, In mod-login with the userId present in passwordResetAction,
+   * it will fetch the user credentials and check if password exists or not.
+   *
+   */
   public Future<Boolean> isPasswordExists(String userId, String token, Holder<String> tokenHolder, OkapiConnectionParams connectionParams, Holder<String> passwordResetActionIdHolder) {
-
+    LOG.info("isPasswordExists:: PasswordResetAction details. UserId {}, PasswordResetActionId {}", userId,passwordResetActionIdHolder.value);
     tokenHolder.value = token;
     JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
     Long exp = payload.getLong("exp");
