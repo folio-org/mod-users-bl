@@ -51,7 +51,6 @@ public class GeneratePasswordRestLinkTest {
   private static final String TENANT = "diku";
   private static final String GENERATE_PASSWORD_RESET_LINK_PATH = "/bl-users/password-reset/link";
   private static final String NOTIFY_PATH = "/notify";
-
   private static final String MODULE_NAME = "USERSBL";
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
@@ -93,18 +92,18 @@ public class GeneratePasswordRestLinkTest {
       .setContentType(ContentType.JSON)
       .setBaseUri("http://localhost:" + port)
       .addHeader(RestVerticle.OKAPI_HEADER_TENANT, TENANT)
-      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, getToken(UUID.randomUUID().toString(),"admin", "diku"))
+      .addHeader(RestVerticle.OKAPI_HEADER_TOKEN, getToken(UUID.randomUUID().toString(), "admin", "diku"))
       .build();
-  }
-
-  @Before
-  public void setUp() {
-    mockUrlHeader = new Header(BLUsersAPI.OKAPI_URL_HEADER, "http://localhost:" + mockServer.port());
   }
 
   @AfterClass
   public static void tearDown(TestContext context) {
     vertx.close(context.asyncAssertSuccess());
+  }
+
+  @Before
+  public void setUp() {
+    mockUrlHeader = new Header(BLUsersAPI.OKAPI_URL_HEADER, "http://localhost:" + mockServer.port());
   }
 
   @Test
@@ -150,14 +149,14 @@ public class GeneratePasswordRestLinkTest {
         new Context()
           .withAdditionalProperty("user", mockUser)
           .withAdditionalProperty("link", expectedLink)
-          .withAdditionalProperty("forgotPasswordLink",expectedForgotPasswordLink))
+          .withAdditionalProperty("forgotPasswordLink", expectedForgotPasswordLink))
       .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification))));
   }
 
   public void shouldHandleExceptionWhenConvertTime(
-    String expirationTime, String expirationTimeOfUnit){
+    String expirationTime, String expirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
@@ -231,9 +230,7 @@ public class GeneratePasswordRestLinkTest {
       .withContext(
         new Context()
           .withAdditionalProperty("user", mockUser)
-          .withAdditionalProperty("link", expectedLink)
-          .withAdditionalProperty("expirationTime", expectedExpirationTime)
-          .withAdditionalProperty("expirationUnitOfTime", expectedExpirationTimeOfUnit))
+          .withAdditionalProperty("link", expectedLink))
       .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
@@ -245,8 +242,8 @@ public class GeneratePasswordRestLinkTest {
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
 
     User mockUser = new User()
-            .withId(UUID.randomUUID().toString())
-            .withUsername(MOCK_USERNAME);
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
@@ -257,44 +254,44 @@ public class GeneratePasswordRestLinkTest {
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
-            .put("userId", mockUser.getId());
+      .put("userId", mockUser.getId());
     String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
     RestAssured.given()
-            .spec(spec)
-            .header(mockUrlHeader)
-            .body(requestBody.encode())
-            .when()
-            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
-            .then()
-            .statusCode(HttpStatus.SC_OK)
-            .body("link", is(expectedLink));
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_OK)
+      .body("link", is(expectedLink));
 
     List<PasswordResetAction> requestBodyByUrl =
-            getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
+      getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
     assertThat(requestBodyByUrl, hasSize(1));
     assertThat(requestBodyByUrl.get(0).getUserId(), is(mockUser.getId()));
 
     Notification expectedNotification = new Notification()
-            .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
-            .withContext(
-                    new Context()
-                            .withAdditionalProperty("user", mockUser)
-                            .withAdditionalProperty("link", expectedLink))
-            .withRecipientId(mockUser.getId());
+      .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
+      .withContext(
+        new Context()
+          .withAdditionalProperty("user", mockUser)
+          .withAdditionalProperty("link", expectedLink))
+      .withRecipientId(mockUser.getId());
     WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
-            .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
+      .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
   }
 
   public void cannotGeneratePasswordWhenTokenSignEndPointReturns500(
-          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-          String expectedExpirationTimeOfUnit) {
+    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+    String expectedExpirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
-            .withId(UUID.randomUUID().toString())
-            .withUsername(MOCK_USERNAME);
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
@@ -305,28 +302,28 @@ public class GeneratePasswordRestLinkTest {
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
-            .put("userId", mockUser.getId());
+      .put("userId", mockUser.getId());
     RestAssured.given()
-            .spec(spec)
-            .header(mockUrlHeader)
-            .body(requestBody.encode())
-            .when()
-            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
-            .then()
-            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
   }
 
   public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500(
-          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-          String expectedExpirationTimeOfUnit) {
+    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+    String expectedExpirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
-            .withId(UUID.randomUUID().toString())
-            .withUsername(MOCK_USERNAME);
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
@@ -337,28 +334,28 @@ public class GeneratePasswordRestLinkTest {
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
-            .put("userId", mockUser.getId());
+      .put("userId", mockUser.getId());
     RestAssured.given()
-            .spec(spec)
-            .header(mockUrlHeader)
-            .body(requestBody.encode())
-            .when()
-            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
-            .then()
-            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
   }
 
   public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404(
-          String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-          String expectedExpirationTimeOfUnit) {
+    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
+    String expectedExpirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
-            .withId(UUID.randomUUID().toString())
-            .withUsername(MOCK_USERNAME);
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
@@ -369,17 +366,18 @@ public class GeneratePasswordRestLinkTest {
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
-            .put("userId", mockUser.getId());
+      .put("userId", mockUser.getId());
     RestAssured.given()
-            .spec(spec)
-            .header(mockUrlHeader)
-            .body(requestBody.encode())
-            .when()
-            .post(GENERATE_PASSWORD_RESET_LINK_PATH)
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_NOT_FOUND);
 
   }
+
   @Test
   public void shouldGenerateAndSendCreatePasswordNotificationWhenPasswordExists() {
     Map<String, String> configToMock = new HashMap<>();
@@ -506,20 +504,21 @@ public class GeneratePasswordRestLinkTest {
   @Test
   public void cannotGeneratePasswordWhenTokenSignEndPointReturns500() {
     cannotGeneratePasswordWhenTokenSignEndPointReturns500(EXPIRATION_TIME_MINUTES,
-            EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
+      EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
 
   @Test
   public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500() {
     cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500(EXPIRATION_TIME_MINUTES,
-            EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
+      EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
   }
 
   @Test
   public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404() {
     shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404(EXPIRATION_TIME_DAYS,
-            EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
+      EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
   }
+
   private String toJson(Object object) {
     return JsonObject.mapFrom(object).toString();
   }
@@ -553,33 +552,34 @@ public class GeneratePasswordRestLinkTest {
 
   private void mockSignAuthTokenNotFound() {
     WireMock.stubFor(WireMock.post("/token/sign")
-            .willReturn(WireMock.notFound()));
+      .willReturn(WireMock.notFound()));
   }
+
   private void mockSignAuthToken(String tokenForResponse) {
     JsonObject response = new JsonObject().put("token", tokenForResponse);
     WireMock.stubFor(WireMock.post("/token/sign")
-            .willReturn(WireMock.created().withBody(response.encode())));
+      .willReturn(WireMock.created().withBody(response.encode())));
   }
 
   private void mockSignAuthTokenLegacy(String tokenForResponse) {
     JsonObject response = new JsonObject().put("token", tokenForResponse);
     WireMock.stubFor(WireMock.post("/token")
-            .willReturn(WireMock.created().withBody(response.encode())));
+      .willReturn(WireMock.created().withBody(response.encode())));
   }
 
   private void mockSignAuthTokenServerError() {
     WireMock.stubFor(WireMock.post("/token/sign")
-            .willReturn(WireMock.serverError()));
+      .willReturn(WireMock.serverError()));
   }
 
   private void mockSignAuthTokenLegacyServerError() {
     WireMock.stubFor(WireMock.post("/token")
-            .willReturn(WireMock.serverError()));
+      .willReturn(WireMock.serverError()));
   }
 
   private void mockSignAuthTokenLegacyNotFound() {
     WireMock.stubFor(WireMock.post("/token")
-            .willReturn(WireMock.notFound()));
+      .willReturn(WireMock.notFound()));
   }
 
   private void mockNotificationModule() {

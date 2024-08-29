@@ -1,10 +1,7 @@
 package org.folio.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -36,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -51,19 +47,14 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String FORGOT_PASSWORD_UI_PATH_CONFIG_KEY = "FORGOT_PASSWORD_UI_PATH";
   private static final Set<String> GENERATE_LINK_REQUIRED_CONFIGURATION = Collections.emptySet();
   private static final String FOLIO_HOST_DEFAULT = "http://localhost:3000";
-
   private static final String CREATE_PASSWORD_EVENT_CONFIG_NAME = "CREATE_PASSWORD_EVENT";//NOSONAR
   private static final String RESET_PASSWORD_EVENT_CONFIG_NAME = "RESET_PASSWORD_EVENT";//NOSONAR
   private static final String PASSWORD_CREATED_EVENT_CONFIG_NAME = "PASSWORD_CREATED_EVENT";//NOSONAR
   private static final String PASSWORD_CHANGED_EVENT_CONFIG_NAME = "PASSWORD_CHANGED_EVENT";//NOSONAR
   private static final String DEFAULT_NOTIFICATION_LANG = "en";
-
   private static final String LINK_INVALID_STATUS_CODE = "link.invalid";
   private static final String LINK_EXPIRED_STATUS_CODE = "link.expired";
   private static final String LINK_USED_STATUS_CODE = "link.used";
-
-  private static final int MAXIMUM_EXPIRATION_TIME_IN_WEEKS = 4;
-  private static final long MAXIMUM_EXPIRATION_TIME = TimeUnit.DAYS.toMillis(7) * MAXIMUM_EXPIRATION_TIME_IN_WEEKS;
 
   private ConfigurationClient configurationClient;
   private AuthTokenClient authTokenClient;
@@ -71,11 +62,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private PasswordResetActionClient passwordResetActionClient;
   private UserModuleClient userModuleClient;
   private UserPasswordService userPasswordService;
-
   private String resetPasswordUIPathDefault;
   private String forgotPasswordUIPathDefault;
-
-  private Vertx vertx;
 
   public PasswordResetLinkServiceImpl(ConfigurationClient configurationClient, AuthTokenClient authTokenClient,
                                       NotificationClient notificationClient, PasswordResetActionClient passwordResetActionClient,
@@ -86,7 +74,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     this.passwordResetActionClient = passwordResetActionClient;
     this.userModuleClient = userModuleClient;
     this.resetPasswordUIPathDefault = System.getProperty("reset-password.ui-path.default", "/reset-password");
-    this.forgotPasswordUIPathDefault = System.getProperty("forgot-password.ui-path.default","/forgot-password");
+    this.forgotPasswordUIPathDefault = System.getProperty("forgot-password.ui-path.default", "/forgot-password");
     this.userPasswordService = userPasswordService;
   }
 

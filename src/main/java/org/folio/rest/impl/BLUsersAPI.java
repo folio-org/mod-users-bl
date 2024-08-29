@@ -1472,6 +1472,7 @@ public class BLUsersAPI implements BlUsers {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get(BLUsersAPI.OKAPI_URL_HEADER),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN));
+
     passwordResetLinkService.validateLink(connectionParams)
       .map(PostBlUsersPasswordResetValidateResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
