@@ -154,25 +154,5 @@ and the [Docker image](https://hub.docker.com/r/folioorg/mod-users-bl/).
 
 ### Password reset link expiration
 
-Operators should take care when setting configuration values for `RESET_PASSWORD_LINK_EXPIRATION_TIME` and
-`RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME` to match either the default access token expiration or custom
-configured access token configuration for a given tenant, since the token expiration which is tied to the reset will
-use this expiration which is set in mod-authtoken. The `RESET_PASSWORD_LINK_EXPIRATION_TIME` and
-`RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME` configuration parameters are used in the notification sent
-by the mod-users-bl module.
-
-`RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME` defaults to `hours` and can be any of `minutes`, `hours`, `days`,
-and `weeks`.
-
-A link expiration time longer than four weeks is truncated to four weeks.
-
-The configuration values are stored in [mod-configuration](https://github.com/folio-org/mod-configuration).
-Example records:
-
-```
-{ "module": "USERSBL", "configName": "", "code": "RESET_PASSWORD_LINK_EXPIRATION_TIME", "value": "12" }
-```
-```
-{ "module": "USERSBL", "configName": "", "code": "RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME", "value": "hours" }
-```
+The Password reset link expiration will be dependent on the expiration time of the token.
 
