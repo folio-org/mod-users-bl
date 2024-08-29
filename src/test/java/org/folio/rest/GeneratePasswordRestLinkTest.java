@@ -57,24 +57,17 @@ public class GeneratePasswordRestLinkTest {
   private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
   private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";
   private static final String EXPIRATION_TIME_MINUTES = "15";
-  private static final String EXPIRATION_TIME_HOURS = "24";
   private static final String EXPIRATION_TIME_DAYS = "2";
-  private static final String EXPIRATION_TIME_WEEKS = "3";
-  private static final String EXPIRATION_UNIT_OF_TIME_HOURS = "hours";
   private static final String EXPIRATION_UNIT_OF_TIME_MINUTES = "minutes";
   private static final String EXPIRATION_UNIT_OF_TIME_DAYS = "days";
-  private static final String EXPIRATION_UNIT_OF_TIME_WEEKS = "weeks";
-  private static final String EXPIRATION_UNIT_OF_TIME_INCORRECT = "test";
   private static final String RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME = "RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME";
   private static final String RESET_PASSWORD_LINK_EXPIRATION_TIME = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
   private static final String MOCK_FOLIO_UI_HOST = "http://localhost:3000";
   private static final String DEFAULT_UI_URL = "/reset-password";
   private static final String DEFAULT_FORGOT_PASSWORD_URL = "/forgot-password";
-  private static final String SAMPLE_TOKEN = "eyJhbGciOiJIUzM4NCJ9.eyJkdW1teSI6dHJ1ZSwic3ViIjoiVU5ERUZJTkVEX1VTRVJfX1JFU0VUX1BBU1NXT1JEXzRkMjMzOWZmLWI0ZDktNDU4MC1hNTc0LThiYWM3YWI2YjBhZiIsInR5cGUiOiJkdW1teS1leHBpcmluZyIsImV4dHJhX3Blcm1pc3Npb25zIjpbInVzZXJzLWJsLnBhc3N3b3JkLXJlc2V0LWxpbmsudmFsaWRhdGUiLCJ1c2Vycy1ibC5wYXNzd29yZC1yZXNldC1saW5rLnJlc2V0Il0sImV4cCI6MTcyNDY2NjE3MywidGVuYW50IjoiZGlrdSJ9.L7h_vsh47dFo537KeO8MYZV1xSmHJ5E7XR_9uhPYs30orGBACoydq-uJZrtFB-JK";
   private static final String MOCK_TOKEN = "eyJhbGciOiJIUzM4NCJ9.eyJkdW1teSI6dHJ1ZSwic3ViIjoiVU5ERUZJTkVEX1VTRVJfX1JFU0VUX1BBU1NXT1JEXzRkMjMzOWZmLWI0ZDktNDU4MC1hNTc0LThiYWM3YWI2YjBhZiIsInR5cGUiOiJkdW1teS1leHBpcmluZyIsImV4dHJhX3Blcm1pc3Npb25zIjpbInVzZXJzLWJsLnBhc3N3b3JkLXJlc2V0LWxpbmsudmFsaWRhdGUiLCJ1c2Vycy1ibC5wYXNzd29yZC1yZXNldC1saW5rLnJlc2V0Il0sImV4cCI6MTcyNDY2NjE3MywidGVuYW50IjoiZGlrdSJ9.L7h_vsh47dFo537KeO8MYZV1xSmHJ5E7XR_9uhPYs30orGBACoydq-uJZrtFB-JK";
   private static final String MOCK_USERNAME = "username";
   private static final String PASSWORD_RESET_ACTION_PATH = "/authn/password-reset-action";
-  private static final String EXPIRATION_TIME_WEEKS_MAX = "4";
 
   private static Vertx vertx;
   private static int port;
@@ -125,13 +118,13 @@ public class GeneratePasswordRestLinkTest {
 
     mockUserFound(mockUser.getId(), mockUser);
     mockConfigModule(MODULE_NAME, configToMock);
-    mockSignAuthToken(SAMPLE_TOKEN);
+    mockSignAuthToken(MOCK_TOKEN);
     mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
-    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + SAMPLE_TOKEN + "?tenant=" + TENANT;
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
     String expectedForgotPasswordLink = MOCK_FOLIO_UI_HOST + DEFAULT_FORGOT_PASSWORD_URL;
     RestAssured.given()
       .spec(spec)

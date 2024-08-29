@@ -41,8 +41,6 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
             String.format("Error saving password reset action. Status: %d, body: %s", response.getCode(), response.getBody());
           throw new OkapiModuleClientException(logMessage);
         }
-        System.out.println("save action");
-        System.out.println(response.getJson());
         return response.getJson().getBoolean("passwordExists");
       }));
   }

@@ -25,12 +25,8 @@ public class AuthTokenClientImpl implements AuthTokenClient {
   public Future<String> signToken(JsonObject tokenPayload, OkapiConnectionParams okapiConnectionParams) {
     String requestUrl = okapiConnectionParams.getOkapiUrl() + "/token/sign";
     String requestPayload = new JsonObject().put("payload", tokenPayload).encode();
-    System.out.println("signToken in auth token client");
-    System.out.println(tokenPayload);
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST, okapiConnectionParams.buildHeaders(), requestPayload)
       .compose(response -> {
-        System.out.println("sign token response");
-        System.out.println(response.getJson());
         switch (response.getCode()) {
           case HttpStatus.SC_CREATED:
             return Future.succeededFuture(response.getJson().getString("token"));

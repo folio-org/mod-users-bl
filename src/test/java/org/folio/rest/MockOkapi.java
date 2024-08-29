@@ -368,7 +368,7 @@ public class MockOkapi extends AbstractVerticle {
 
   private MockResponse handleSingToken(HttpMethod method, String payload) {
     if (method.equals(HttpMethod.POST)) {
-      return new MockResponse(HttpStatus.SC_CREATED, "{\"token\":\"header.payload.signature\"}");
+      return new MockResponse(HttpStatus.SC_CREATED, "{\"token\":\"eyJhbGciOiJIUzM4NCJ9.eyJkdW1teSI6dHJ1ZSwic3ViIjoiVU5ERUZJTkVEX1VTRVJfX1JFU0VUX1BBU1NXT1JEXzRkMjMzOWZmLWI0ZDktNDU4MC1hNTc0LThiYWM3YWI2YjBhZiIsInR5cGUiOiJkdW1teS1leHBpcmluZyIsImV4dHJhX3Blcm1pc3Npb25zIjpbInVzZXJzLWJsLnBhc3N3b3JkLXJlc2V0LWxpbmsudmFsaWRhdGUiLCJ1c2Vycy1ibC5wYXNzd29yZC1yZXNldC1saW5rLnJlc2V0Il0sImV4cCI6MTcyNDY2NjE3MywidGVuYW50IjoiZGlrdSJ9.L7h_vsh47dFo537KeO8MYZV1xSmHJ5E7XR_9uhPYs30orGBACoydq-uJZrtFB-JK\"}");
     } else {
       return new MockResponse(HttpStatus.SC_NOT_FOUND, method.name());
     }

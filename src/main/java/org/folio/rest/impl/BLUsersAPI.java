@@ -817,7 +817,7 @@ public class BLUsersAPI implements BlUsers {
     return substringAfterLast(iss, "/");
   }
 
-  public JsonObject parseTokenPayload(String token) {
+  private JsonObject parseTokenPayload(String token) {
     String[] tokenParts = token.split("\\.");
     if (tokenParts.length == 3) {
       String encodedPayload = tokenParts[1];
@@ -1437,9 +1437,6 @@ public class BLUsersAPI implements BlUsers {
                                            Map<String, String> okapiHeaders,
                                            Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                            Context vertxContext) {
-    logger.info("postBlUsersPasswordResetLink for account activation and password reset");
-    logger.info(entity.getUserId());
-    logger.info(entity.getAdditionalProperties());    //for both the activate account and reset password
     passwordResetLinkService.sendPasswordResetLink(entity.getUserId(), okapiHeaders)
       .map(link ->
         PostBlUsersPasswordResetLinkResponse.respond200WithApplicationJson(
@@ -1454,9 +1451,6 @@ public class BLUsersAPI implements BlUsers {
                                             Map<String, String> okapiHeaders,
                                             Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                             Context vertxContext) {
-    logger.info("postBlUsersPasswordResetReset");
-    logger.info(userAgent);
-    logger.info(xForwardedFor);
     JsonObject request = JsonObject.mapFrom(entity);
     Map<String, String> requestHeaders = new CaseInsensitiveMap<>(okapiHeaders);
     Optional.ofNullable(userAgent)
@@ -1478,7 +1472,6 @@ public class BLUsersAPI implements BlUsers {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders.get(BLUsersAPI.OKAPI_URL_HEADER),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT),
       okapiHeaders.get(RestVerticle.OKAPI_HEADER_TOKEN));
-    logger.info("postBlUsersPasswordResetValidate");
     passwordResetLinkService.validateLink(connectionParams)
       .map(PostBlUsersPasswordResetValidateResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)

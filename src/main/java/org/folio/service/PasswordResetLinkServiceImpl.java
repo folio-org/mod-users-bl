@@ -168,7 +168,9 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   public Future<Boolean> isPasswordExists(String userId, String token, Holder<String> tokenHolder, OkapiConnectionParams connectionParams, Holder<Map<String, String>> configMapHolder, Holder<String> passwordResetActionIdHolder) {
 
     tokenHolder.value = token;
-    Date expirationDate = tokenDecoder(token);
+    JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
+    Long exp = payload.getLong("exp");
+    Date expirationDate = new Date(exp * 1000);
     PasswordResetAction actionToCreate = new PasswordResetAction()
       .withId(passwordResetActionIdHolder.value)
       .withUserId(userId)
@@ -179,38 +181,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     logger.info("user id" + actionToCreate.getUserId());
     return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
   }
-  private Date tokenDecoder( String token) {
 
-    Date expirationDate = new Date();
-    try {
-      String[] parts = token.split("\\.");
-      if (parts.length != 3) {
-        throw new IllegalArgumentException("JWT does not have 3 parts");
-      }
-      String payload = parts[1];
-      String decodedPayload = base64UrlDecode(payload);
-
-      ObjectMapper objectMapper = new ObjectMapper();
-      JsonNode payloadJson = objectMapper.readTree(decodedPayload);
-
-      long exp = payloadJson.path("exp").asLong();
-      expirationDate = new Date(exp * 1000);
-
-    } catch (Exception e) {
-      System.err.println("Error decoding token: " + e.getMessage());
-    }
-    System.out.println("exp2" + expirationDate);
-    return expirationDate;
-  }
-
-  private String base64UrlDecode(String input) {
-    String base64 = input.replace('-', '+').replace('_', '/');
-    int padding = 4 - (base64.length() % 4);
-    if (padding != 4) {
-      base64 += "=".repeat(padding);
-    }
-    return new String(Base64.getDecoder().decode(base64));
-  }
 
   @Override
   public Future<Void> resetPassword(String newPassword, Map<String, String> requestHeaders) {
