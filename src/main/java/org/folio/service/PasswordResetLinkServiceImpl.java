@@ -6,8 +6,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.folio.rest.client.AuthTokenClient;
 import org.folio.rest.client.ConfigurationClient;
 import org.folio.rest.client.NotificationClient;
@@ -40,7 +38,6 @@ import java.util.stream.Collectors;
 public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private static final String MODULE_NAME = "USERSBL";
-  private static final Logger logger = LogManager.getLogger(PasswordResetLinkServiceImpl.class);
   private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String UI_PATH_CONFIG_KEY = "RESET_PASSWORD_UI_PATH";
@@ -95,7 +92,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         }
         return signToken(connectionParams, passwordResetActionIdHolder);
       })
-      .compose(token -> isPasswordExists(user.getId(), token, tokenHolder, connectionParams, configMapHolder, passwordResetActionIdHolder))
+      .compose(token -> isPasswordExists(user.getId(), token, tokenHolder, connectionParams, passwordResetActionIdHolder))
       .compose(passwordExists -> sendNotification(connectionParams, passwordExists, tokenHolder, configMapHolder, linkHolder, user))
       .map(v -> linkHolder.value);
   }
@@ -153,7 +150,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     return authTokenClient.signToken(tokenPayload, connectionParams);
   }
 
-  public Future<Boolean> isPasswordExists(String userId, String token, Holder<String> tokenHolder, OkapiConnectionParams connectionParams, Holder<Map<String, String>> configMapHolder, Holder<String> passwordResetActionIdHolder) {
+  public Future<Boolean> isPasswordExists(String userId, String token, Holder<String> tokenHolder, OkapiConnectionParams connectionParams, Holder<String> passwordResetActionIdHolder) {
 
     tokenHolder.value = token;
     JsonObject payload = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(token.split("\\.")[1])));
@@ -164,9 +161,6 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .withUserId(userId)
       .withExpirationTime(expirationDate);
 
-    logger.info("expirationtime" + actionToCreate.getExpirationTime());
-    logger.info("action id" + actionToCreate.getId());
-    logger.info("user id" + actionToCreate.getUserId());
     return passwordResetActionClient.saveAction(actionToCreate, connectionParams);
   }
 

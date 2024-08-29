@@ -96,14 +96,14 @@ public class GeneratePasswordRestLinkTest {
       .build();
   }
 
-  @AfterClass
-  public static void tearDown(TestContext context) {
-    vertx.close(context.asyncAssertSuccess());
-  }
-
   @Before
   public void setUp() {
     mockUrlHeader = new Header(BLUsersAPI.OKAPI_URL_HEADER, "http://localhost:" + mockServer.port());
+  }
+
+  @AfterClass
+  public static void tearDown(TestContext context) {
+    vertx.close(context.asyncAssertSuccess());
   }
 
   @Test
@@ -156,7 +156,7 @@ public class GeneratePasswordRestLinkTest {
   }
 
   public void shouldHandleExceptionWhenConvertTime(
-    String expirationTime, String expirationTimeOfUnit) {
+    String expirationTime, String expirationTimeOfUnit){
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
@@ -190,8 +190,7 @@ public class GeneratePasswordRestLinkTest {
   }
 
   public void generateAndSendResetPasswordNotificationWhenPasswordExistsWith(
-    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-    String expectedExpirationTimeOfUnit) {
+    String expirationTime, String expirationTimeOfUnit) {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
