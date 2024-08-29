@@ -122,7 +122,8 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     String forgotPasswordLinkPath = configMapHolder.value.getOrDefault(FORGOT_PASSWORD_UI_PATH_CONFIG_KEY, forgotPasswordUIPathDefault);
     String forgotPasswordLink = forgotPasswordLinkHost + forgotPasswordLinkPath;
 
-    String eventConfigName = passwordExists ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
+    boolean passwordExistsValue = (null != passwordExists) && passwordExists;
+    String eventConfigName = passwordExistsValue ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
     Notification notification = new Notification()
       .withEventConfigName(eventConfigName)
       .withRecipientId(user.getId())
