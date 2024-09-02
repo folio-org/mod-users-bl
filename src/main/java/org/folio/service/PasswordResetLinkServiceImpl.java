@@ -86,7 +86,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     Holder<String> tokenHolder = new Holder<>();
     Holder<String> linkHolder = new Holder<>();
 
-     return configurationClient.lookupConfigByModuleName(MODULE_NAME, GENERATE_LINK_REQUIRED_CONFIGURATION, connectionParams)
+    return configurationClient.lookupConfigByModuleName(MODULE_NAME, GENERATE_LINK_REQUIRED_CONFIGURATION, connectionParams)
       .compose(configurations -> {
         configMapHolder.value = configurations;
         if (StringUtils.isBlank(user.getUsername())) {
@@ -128,7 +128,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     String forgotPasswordLinkPath = configMapHolder.value.getOrDefault(FORGOT_PASSWORD_UI_PATH_CONFIG_KEY, forgotPasswordUIPathDefault);
     String forgotPasswordLink = forgotPasswordLinkHost + forgotPasswordLinkPath;
 
-    boolean passwordExistsValue = (null != passwordExists) && passwordExists;
+    boolean passwordExistsValue = Boolean.TRUE.equals(passwordExists);
     String eventConfigName = passwordExistsValue ? RESET_PASSWORD_EVENT_CONFIG_NAME : CREATE_PASSWORD_EVENT_CONFIG_NAME;
     Notification notification = new Notification()
       .withEventConfigName(eventConfigName)

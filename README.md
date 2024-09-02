@@ -154,5 +154,5 @@ and the [Docker image](https://hub.docker.com/r/folioorg/mod-users-bl/).
 
 ### Password reset link expiration
 
-The Password reset link expiration will be dependent on the expiration time of the token.
+The Password reset link expiration will be dependent on the token expiration time configured in [mod-authtoken](https://github.com/folio-org/mod-authtoken).
 
