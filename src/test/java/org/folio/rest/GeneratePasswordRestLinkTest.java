@@ -1,7 +1,6 @@
 package org.folio.rest;
 
 import static org.folio.rest.MockOkapi.getToken;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.folio.rest.impl.BLUsersAPI;
@@ -53,12 +51,6 @@ public class GeneratePasswordRestLinkTest {
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
   private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
   private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";
-  private static final String EXPIRATION_TIME_MINUTES = "15";
-  private static final String EXPIRATION_TIME_DAYS = "2";
-  private static final String EXPIRATION_UNIT_OF_TIME_MINUTES = "minutes";
-  private static final String EXPIRATION_UNIT_OF_TIME_DAYS = "days";
-  private static final String RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME = "RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME";
-  private static final String RESET_PASSWORD_LINK_EXPIRATION_TIME = "RESET_PASSWORD_LINK_EXPIRATION_TIME";
   private static final String MOCK_FOLIO_UI_HOST = "http://localhost:3000";
   private static final String DEFAULT_UI_URL = "/reset-password";
   private static final String DEFAULT_FORGOT_PASSWORD_URL = "/forgot-password";
@@ -153,46 +145,9 @@ public class GeneratePasswordRestLinkTest {
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification))));
   }
 
-  public void shouldHandleExceptionWhenConvertTime(
-    String expirationTime, String expirationTimeOfUnit){
+  public void generateAndSendResetPasswordNotificationWhenPasswordExistsWith() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
-    User mockUser = new User()
-      .withId(UUID.randomUUID().toString())
-      .withUsername(MOCK_USERNAME);
-    boolean passwordExists = true;
-
-    mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
-    mockSignAuthToken(MOCK_TOKEN);
-    mockPostPasswordResetAction(passwordExists);
-    mockNotificationModule();
-
-    JsonObject requestBody = new JsonObject()
-      .put("userId", mockUser.getId());
-    String actual = RestAssured.given()
-      .spec(spec)
-      .header(mockUrlHeader)
-      .body(requestBody.encode())
-      .when()
-      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
-      .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY)
-      .contentType(MediaType.APPLICATION_JSON)
-      .extract()
-      .asString();
-
-    assertThat(actual, containsString("Can't convert time period to milliseconds"));
-  }
-
-  public void generateAndSendResetPasswordNotificationWhenPasswordExistsWith(
-    String expirationTime, String expirationTimeOfUnit) {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
@@ -234,7 +189,7 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
-  public void shouldGenerateAndSendPasswordNotificationWhenPasswordWithMinutesOfExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken() {
+  public void shouldGenerateAndSendPasswordNotificationWithExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
 
@@ -279,13 +234,10 @@ public class GeneratePasswordRestLinkTest {
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
   }
 
-  public void cannotGeneratePasswordWhenTokenSignEndPointReturns500(
-    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-    String expectedExpirationTimeOfUnit) {
+  @Test
+  public void cannotGeneratePasswordWhenTokenSignEndPointReturns500() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
@@ -311,13 +263,10 @@ public class GeneratePasswordRestLinkTest {
 
   }
 
-  public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500(
-    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-    String expectedExpirationTimeOfUnit) {
+  @Test
+  public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
@@ -343,13 +292,9 @@ public class GeneratePasswordRestLinkTest {
 
   }
 
-  public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404(
-    String expirationTime, String expirationTimeOfUnit, String expectedExpirationTime,
-    String expectedExpirationTimeOfUnit) {
+  public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_TIME, expirationTime);
-    configToMock.put(RESET_PASSWORD_LINK_EXPIRATION_UNIT_OF_TIME, expirationTimeOfUnit);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
@@ -376,7 +321,7 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
-  public void shouldGenerateAndSendCreatePasswordNotificationWhenPasswordExists() {
+  public void shouldGenerateAndSendCreatePasswordNotificationWhenPasswordNotExists() {
     Map<String, String> configToMock = new HashMap<>();
     configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
@@ -496,24 +441,6 @@ public class GeneratePasswordRestLinkTest {
       .then()
       .statusCode(HttpStatus.SC_OK)
       .body("link", is(expectedLink));
-  }
-
-  @Test
-  public void cannotGeneratePasswordWhenTokenSignEndPointReturns500() {
-    cannotGeneratePasswordWhenTokenSignEndPointReturns500(EXPIRATION_TIME_MINUTES,
-      EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
-  }
-
-  @Test
-  public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500() {
-    cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500(EXPIRATION_TIME_MINUTES,
-      EXPIRATION_UNIT_OF_TIME_MINUTES, EXPIRATION_TIME_MINUTES, EXPIRATION_UNIT_OF_TIME_MINUTES);
-  }
-
-  @Test
-  public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404() {
-    shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404(EXPIRATION_TIME_DAYS,
-      EXPIRATION_UNIT_OF_TIME_DAYS, EXPIRATION_TIME_DAYS, EXPIRATION_UNIT_OF_TIME_DAYS);
   }
 
   private String toJson(Object object) {
