@@ -4,7 +4,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-users-bl</artifactId>
   <name>mod-users-bl</name>
-  <version>7.8.0</version>
+  <version>7.8.2-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License 2.0</name>
