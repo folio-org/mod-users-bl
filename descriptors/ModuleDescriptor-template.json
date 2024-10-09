@@ -251,10 +251,6 @@
     {
       "id": "password-validator",
       "version": "1.0"
-    },
-    {
-      "id": "request-storage",
-      "version": "6.0"
     }
   ],
   "optional": [
@@ -277,6 +273,10 @@
     {
       "id": "notify",
       "version": "2.2"
+    },
+    {
+      "id": "request-storage",
+      "version": "6.0"
     }
   ],
   "permissionSets": [
