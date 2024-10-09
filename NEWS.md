@@ -1,4 +1,5 @@
-## 7.9.0 in progress
+## 7.8.1 2024-10-09
+* MODUSERBL-199 - Adding the dependency request-storage as optional.
 
 ## 7.8.0 2024-06-20
 
