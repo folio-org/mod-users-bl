@@ -164,6 +164,7 @@
             "login.password-reset-action.post",
             "auth.signtoken",
             "notify.item.post",
+            "notify.users.item.post",
             "user-tenants.collection.get"
           ]
         },
@@ -178,6 +179,7 @@
             "users.collection.get",
             "users.item.get",
             "notify.item.post",
+            "notify.users.item.post",
             "user-tenants.collection.get"
           ]
         },
@@ -199,7 +201,8 @@
             "configuration.entries.collection.get",
             "login.password-reset-action.post",
             "auth.signtoken",
-            "notify.item.post"
+            "notify.item.post",
+            "notify.users.item.post"
           ]
         },
         {
@@ -213,7 +216,8 @@
             "auth.signtoken",
             "login.password-reset.post",
             "validation.validate.post",
-            "notify.item.post"
+            "notify.item.post",
+            "notify.users.item.post"
           ]
         },
         {
