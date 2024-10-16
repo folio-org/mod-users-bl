@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.folio.dbschema.ObjectMapperTool;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Config;
 import org.folio.rest.jaxrs.model.Configurations;
@@ -444,7 +445,7 @@ public class GeneratePasswordRestLinkTest {
   }
 
   private String toJson(Object object) {
-    return JsonObject.mapFrom(object).toString();
+    return ObjectMapperTool.valueAsString(object);
   }
 
 

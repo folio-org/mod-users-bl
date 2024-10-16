@@ -20,6 +20,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+
+import org.folio.dbschema.ObjectMapperTool;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.LoginCredentials;
 import org.folio.rest.jaxrs.model.PasswordReset;
@@ -124,7 +126,7 @@ public class HeadersForwardingTest {
       .willReturn(WireMock.okJson(users.encode())));
 
     WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
-      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getToken(USER_ID, USERNAME, TENANT))));
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getToken(USER_ID, USERNAME, TENANT))));
 
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray().add(new JsonObject()));
@@ -145,7 +147,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
@@ -201,7 +203,7 @@ public class HeadersForwardingTest {
       .setPath("/authn")
       .setHttpOnly(true);
     WireMock.stubFor(post(URL_AUTH_LOGIN)
-      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode())
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials))
       .withStatus(201)
       .withHeader("Set-Cookie", accessTokenCookie.encode())
       .withHeader("Set-Cookie", refreshTokenCookie.encode())
@@ -232,7 +234,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(BL_USERS_LOGIN + "?expandPermissions=true")
       .then()
@@ -284,7 +286,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
@@ -300,7 +302,7 @@ public class HeadersForwardingTest {
     credentials.setPassword("password");
 
     WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
-      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getTokenWithoutTenant(USER_ID, USERNAME))));
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getTokenWithoutTenant(USER_ID, USERNAME))));
 
     WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID))
@@ -310,7 +312,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
@@ -326,7 +328,7 @@ public class HeadersForwardingTest {
     credentials.setPassword("password");
 
     WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
-      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, "")));
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, "")));
 
     WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID))
@@ -336,7 +338,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
@@ -358,7 +360,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
@@ -381,7 +383,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
@@ -401,7 +403,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post("/bl-users/login")
       .then()
@@ -421,7 +423,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post("/bl-users/login")
       .then()
@@ -459,7 +461,7 @@ public class HeadersForwardingTest {
       .willReturn(WireMock.okJson(users.encode())));
 
     WireMock.stubFor(post(authLoginEndpoint)
-      .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getToken(USER_ID, USERNAME, TENANT))));
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getToken(USER_ID, USERNAME, TENANT))));
 
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray()
@@ -482,7 +484,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post(blUsersLoginEndpoint)
       .then()
@@ -529,7 +531,7 @@ public class HeadersForwardingTest {
       .given()
       .spec(spec)
       .header(new Header(BLUsersAPI.X_FORWARDED_FOR_HEADER, IP))
-      .body(JsonObject.mapFrom(credentials).encode())
+      .body(ObjectMapperTool.valueAsString(credentials))
       .when()
       .post("/bl-users/settings/myprofile/password")
       .then()
@@ -548,7 +550,7 @@ public class HeadersForwardingTest {
 
     WireMock.stubFor(
       WireMock.get("/authn/password-reset-action/" + RESET_PASSWORD_ACTION_ID)
-        .willReturn(WireMock.okJson(JsonObject.mapFrom(passwordResetAction).encode()))
+        .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(passwordResetAction)))
     );
 
     WireMock.stubFor(
@@ -580,7 +582,7 @@ public class HeadersForwardingTest {
       .spec(spec)
       .header(new Header(header, IP))
       .header(new Header("x-okapi-token", buildMockJwtToken()))
-      .body(JsonObject.mapFrom(new PasswordReset().withNewPassword(USER_PASSWORD)).encode())
+      .body(ObjectMapperTool.valueAsString(new PasswordReset().withNewPassword(USER_PASSWORD)))
       .when()
       .post("/bl-users/password-reset/reset")
       .then()
@@ -625,6 +627,6 @@ public class HeadersForwardingTest {
   }
 
   private String toJson(Object object) {
-    return JsonObject.mapFrom(object).toString();
+    return ObjectMapperTool.valueAsString(object);
   }
 }
