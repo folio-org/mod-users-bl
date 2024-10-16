@@ -135,7 +135,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .withRecipientId(user.getId())
       .withContext(
         new Context()
-          .withAdditionalProperty("user", JsonObject.mapFrom(user))
+          .withAdditionalProperty("user", user)
           .withAdditionalProperty("link", generatedLink)
           .withAdditionalProperty("forgotPasswordLink", forgotPasswordLink))
       .withText(StringUtils.EMPTY)

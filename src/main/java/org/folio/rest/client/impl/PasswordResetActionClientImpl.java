@@ -7,6 +7,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
+import org.folio.dbschema.ObjectMapperTool;
 import org.folio.rest.client.PasswordResetActionClient;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.impl.BLUsersAPI;
@@ -34,7 +35,7 @@ public class PasswordResetActionClientImpl implements PasswordResetActionClient 
     String requestUrl = okapiConnectionParams.getOkapiUrl() + PW_RESET_ACTION_ENDPOINT;
 
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.POST,
-      okapiConnectionParams.buildHeaders(), JsonObject.mapFrom(passwordResetAction).encode())
+      okapiConnectionParams.buildHeaders(), ObjectMapperTool.valueAsString(passwordResetAction))
       .map((response -> {
         if (response.getCode() != HttpStatus.SC_CREATED) {
           String logMessage =
