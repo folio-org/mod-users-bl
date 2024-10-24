@@ -157,7 +157,6 @@ resourceTypes:
   /by-id:
     /{id}:
       type: { compositeUserResource: { "typeName" : "id" } }
-      is: [includeable]
       delete:
         description: "Delete a user by id"
         responses:

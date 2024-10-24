@@ -713,8 +713,7 @@ public class BLUsersAPI implements BlUsers {
   }
 
   @Override
-  public void deleteBlUsersByIdById(String id, List<String> include,
-                                    Map<String, String> okapiHeaders,
+  public void deleteBlUsersByIdById(String id, Map<String, String> okapiHeaders,
                                     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
                                     Context vertxContext) {
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
