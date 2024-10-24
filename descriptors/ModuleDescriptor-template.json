@@ -332,7 +332,7 @@
       "description": "Get summary of open transactions of user record"
     },
     {
-      "permissionName": "users-bl.transactions-by-username.collection.get",
+      "permissionName": "users-bl.transactions-by-username.get",
       "displayName": "users-bl transactions get by username",
       "description": "Get summary of open transactions of user record by its username"
     },
@@ -351,7 +351,7 @@
         "users-bl.password-reset-link.validate",
         "users-bl.password-reset-link.reset",
         "users-bl.transactions.get",
-        "users-bl.transactions-by-username.collection.get"
+        "users-bl.transactions-by-username.get"
       ],
       "visible" : false
     }
