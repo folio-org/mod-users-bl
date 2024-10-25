@@ -66,10 +66,7 @@
         {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-username/{id}",
-          "permissionsRequired": [
-            "users-bl.item.get",
-            "perms.users.get"
-          ],
+          "permissionsRequired": ["users-bl.users-by-username.item.get"],
           "modulePermissions": [
             "users.item.get",
             "users.collection.get",
@@ -83,7 +80,7 @@
          {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-id/{id}",
-          "permissionsRequired": ["users-bl.item.get", "perms.users.get"],
+          "permissionsRequired": ["users-bl.item.get"],
           "modulePermissions": [
             "users.item.get",
             "users.collection.get",
@@ -124,7 +121,7 @@
         {
           "methods": ["GET"],
           "pathPattern": "/bl-users/by-username/{name}/open-transactions",
-          "permissionsRequired": ["users-bl.transactions.get"],
+          "permissionsRequired": ["users-bl.transactions-by-username.get"],
           "modulePermissions": [
             "users.collection.get",
             "circulation-storage.loans.collection.get",
@@ -295,6 +292,11 @@
       "description" : "Get a single composite user record by id"
     },
     {
+      "permissionName" : "users-bl.users-by-username.item.get",
+      "displayName" : "users-bl item get by username",
+      "description" : "Get a single composite user record by username"
+    },
+    {
       "permissionName" : "users-bl.item.post",
       "displayName" : "users-bl item post",
       "description" : "Create a new composite user record"
@@ -330,11 +332,17 @@
       "description": "Get summary of open transactions of user record"
     },
     {
+      "permissionName": "users-bl.transactions-by-username.get",
+      "displayName": "users-bl transactions get by username",
+      "description": "Get summary of open transactions of user record by its username"
+    },
+    {
       "permissionName" : "users-bl.all",
       "displayName" : "users-bl all",
       "description" : "All user business-logic permissions",
       "subPermissions" : [
         "users-bl.collection.get",
+        "users-bl.users-by-username.item.get",
         "users-bl.item.get",
         "users-bl.item.post",
         "users-bl.item.put",
@@ -342,7 +350,8 @@
         "users-bl.password-reset-link.generate",
         "users-bl.password-reset-link.validate",
         "users-bl.password-reset-link.reset",
-        "users-bl.transactions.get"
+        "users-bl.transactions.get",
+        "users-bl.transactions-by-username.get"
       ],
       "visible" : false
     }
