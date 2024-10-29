@@ -93,8 +93,8 @@ Example:
   "permissions": {
     "userId": "0002d1e9-42ae-4bc8-9ac3-d49cc7a0a5ce",
     "permissions": [
-      "perms.users",
-      "perms.permissions",
+      "perms.users.all",
+      "perms.permissions.all",
       "login",
       "users.read",
       "users.create",
