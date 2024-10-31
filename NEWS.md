@@ -1,4 +1,16 @@
-## 7.9.0 in progress
+## 7.9.0 2024-10-31
+* 500 response when calling GET /bl-users/by-username/{username} (MODUSERBL-190)
+* Vert.x 4.5.8 fixing Netty form POST OOM CVE-2024-29025 (MODUSERBL-195)
+* Users with non-ASCII characters in username are unable to login (MODUSERBL-182)
+* Fixed 500 error while login POST /bl-users/login in Eureka mode (MODUSERBL-191)
+* Fix inconsistencies in the module descriptors for mod-users-bl-7.9.0-SNAPSHOT (MODUSERBL-199)
+* DELETE /bl-users/by-id should delete request-preference, permissions, password (MODUSERBL-194)
+* RESET_PASSWORD_* values may conflict with mod-authtoken configuration (MODUSERBL-185)
+* Add the new permission notify.user.item.post (MODUSERBL-205)
+* Upgrade RMB version to V.35.3.0 (MODUSERBL-203)
+* Review and cleanup Module Descriptors for mod-users-bl (MODUSERBL-202)
+* Remove unused include parameter of DELETE /bl-users/by-id/{id} (MODUSERBL-200)
+* Rename permission name (PR #198)
 
 ## 7.8.0 2024-06-20
 
