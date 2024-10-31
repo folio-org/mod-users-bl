@@ -231,11 +231,11 @@
   "requires" : [
     {
       "id" : "users",
-      "version" : "16.1"
+      "version" : "16.3"
     },
     {
       "id" : "permissions",
-      "version" : "5.6"
+      "version" : "5.7"
     },
     {
       "id" : "login",
@@ -257,11 +257,11 @@
   "optional": [
     {
       "id": "loan-storage",
-      "version": "7.1"
+      "version": "7.3"
     },
     {
       "id": "feesfines",
-      "version": "18.0 19.0"
+      "version": "19.0"
     },
     {
       "id" : "service-points",
@@ -277,7 +277,7 @@
     },
     {
       "id": "request-storage",
-      "version": "6.0"
+      "version": "6.1"
     }
   ],
   "permissionSets": [
