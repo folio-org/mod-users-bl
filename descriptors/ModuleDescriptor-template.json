@@ -159,7 +159,7 @@
             "users.collection.get",
             "users.item.get",
             "login.password-reset-action.post",
-            "auth.signtoken",
+            "auth.signtoken.all",
             "notify.item.post",
             "notify.users.item.post",
             "user-tenants.collection.get"
@@ -197,7 +197,7 @@
             "users.item.get",
             "configuration.entries.collection.get",
             "login.password-reset-action.post",
-            "auth.signtoken",
+            "auth.signtoken.all",
             "notify.item.post",
             "notify.users.item.post"
           ]
@@ -210,7 +210,7 @@
           "modulePermissions": [
             "login.password-reset-action.get",
             "users.item.get",
-            "auth.signtoken",
+            "auth.signtoken.all",
             "login.password-reset.post",
             "validation.validate.post",
             "notify.item.post",
@@ -222,7 +222,7 @@
           "pathPattern": "/bl-users/password-reset/validate",
           "permissionsDesired": [],
           "permissionsRequired": ["users-bl.password-reset-link.validate"],
-          "modulePermissions": ["users.item.get", "auth.signtoken",
+          "modulePermissions": ["users.item.get", "auth.signtoken.all",
             "login.password-reset-action.get"]
         }
       ]
@@ -243,7 +243,11 @@
     },
     {
       "id": "authtoken",
-      "version": "2.0"
+      "version": "2.1"
+    },
+    {
+      "id": "authtoken2",
+      "version": "1.1"
     },
     {
       "id": "configuration",
