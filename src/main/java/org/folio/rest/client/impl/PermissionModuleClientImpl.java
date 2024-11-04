@@ -11,10 +11,6 @@ import org.folio.rest.client.PermissionModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
-import org.folio.util.StringUtil;
-
-import java.util.Objects;
-import java.util.Optional;
 
 public class PermissionModuleClientImpl implements PermissionModuleClient {
   private static final Logger logger = LogManager.getLogger(PermissionModuleClientImpl.class);
