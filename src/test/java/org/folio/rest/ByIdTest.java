@@ -113,13 +113,7 @@ class ByIdTest {
       .willReturn(status(204)));
 
     //Stubbing for deleting /perms/users
-    String permsRandomId = UUID.randomUUID().toString();
-    JsonObject permsUsersRes = new JsonObject().put("totalRecords", 1)
-      .put("permissionUsers", new JsonArray().add(new JsonObject().put("id", permsRandomId)));
-    stubFor(get(MOD_PERMISSION_ENDPOINT + "?query=" +
-      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
-      .willReturn(okJson(permsUsersRes)));
-    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + permsRandomId)
+    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + userId + "?indexField=userId")
       .willReturn(status(204)));
 
     whenDeleteById()
@@ -148,13 +142,7 @@ class ByIdTest {
       .willReturn(status(404)));
 
     //Stubbing for deleting /perms/users
-    String permsRandomId = UUID.randomUUID().toString();
-    JsonObject permsUsersRes = new JsonObject().put("totalRecords", 0)
-      .put("permissionUsers", new JsonArray());
-    stubFor(get(MOD_PERMISSION_ENDPOINT + "?query=" +
-      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
-      .willReturn(okJson(permsUsersRes)));
-    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + permsRandomId)
+    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + userId + "?indexField=userId")
       .willReturn(status(404).withBody("Not found")));
 
     whenDeleteById()
@@ -183,13 +171,7 @@ class ByIdTest {
       .willReturn(status(404).withBody("Not found")));
 
     //Stubbing for deleting /perms/users
-    String permsRandomId = UUID.randomUUID().toString();
-    JsonObject permsUsersRes = new JsonObject().put("totalRecords", 1)
-      .put("permissionUsers", new JsonArray().add(new JsonObject().put("id", permsRandomId)));
-    stubFor(get(MOD_PERMISSION_ENDPOINT + "?query=" +
-      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
-      .willReturn(okJson(permsUsersRes)));
-    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + permsRandomId)
+    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + userId + "?indexField=userId")
       .willReturn(status(404).withBody("Not found")));
 
     whenDeleteById()
@@ -218,13 +200,7 @@ class ByIdTest {
       .willReturn(status(500)));
 
     //Stubbing for deleting /perms/users
-    String permsRandomId = UUID.randomUUID().toString();
-    JsonObject permsUsersRes = new JsonObject().put("totalRecords", 1)
-      .put("permissionUsers", new JsonArray().add(new JsonObject().put("id", permsRandomId)));
-    stubFor(get(MOD_PERMISSION_ENDPOINT + "?query=" +
-      StringUtil.urlEncode("userId==" + StringUtil.cqlEncode(userId)))
-      .willReturn(okJson(permsUsersRes)));
-    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + permsRandomId)
+    stubFor(delete(MOD_PERMISSION_ENDPOINT + "/" + userId + "?indexField=userId")
       .willReturn(status(500)));
 
     whenDeleteById()
