@@ -835,7 +835,9 @@ public class BLUsersAPI implements BlUsers {
           Context vertxContext) {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
+    username = StringUtils.isNotBlank(username) ? URLEncoder.encode(username, StandardCharsets.UTF_8) : username;
     String userId = getUserId(token);
+    userId = StringUtils.isNotBlank(userId) ? URLEncoder.encode(userId, StandardCharsets.UTF_8) : userId;
     if (StringUtils.isBlank(username) || username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
       run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
     } else {
