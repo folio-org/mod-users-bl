@@ -1,3 +1,6 @@
+## 7.9.1 2024-11-07
+* Use DELETE /perms/users/{userId}?indexField=userId in DELETE /bl-users/by-id ([MODUSERBL-201](https://folio-org.atlassian.net/browse/MODUSERBL-201))
+
 ## 7.9.0 2024-10-31
 * 500 response when calling GET /bl-users/by-username/{username} (MODUSERBL-190)
 * Vert.x 4.5.8 fixing Netty form POST OOM CVE-2024-29025 (MODUSERBL-195)
