@@ -333,7 +333,7 @@ public class BLUsersAPI implements BlUsers {
     CompletableFuture<Response>[] userIdResponse = new CompletableFuture[1];
     String userTemplate = "";
     String groupTemplate = "";
-    StringBuffer userUrl = new StringBuffer("/users");
+    StringBuilder userUrl = new StringBuilder("/users");
     String mode[] = new String[1];
     try {
       if (userid != null) {
@@ -343,8 +343,13 @@ public class BLUsersAPI implements BlUsers {
         groupTemplate = "{patronGroup}";
         mode[0] = "id";
       } else if (username != null) {
-        userUrl.append("?query=username==").append(username);
+        userUrl.append("?query=");
+        String usernameQuery = "username==" + StringUtil.cqlEncode(username);
+        userUrl.append(PercentCodec.encode(usernameQuery));
         userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
+        userIdResponse[0].thenAccept(response -> {
+          System.out.println(response.getBody());
+        });
         userTemplate = "{users[0].id}";
         groupTemplate = "{users[0].patronGroup}";
         mode[0] = "username";
@@ -835,9 +840,7 @@ public class BLUsersAPI implements BlUsers {
           Context vertxContext) {
     String token = okapiHeaders.get(OKAPI_TOKEN_HEADER);
     String username = getUsername(token);
-    username = StringUtils.isNotBlank(username) ? URLEncoder.encode(username, StandardCharsets.UTF_8) : username;
     String userId = getUserId(token);
-    userId = StringUtils.isNotBlank(userId) ? URLEncoder.encode(userId, StandardCharsets.UTF_8) : userId;
     if (StringUtils.isBlank(username) || username.startsWith(UNDEFINED_USER) || StringUtils.isBlank(userId)) {
       run(null, username, expandPerms, include, okapiHeaders, asyncResultHandler);
     } else {
