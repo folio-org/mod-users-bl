@@ -299,7 +299,7 @@ public class BLUsersAPITest {
             get("/bl-users").
     then().
             statusCode(200).
-            body("compositeUsers.size()", equalTo(7),
+            body("compositeUsers.size()", equalTo(8),
                  "compositeUsers[0].users.username", equalTo("maxi"));
   }
 
