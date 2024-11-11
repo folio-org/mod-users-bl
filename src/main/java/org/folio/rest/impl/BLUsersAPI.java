@@ -347,9 +347,6 @@ public class BLUsersAPI implements BlUsers {
         String usernameQuery = "username==" + StringUtil.cqlEncode(username);
         userUrl.append(PercentCodec.encode(usernameQuery));
         userIdResponse[0] = client.request(userUrl.toString(), okapiHeaders);
-        userIdResponse[0].thenAccept(response -> {
-          System.out.println(response.getBody());
-        });
         userTemplate = "{users[0].id}";
         groupTemplate = "{users[0].patronGroup}";
         mode[0] = "username";
