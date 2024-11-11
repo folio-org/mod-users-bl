@@ -1,3 +1,6 @@
+## 7.9.2 2024-11-11
+* auth permission rename: auth.signtoken.all (MODAT-168)
+
 ## 7.9.1 2024-11-07
 * Use DELETE /perms/users/{userId}?indexField=userId in DELETE /bl-users/by-id ([MODUSERBL-201](https://folio-org.atlassian.net/browse/MODUSERBL-201))
 
