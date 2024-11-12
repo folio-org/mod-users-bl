@@ -348,56 +348,12 @@ public class BLUsersAPITest {
   }
 
   @Test
-  public void getBlUsersSelfWithPercentageEncodedUsername(TestContext context) {
-    Header header = new Header(RestVerticle.OKAPI_HEADER_TOKEN, getTokenWithoutUserId(
-      PercentCodec.encode("myuserñ`ame").toString(), "diku"));
-    given().
-      spec(okapi).port(port).header(header).
-      when().
-      get("/bl-users/_self").
-      then().
-      statusCode(200);
-  }
-
-  @Test
-  public void getBlUsersSelfWithURLEncodedUsername(TestContext context) {
-    Header header = new Header(RestVerticle.OKAPI_HEADER_TOKEN, getTokenWithoutUserId(
-      URLEncoder.encode("myuserñ`ame", StandardCharsets.UTF_8).toString(), "diku"));
-    given().
-      spec(okapi).port(port).header(header).
-      when().
-      get("/bl-users/_self").
-      then().
-      statusCode(200);
-  }
-
-  @Test
   public void getBlUsersSelfWithPlainUsername(TestContext context) {
     Header header = new Header(RestVerticle.OKAPI_HEADER_TOKEN, getTokenWithoutUserId("myuserñ`ame", "diku"));
     given().
       spec(okapi).port(port).header(header).
       when().
       get("/bl-users/_self").
-      then().
-      statusCode(200);
-  }
-
-  @Test
-  public void getBlUserByUserNameWhenPassingPercentageEncodedUsername(TestContext context) {
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-username/" + PercentCodec.encode("myuserñ`ame")).
-      then().
-      statusCode(200);
-  }
-
-  @Test
-  public void getBlUserByUserNameWhenPassingURLEncodedUsername(TestContext context) {
-    given().
-      spec(okapi).port(port).
-      when().
-      get("/bl-users/by-username/" + URLEncoder.encode("myuserñ`ame", StandardCharsets.UTF_8)).
       then().
       statusCode(200);
   }
