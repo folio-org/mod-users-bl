@@ -102,7 +102,11 @@
             "circulation-storage.requests.collection.get",
             "accounts.collection.get",
             "manualblocks.collection.get",
-            "proxiesfor.collection.get"
+            "proxiesfor.collection.get",
+            "circulation-storage.request-preferences.collection.get",
+            "circulation-storage.request-preferences.item.delete",
+            "login.item.delete",
+            "perms.users.item.id.delete"
           ]
         },
         {
