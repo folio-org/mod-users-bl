@@ -286,6 +286,10 @@
     {
       "id": "request-storage",
       "version": "6.1"
+    },
+    {
+      "id": "request-preference-storage",
+      "version": "2.0"
     }
   ],
   "permissionSets": [
