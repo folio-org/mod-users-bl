@@ -1,3 +1,8 @@
+## 7.9.3 2024-11-13
+* Missing interface dependencies in module descriptor ([MODUSERBL-213](https://folio-org.atlassian.net/browse/MODUSERBL-213))
+* Add permission for Delete request-preference, permissions, authen_credentails/password ([MODUSERBL-214](https://folio-org.atlassian.net/browse/MODUSERBL-214))
+* Query fails on username with special characters (CQL and URL injection). (Query with username fails when username contains non-url-encoded characters) ([MODUSERBL-208](https://folio-org.atlassian.net/browse/MODUSERBL-208))
+
 ## 7.9.2 2024-11-11
 * auth permission rename: auth.signtoken.all (MODAT-168)
 
