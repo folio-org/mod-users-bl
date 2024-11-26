@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.http.HttpStatus;
+import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.folio.util.PercentCodec;
@@ -24,6 +25,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -35,6 +37,8 @@ import static org.folio.rest.MockOkapi.getToken;
 import static org.folio.rest.MockOkapi.getTokenWithoutUserId;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 
 @RunWith(VertxUnitRunner.class)
@@ -57,6 +61,7 @@ public class BLUsersAPITest {
   private static final String USER_ID_3 = "0bb4f26d-e073-4f93-afbc-dcc24fd88813";
   private static final String USER_ID_4 = "0bb4f26d-e073-4f93-afbc-dcc24fd88814";
   private static final String USER_ID_5 = "0bb4f26d-e073-4f93-afbc-dcc24fd88815";
+  private static final String USER_ID_6 = "b4b5e97a-0a99-4db9-97df-5fdf406ec55d";
   private static final String FAKE_USER_ID = "f2216cfc-4abb-4f54-85bb-4945c9fd91cb";
   private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
   private static final String JWT_TOKEN_PATTERN = "%s.%s.%s";
@@ -174,6 +179,20 @@ public class BLUsersAPITest {
         when().post("http://localhost:" + okapiPort + "/users").
         then().statusCode(201);
 
+    userPost = new JsonObject()
+      .put("username", "myuserñ`ame")
+      .put("id", USER_ID_6)
+      .put("patronGroup", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d")
+      .put("active", true)
+      .put("personal", new JsonObject().put("email", "myuserñ`ame@gmail.org").put("lastName", "123-12-123"));
+    given()
+      .body(userPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/users")
+      .then()
+      .statusCode(201);
+
+
     JsonObject groupPost = new JsonObject().put("group", "staff")
         .put("desc", "people running the library")
         .put("id", "b4b5e97a-0a99-4db9-97df-4fdf406ec74d");
@@ -185,7 +204,7 @@ public class BLUsersAPITest {
         put("permissionName", "ui-checkin.all").
         put("displayName", "Check in: All permissions").
         put("id", "604a6236-1c9d-4681-ace1-a0dd1bba5058");
-    String [] users = { USER_ID, USER_ID_2, USER_ID_3, USER_ID_4, USER_ID_5 };
+    String [] users = { USER_ID, USER_ID_2, USER_ID_3, USER_ID_4, USER_ID_5, USER_ID_6 };
     for (var user : users) {
       JsonObject permsUsersPost = new JsonObject()
           .put("permissions", new JsonArray().add(permission))
@@ -286,7 +305,7 @@ public class BLUsersAPITest {
             get("/bl-users").
     then().
             statusCode(200).
-            body("compositeUsers.size()", equalTo(7),
+            body("compositeUsers.size()", equalTo(8),
                  "compositeUsers[0].users.username", equalTo("maxi"));
   }
 
@@ -330,6 +349,27 @@ public class BLUsersAPITest {
       spec(okapi).port(port).header(header).
       when().
       get("/bl-users/_self").
+      then().
+      statusCode(200);
+  }
+
+  @Test
+  public void getBlUsersSelfWithPlainUsername(TestContext context) {
+    Header header = new Header(RestVerticle.OKAPI_HEADER_TOKEN, getTokenWithoutUserId("myuserñ`ame", "diku"));
+    given().
+      spec(okapi).port(port).header(header).
+      when().
+      get("/bl-users/_self").
+      then().
+      statusCode(200);
+  }
+
+  @Test
+  public void getBlUserByUserNameWhenPassingPlainUsername(TestContext context) {
+    given().
+      spec(okapi).port(port).
+      when().
+      get("/bl-users/by-username/myuserñ`ame").
       then().
       statusCode(200);
   }
@@ -815,4 +855,15 @@ public class BLUsersAPITest {
     byte[] bytes = payload.encode().getBytes(StandardCharsets.UTF_8);
     return String.format(JWT_TOKEN_PATTERN, JWT_TOKEN, Base64.getEncoder().encodeToString(bytes), "sig");
   }
+  @Test
+  public void testParseTokenPayload() throws Exception {
+    String token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmb2_DpCIsInVzZXJfaWQiOiI4M2Q4OGQxZi1lYWE5LTRjNTgtYTU3YS02YzNmZWIxMzk1ZjQiLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE3NDg1NTIxLCJpYXQiOjE3MTc0ODQ5MjEsInRlbmFudCI6ImRpa3UifQ.JIHS_KVfFXq9vsIZa7tSnp2ZOOaEZn7leKUh3-kYOFs";
+    Method method = BLUsersAPI.class.getDeclaredMethod("parseTokenPayload", String.class);
+    method.setAccessible(true);
+    JsonObject payload = (JsonObject) method.invoke(new BLUsersAPI(vertx, "diku"), token);
+
+    assertNotNull(payload);
+    assertEquals("fooä", payload.getString("sub"));
+  }
+
 }

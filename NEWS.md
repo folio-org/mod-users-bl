@@ -1,3 +1,8 @@
+## 7.7.5 2024-11-26
+
+* Query fails on username with special characters (CQL and URL injection). (Query with username fails when username contains non-url-encoded characters) ([MODUSERBL-208](https://folio-org.atlassian.net/browse/MODUSERBL-208))
+* Users with non-ASCII characters in username are unable to login. ([MODUSERBL-182](https://folio-org.atlassian.net/browse/MODUSERBL-182))
+
 ## 7.7.4 2024-07-04
 
 * Vert.x 4.5.8 fixing Netty form POST OOM CVE-2024-29025 (MODUSERBL-195)
