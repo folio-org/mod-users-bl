@@ -186,38 +186,6 @@ resourceTypes:
         type: { compositeOpenTransactionsResource: { "typeName" : "username" } }
   /_self:
     type: { compositeUserResource: { "typeName" : "self reference" } }
-  /login:
-    post:
-      description: Allow a new user to login and return an authtoken, along with a composite user record. Deprecated and will be removed in a future release. Please use /login-with-expiry.
-      is: [permissionsExpandable, includeable]
-      headers:
-        User-Agent:
-        X-Forwarded-For:
-      body:
-        application/json:
-          type: loginCredentials
-      responses:
-        201:
-          body:
-            application/json:
-              type: compositeUser
-          headers:
-            x-okapi-token:
-        400:
-          description: "Bad request"
-          body:
-            text/plain:
-              example: "Bad request"
-        422:
-          description: "Unprocessable Entity"
-          body:
-            application/json:
-              type: errors
-        500:
-          description: "Internal server error"
-          body:
-            text/plain:
-              example: "Internal server error"
   /login-with-expiry:
     post:
       description: |
