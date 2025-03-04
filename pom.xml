@@ -47,7 +47,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <raml-module-builder.version>35.4.0</raml-module-builder.version>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
-    <vertx-version>4.5.11</vertx-version>
+    <vertx-version>4.5.13</vertx-version>
     <java.version>21</java.version>
     <aspectj.version>1.9.22.1</aspectj.version>
 
