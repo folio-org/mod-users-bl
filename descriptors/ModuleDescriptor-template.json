@@ -235,11 +235,11 @@
   "requires" : [
     {
       "id" : "users",
-      "version" : "16.3"
+      "version" : "16.4"
     },
     {
       "id" : "permissions",
-      "version" : "5.7"
+      "version" : "5.8"
     },
     {
       "id" : "login",
