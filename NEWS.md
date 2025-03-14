@@ -1,3 +1,7 @@
+## 7.10.0 2024-03-13
+
+* Update to mod-users-bl Java 21 (FOLIO-4223)
+
 ## 7.9.0 2024-10-31
 * 500 response when calling GET /bl-users/by-username/{username} (MODUSERBL-190)
 * Vert.x 4.5.8 fixing Netty form POST OOM CVE-2024-29025 (MODUSERBL-195)
