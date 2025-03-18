@@ -52,7 +52,7 @@
     <aspectj.version>1.9.22.1</aspectj.version>
 
     <!--Folio dependencies properties-->
-    <mod-configuration-client.version>5.11.0</mod-configuration-client.version>
+    <mod-configuration-client.version>5.12.0</mod-configuration-client.version>
     <folio-module-descriptor-validator.version>1.0.1</folio-module-descriptor-validator.version>
   </properties>
 
