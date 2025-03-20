@@ -1,4 +1,8 @@
-## 7.10.0 2024-03-13
+## 7.10.1 2025-03-20
+
+* Fix POM libs version upgrades after Sunflower Releases (MODUSERBL-221)
+
+## 7.10.0 2025-03-13
 
 * Update to mod-users-bl Java 21 (FOLIO-4223)
 
