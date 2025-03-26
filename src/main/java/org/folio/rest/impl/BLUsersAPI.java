@@ -139,7 +139,6 @@ public class BLUsersAPI implements BlUsers {
   private static final String UNDEFINED_USER = "UNDEFINED_USER__";
 
   private static final String LOGIN_ENDPOINT = "/authn/login-with-expiry";
-  private static final String LOGIN_ENDPOINT_LEGACY = "/authn/login";
   private static final String FOLIO_ACCESS_TOKEN = "folioAccessToken";
   private static final String SET_COOKIE_HEADER = "Set-Cookie";
 
@@ -853,14 +852,6 @@ public class BLUsersAPI implements BlUsers {
         LOGIN_ENDPOINT, this::loginResponse);
   }
 
-  @Override
-  public void postBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor,
-      LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-      Context vertxContext) {
-    doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
-        LOGIN_ENDPOINT_LEGACY, this::loginResponseLegacy);
-  }
-
   @SuppressWarnings("java:S1874")
   private void doPostBlUsersLogin(boolean expandPerms, List<String> include, String userAgent, String xForwardedFor, //NOSONAR
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
@@ -879,7 +870,7 @@ public class BLUsersAPI implements BlUsers {
 
     if (entity == null || entity.getUsername() == null || entity.getPassword() == null) {
       asyncResultHandler.handle(Future.succeededFuture(
-        PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
+        PostBlUsersLoginWithExpiryResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
       HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
       String moduleURL = "/authn/login";
@@ -913,7 +904,7 @@ public class BLUsersAPI implements BlUsers {
             } catch (Exception e) {
               client.closeClient();
               asyncResultHandler.handle(Future.succeededFuture(
-                PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
+                PostBlUsersLoginWithExpiryResponse.respond500WithTextPlain(e.getLocalizedMessage())));
             } finally {
               clientForLogin.closeClient();
             }
@@ -921,13 +912,13 @@ public class BLUsersAPI implements BlUsers {
           .exceptionally(throwable -> {
             clientForLogin.closeClient();
             asyncResultHandler.handle(Future.succeededFuture(
-              PostBlUsersLoginResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
+              PostBlUsersLoginWithExpiryResponse.respond500WithTextPlain(throwable.getLocalizedMessage())));
             return null;
           });
       } catch (Exception ex) {
         clientForLogin.closeClient();
         asyncResultHandler.handle(Future.succeededFuture(
-          PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
+          PostBlUsersLoginWithExpiryResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
       }
     }
   }
@@ -999,7 +990,7 @@ public class BLUsersAPI implements BlUsers {
           } catch (Exception ex) {
             client.closeClient();
             asyncResultHandler.handle(Future.succeededFuture(
-              PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
+              PostBlUsersLoginWithExpiryResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
           }
         }
       }
@@ -1084,7 +1075,7 @@ public class BLUsersAPI implements BlUsers {
         } catch (Exception e) {
           if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(Future.succeededFuture(
-              PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
+              PostBlUsersLoginWithExpiryResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
           logger.error(e.getMessage(), e);
         } finally {
@@ -1124,13 +1115,6 @@ public class BLUsersAPI implements BlUsers {
         cu.setServicePointsUser(spu);
       }
     }
-  }
-
-  @SuppressWarnings("java:S1874")
-  private javax.ws.rs.core.Response loginResponseLegacy(Response loginResponse, CompositeUser cu) {
-    String token = String.valueOf(loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER));
-    return PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
-      PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token));
   }
 
   @SuppressWarnings("java:S1874")
