@@ -223,7 +223,8 @@ resourceTypes:
       description: |
         Allow a new user to login and return two cookies, one containing the user's refresh token
         and one containing an access token. Both tokens have an expiration. The expiration time
-        for each is contained in the composite user token expiration property.
+        for each is contained in the composite user token expiration property. If you don't need
+        the data in the composite user you should call the /authn/login-with-expiry API instead.
       is: [permissionsExpandable, includeable]
       headers:
         User-Agent:
