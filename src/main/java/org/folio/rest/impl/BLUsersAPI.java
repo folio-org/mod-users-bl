@@ -1,5 +1,7 @@
 package org.folio.rest.impl;
 
+import static org.apache.commons.lang3.StringUtils.substringAfterLast;
+
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.AsyncResult;
@@ -13,6 +15,28 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +57,7 @@ import org.folio.rest.client.impl.NotificationClientImpl;
 import org.folio.rest.client.impl.PasswordResetActionClientImpl;
 import org.folio.rest.client.impl.PermissionModuleClientImpl;
 import org.folio.rest.client.impl.UserModuleClientImpl;
+import org.folio.rest.exception.MultipleEntityException;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.CompositeUser;
@@ -71,31 +96,6 @@ import org.folio.service.transactions.OpenTransactionsService;
 import org.folio.service.transactions.OpenTransactionsServiceImpl;
 import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 
 /**
  * @author shale
@@ -1318,7 +1318,7 @@ public class BLUsersAPI implements BlUsers {
         } else if (arraySize > 1) {
           String message = String.format("Multiple users associated with '%s'", entity.getId());
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(errorKey, message);
-          asyncResult.fail(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
+          asyncResult.fail(new MultipleEntityException(Collections.singletonList(entityMessage)));
           return;
         }
         try {
@@ -1355,7 +1355,14 @@ public class BLUsersAPI implements BlUsers {
       .compose(user -> passwordResetLinkService.sendPasswordResetLink(user, okapiHeaders))
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
-      .otherwise(ExceptionHelper::handleException)
+      .otherwise(e -> {
+        if (e instanceof MultipleEntityException) {
+          // Return 204 success response when multiple users are found
+          logger.warn("Multiple users found for forgotten password request, returning success without sending reset link: {}", e.getMessage());
+          return PostBlUsersForgottenPasswordResponse.respond204();
+        }
+        return ExceptionHelper.handleException(e);
+      })
       .onComplete(asyncResultHandler);
   }
 
@@ -1376,7 +1383,14 @@ public class BLUsersAPI implements BlUsers {
       })
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
-      .otherwise(ExceptionHelper::handleException)
+      .otherwise(e -> {
+        if (e instanceof MultipleEntityException) {
+          // Return 204 success response when multiple users are found
+          logger.warn("Multiple users found for forgotten username request, returning success without sending reset link: {}", e.getMessage());
+          return PostBlUsersForgottenPasswordResponse.respond204();
+        }
+        return ExceptionHelper.handleException(e);
+      })
       .onComplete(asyncResultHandler);
   }
 
