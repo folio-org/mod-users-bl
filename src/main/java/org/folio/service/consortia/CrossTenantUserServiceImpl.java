@@ -1,32 +1,32 @@
 package org.folio.service.consortia;
 
+import static org.folio.rest.impl.BLUsersAPI.FORGOTTEN_PASSWORD_FOUND_INACTIVE;
+import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_EMAIL;
+import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_MOBILE_PHONE_NUMBER;
+import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_PHONE_NUMBER;
+import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_USERNAME;
+
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.okapi.common.XOkapiHeaders;
+import org.folio.rest.exception.MultipleEntityException;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.tools.client.Response;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
-
-import static org.folio.rest.impl.BLUsersAPI.FORGOTTEN_PASSWORD_FOUND_INACTIVE;
-import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_USERNAME;
-import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_PHONE_NUMBER;
-import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_EMAIL;
-import static org.folio.rest.impl.BLUsersAPI.LOCATE_USER_MOBILE_PHONE_NUMBER;
 
 public class CrossTenantUserServiceImpl implements CrossTenantUserService {
   private static final Logger logger = LogManager.getLogger(CrossTenantUserServiceImpl.class);
@@ -58,7 +58,7 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
         if (totalRecords > 1) {
           String message = String.format("Multiple users associated with '%s'", entity);
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(errorKey, message);
-          return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
+          return Future.failedFuture(new MultipleEntityException(Collections.singletonList(entityMessage)));
         }
 
         JsonObject userTenantObject = userTenantJson.getJsonArray("userTenants").getJsonObject(0);
