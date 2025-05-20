@@ -35,7 +35,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-
 @RunWith(VertxUnitRunner.class)
 public class BLUsersAPITest {
   static Vertx vertx;
@@ -423,8 +422,7 @@ public class BLUsersAPITest {
       when().
       post("/bl-users/forgotten/password").
       then().
-      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
-      body("errors[0].code", equalTo("forgotten.password.found.multiple.users"));
+      statusCode(204);
 
     //by email
     given().
@@ -435,8 +433,7 @@ public class BLUsersAPITest {
       when().
       post("/bl-users/forgotten/password").
       then().
-      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
-      body("errors[0].code", equalTo("forgotten.password.found.multiple.users"));
+      statusCode(204);
 
     //by phone
     given().
@@ -447,8 +444,7 @@ public class BLUsersAPITest {
       when().
       post("/bl-users/forgotten/password").
       then().
-      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
-      body("errors[0].code", equalTo("forgotten.password.found.multiple.users"));
+      statusCode(204);
 
     //inactive
     given().
@@ -484,8 +480,7 @@ public class BLUsersAPITest {
       when().
       post("/bl-users/forgotten/username").
       then().
-      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
-      body("errors[0].code", equalTo("forgotten.username.found.multiple.users"));
+      statusCode(204);
 
     //by phone
     given().
@@ -496,8 +491,7 @@ public class BLUsersAPITest {
       when().
       post("/bl-users/forgotten/username").
       then().
-      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
-      body("errors[0].code", equalTo("forgotten.username.found.multiple.users"));
+      statusCode(204);
 
     //inactive
     given().

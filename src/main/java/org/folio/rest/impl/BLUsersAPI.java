@@ -33,6 +33,7 @@ import org.folio.rest.client.impl.NotificationClientImpl;
 import org.folio.rest.client.impl.PasswordResetActionClientImpl;
 import org.folio.rest.client.impl.PermissionModuleClientImpl;
 import org.folio.rest.client.impl.UserModuleClientImpl;
+import org.folio.rest.exception.MultipleEntityException;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.CompositeUser;
@@ -1318,7 +1319,7 @@ public class BLUsersAPI implements BlUsers {
         } else if (arraySize > 1) {
           String message = String.format("Multiple users associated with '%s'", entity.getId());
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(errorKey, message);
-          asyncResult.fail(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
+          asyncResult.fail(new MultipleEntityException(Collections.singletonList(entityMessage)));
           return;
         }
         try {
@@ -1355,7 +1356,14 @@ public class BLUsersAPI implements BlUsers {
       .compose(user -> passwordResetLinkService.sendPasswordResetLink(user, okapiHeaders))
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
-      .otherwise(ExceptionHelper::handleException)
+      .otherwise(e -> {
+        if (e instanceof MultipleEntityException) {
+          // Return 204 success response when multiple users are found
+          logger.warn("Multiple users found for forgotten password request, returning success without sending reset link: {}", e.getMessage());
+          return PostBlUsersForgottenPasswordResponse.respond204();
+        }
+        return ExceptionHelper.handleException(e);
+      })
       .onComplete(asyncResultHandler);
   }
 
@@ -1376,7 +1384,14 @@ public class BLUsersAPI implements BlUsers {
       })
       .map(PostBlUsersForgottenPasswordResponse.respond204())
       .map(javax.ws.rs.core.Response.class::cast)
-      .otherwise(ExceptionHelper::handleException)
+      .otherwise(e -> {
+        if (e instanceof MultipleEntityException) {
+          // Return 204 success response when multiple users are found
+          logger.warn("Multiple users found for forgotten username request, returning success without sending reset link: {}", e.getMessage());
+          return PostBlUsersForgottenPasswordResponse.respond204();
+        }
+        return ExceptionHelper.handleException(e);
+      })
       .onComplete(asyncResultHandler);
   }
 
