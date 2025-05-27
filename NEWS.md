@@ -1,3 +1,6 @@
+## 7.9.4 2025-05-27
+* Search users in all tenants when using "Forgot password" and "Forgot username" links ([MODUSERBL-225](https://folio-org.atlassian.net/browse/MODUSERBL-225))
+
 ## 7.9.3 2024-11-13
 * Missing interface dependencies in module descriptor ([MODUSERBL-213](https://folio-org.atlassian.net/browse/MODUSERBL-213))
 * Add permission for Delete request-preference, permissions, authen_credentails/password ([MODUSERBL-214](https://folio-org.atlassian.net/browse/MODUSERBL-214))

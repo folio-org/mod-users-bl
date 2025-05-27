@@ -9,6 +9,7 @@ import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.okapi.common.XOkapiHeaders;
+import org.folio.rest.exception.MultipleEntityException;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
 import org.folio.rest.jaxrs.model.User;
@@ -58,7 +59,7 @@ public class CrossTenantUserServiceImpl implements CrossTenantUserService {
         if (totalRecords > 1) {
           String message = String.format("Multiple users associated with '%s'", entity);
           UnprocessableEntityMessage entityMessage = new UnprocessableEntityMessage(errorKey, message);
-          return Future.failedFuture(new UnprocessableEntityException(Collections.singletonList(entityMessage)));
+          return Future.failedFuture(new MultipleEntityException(Collections.singletonList(entityMessage)));
         }
 
         JsonObject userTenantObject = userTenantJson.getJsonArray("userTenants").getJsonObject(0);
