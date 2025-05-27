@@ -1,5 +1,9 @@
 ## 7.10.1 2025-03-20
 
+* Search users in all tenants when using "Forgot password" and "Forgot username" links (MODUSERBL-225)
+
+## 7.10.1 2025-03-20
+
 * Fix POM libs version upgrades after Sunflower Releases (MODUSERBL-221)
 
 ## 7.10.0 2025-03-13
