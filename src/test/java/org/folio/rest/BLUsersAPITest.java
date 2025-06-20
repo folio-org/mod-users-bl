@@ -2,6 +2,7 @@ package org.folio.rest;
 
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.specification.RequestSpecification;
 import io.vertx.core.DeploymentOptions;
@@ -19,6 +20,7 @@ import org.folio.util.StringUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
@@ -30,8 +32,10 @@ import java.util.Base64;
 import static io.restassured.RestAssured.given;
 import static org.folio.rest.MockOkapi.getToken;
 import static org.folio.rest.MockOkapi.getTokenWithoutUserId;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

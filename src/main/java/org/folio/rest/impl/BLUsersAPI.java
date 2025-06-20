@@ -971,7 +971,7 @@ public class BLUsersAPI implements BlUsers {
         if (include.get(i).equals(PERMISSIONS_INCLUDE)){
           //call perms once the /users?query=username={username} (same as creds) completes
           CompletableFuture<Response> permResponse = userResponse[0].thenCompose(
-                client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
+                client.chainedRequest("/permissions/users/{users[0].id}", okapiHeaders, null,
                   handlePreviousResponse(false, false, false, aRequestHasFailed, asyncResultHandler)));
           requestedIncludes.add(permResponse);
           completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
@@ -1005,17 +1005,6 @@ public class BLUsersAPI implements BlUsers {
         }
       }
 
-      if (expandPerms){
-        CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
-          client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
-            handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
-        );
-        CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
-          client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
-            handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
-        requestedIncludes.add(expandPermsResponse);
-        completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
-      }
       requestedIncludes.add(userResponse[0]);
 
       CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
@@ -1042,34 +1031,20 @@ public class BLUsersAPI implements BlUsers {
               cu.setPatronGroup((PatronGroup)Response.convertToPojo(groupResponse.getBody(), PatronGroup.class));
             }
           }
-          cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
-          if(cf != null){
-            Response permsResponse = cf.get();
-            handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
-            if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
-              //data coming in from the service isnt returned as required by the composite user schema
-              JsonObject j = new JsonObject();
-              j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
-            }
-          }
+
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
           if(cf != null && cf.get().getBody() != null){
             Response permsResponse = cf.get();
             handleResponse(permsResponse, false, false, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0]){
               Permissions p = cu.getPermissions();
-              JsonArray permissionUsers = permsResponse.getBody().getJsonArray("permissionUsers");
+              JsonArray permissionUsers = permsResponse.getBody().getJsonArray("permissions");
+              var userId = permsResponse.getBody().getString("userId");
               if (permissionUsers != null && !permissionUsers.isEmpty()) {
-                if(p != null){
-                  //expanded permissions requested and the array of permissions has been populated
-                  //add the username
-                  p.setUserId(permissionUsers.getJsonObject(0).getString("id"));
-                } else{
-                  //data coming in from the service isnt returned as required by the composite user schema
-                  JsonObject j = permissionUsers.getJsonObject(0);
-                  cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
-                }
+                var userPermissions = permissionUsers.stream()
+                  .map(permissionName -> expandPerms ? Map.of("permissionName", permissionName) : permissionName)
+                  .toList();
+                cu.setPermissions(new Permissions().withPermissions(userPermissions).withUserId(userId));
               }
             }
           }
