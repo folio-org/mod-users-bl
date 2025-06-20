@@ -1,5 +1,19 @@
 package org.folio.rest;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
+import static junit.framework.TestCase.assertTrue;
+import static org.folio.rest.MockOkapi.getToken;
+import static org.folio.rest.MockOkapi.getTokenWithoutTenant;
+import static org.folio.rest.impl.BLUsersAPI.OKAPI_TOKEN_HEADER;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasKey;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
@@ -11,8 +25,8 @@ import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
-import io.restassured.specification.RequestSpecification;
 import io.restassured.matcher.RestAssuredMatchers;
+import io.restassured.specification.RequestSpecification;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Cookie;
@@ -20,7 +34,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-
+import java.nio.charset.StandardCharsets;
+import java.sql.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import org.folio.dbschema.ObjectMapperTool;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.LoginCredentials;
@@ -33,28 +51,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathTemplate;
-import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
-import static junit.framework.TestCase.assertTrue;
-import static org.folio.rest.MockOkapi.getToken;
-import static org.folio.rest.MockOkapi.getTokenWithoutTenant;
-import static org.folio.rest.impl.BLUsersAPI.OKAPI_TOKEN_HEADER;
-
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasKey;
 
 @RunWith(VertxUnitRunner.class)
 public class HeadersForwardingTest {
