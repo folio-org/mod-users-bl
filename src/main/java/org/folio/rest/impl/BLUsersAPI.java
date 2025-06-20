@@ -1037,7 +1037,6 @@ public class BLUsersAPI implements BlUsers {
             Response permsResponse = cf.get();
             handleResponse(permsResponse, false, false, false, aRequestHasFailed, asyncResultHandler);
             if(!aRequestHasFailed[0]){
-              Permissions p = cu.getPermissions();
               JsonArray permissionUsers = permsResponse.getBody().getJsonArray("permissions");
               var userId = permsResponse.getBody().getString("userId");
               if (permissionUsers != null && !permissionUsers.isEmpty()) {
