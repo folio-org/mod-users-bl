@@ -1,19 +1,5 @@
 package org.folio.rest;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
-import static junit.framework.TestCase.assertTrue;
-import static org.folio.rest.MockOkapi.getToken;
-import static org.folio.rest.MockOkapi.getTokenWithoutTenant;
-import static org.folio.rest.impl.BLUsersAPI.OKAPI_TOKEN_HEADER;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasKey;
-
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
@@ -25,8 +11,8 @@ import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
-import io.restassured.matcher.RestAssuredMatchers;
 import io.restassured.specification.RequestSpecification;
+import io.restassured.matcher.RestAssuredMatchers;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Cookie;
@@ -34,11 +20,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Base64;
+
 import org.folio.dbschema.ObjectMapperTool;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.LoginCredentials;
@@ -51,6 +33,28 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.nio.charset.StandardCharsets;
+import java.sql.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathTemplate;
+import static javax.ws.rs.core.HttpHeaders.USER_AGENT;
+import static junit.framework.TestCase.assertTrue;
+import static org.folio.rest.MockOkapi.getToken;
+import static org.folio.rest.MockOkapi.getTokenWithoutTenant;
+import static org.folio.rest.impl.BLUsersAPI.OKAPI_TOKEN_HEADER;
+
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasKey;
 
 @RunWith(VertxUnitRunner.class)
 public class HeadersForwardingTest {
@@ -127,7 +131,8 @@ public class HeadersForwardingTest {
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray().add(new JsonObject()));
 
-    WireMock.stubFor(get(urlPathEqualTo("/permissions/users/" + USER_ID))
+    WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID))
       .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(201)));
 
     JsonObject jsonObject = new JsonObject()
@@ -151,7 +156,8 @@ public class HeadersForwardingTest {
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
-    WireMock.verify(1, getRequestedFor(urlPathEqualTo("/permissions/users/" + USER_ID)));
+    WireMock.verify(1, getRequestedFor(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID)));
 
     WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
 
@@ -204,11 +210,17 @@ public class HeadersForwardingTest {
       .withBody(tokenExpiration.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
-      .put("userId", USER_ID)
-      .put("permissions", new JsonArray().add("permission.one").add("permission.two"));
+      .put("permissionUsers", new JsonArray().add(new JsonObject().put("id", USER_ID)));
 
-    WireMock.stubFor(get(urlPathEqualTo("/permissions/users/" + USER_ID))
-      .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(200)));
+    WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID))
+      .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(201)));
+
+    JsonObject permsNames = new JsonObject()
+        .put("permissionNames", new JsonArray().add("read").add("write"));
+
+    WireMock.stubFor(get(urlPathTemplate("/perms/users/{userid}/permissions"))
+        .willReturn(WireMock.okJson(permsNames.encode()).withStatus(201)));
 
     JsonObject jsonObject = new JsonObject()
       .put("servicePointsUsers", new JsonArray());
@@ -240,12 +252,15 @@ public class HeadersForwardingTest {
           .secured(true))
       .body(TOKEN_EXPIRATION, hasKey(ACCESS_TOKEN_EXPIRATION))
       .body(TOKEN_EXPIRATION, hasKey(REFRESH_TOKEN_EXPIRATION))
-      .body("permissions.permissions.permissionName", contains("permission.one", "permission.two"));
+      .body("permissions.permissions", contains("read", "write"));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
-    WireMock.verify(1, getRequestedFor(urlPathEqualTo("/permissions/users/" + USER_ID)));
+    WireMock.verify(2, getRequestedFor(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID)));
+
+    WireMock.verify(1, getRequestedFor(urlPathTemplate("/perms/users/{userid}/permissions")));
 
     WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
 
@@ -453,7 +468,8 @@ public class HeadersForwardingTest {
         .add(new JsonObject().put("permissions", new JsonArray())))
       .put("totalRecords", 0);
 
-    WireMock.stubFor(get(urlPathEqualTo("/permissions/users/" + USER_ID))
+    WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID))
       .willReturn(WireMock.okJson(permsUsersPost.encode()).withStatus(201)));
 
     JsonObject jsonObject = new JsonObject()
@@ -477,7 +493,8 @@ public class HeadersForwardingTest {
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
-    WireMock.verify(1, getRequestedFor(urlPathEqualTo("/permissions/users/" + USER_ID)));
+    WireMock.verify(1, getRequestedFor(urlPathEqualTo("/perms/users"))
+      .withQueryParam("query", equalTo("userId==" + USER_ID)));
 
     WireMock.verify(1, postRequestedFor(urlPathEqualTo(authLoginEndpoint)));
 

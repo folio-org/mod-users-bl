@@ -1,13 +1,5 @@
 package org.folio.rest;
 
-import static io.restassured.RestAssured.given;
-import static org.folio.rest.MockOkapi.getToken;
-import static org.folio.rest.MockOkapi.getTokenWithoutUserId;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Header;
@@ -18,11 +10,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 import org.apache.http.HttpStatus;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.tools.client.test.HttpClientMock2;
@@ -33,6 +20,20 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+
+import static io.restassured.RestAssured.given;
+import static org.folio.rest.MockOkapi.getToken;
+import static org.folio.rest.MockOkapi.getTokenWithoutUserId;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(VertxUnitRunner.class)
 public class BLUsersAPITest {
