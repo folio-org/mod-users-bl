@@ -55,6 +55,9 @@
     <!--Folio dependencies properties-->
     <mod-configuration-client.version>5.12.0</mod-configuration-client.version>
     <folio-module-descriptor-validator.version>1.0.1</folio-module-descriptor-validator.version>
+
+    <!--    Sonar properties-->
+    <sonar.cpd.exclusions>src/main/java/org/folio/rest/impl/BLUsersAPI.java</sonar.cpd.exclusions>
   </properties>
 
   <dependencyManagement>
