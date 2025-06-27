@@ -60,7 +60,6 @@ import org.folio.rest.tools.client.Response;
 import org.folio.rest.tools.client.exceptions.PopulateTemplateException;
 import org.folio.rest.tools.client.interfaces.HttpClientInterface;
 import org.folio.rest.util.ExceptionHelper;
-import org.folio.rest.util.FeatureFlags;
 import org.folio.rest.util.HttpClientUtil;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.service.PasswordResetLinkService;
@@ -947,57 +946,45 @@ public class BLUsersAPI implements BlUsers {
     return headers.get(OKAPI_TOKEN_HEADER);
   }
 
-  private void getUserWithPerms(boolean expandPerms,
-    Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-    String userUrl, List<String> include, String tenant, org.folio.rest.tools.client.Response loginResponse, HttpClientInterface client,
-    BiFunction<org.folio.rest.tools.client.Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
-
-    if (FeatureFlags.isEurekaLoginPermsEnabled()) {
-      getUserWithPermsEureka(expandPerms, okapiHeaders, asyncResultHandler,
-        userUrl, include, tenant, loginResponse, client, respond);
-    } else {
-      getUserWithPermsLegacy(expandPerms, okapiHeaders, asyncResultHandler,
-        userUrl, include, tenant, loginResponse, client, respond);
-    }
-  }
-
   @SuppressWarnings({"java:S107", "java:S3776", "java:S1874"})
-  private void getUserWithPermsLegacy(boolean expandPerms,
+  private void getUserWithPerms(boolean expandPerms,
     Map<String, String> okapiHeaders,
     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
     String userUrl,
     List<String> include,
     String tenant,
-    org.folio.rest.tools.client.Response loginResponse,
+    Response loginResponse,
     HttpClientInterface client,
-    BiFunction<org.folio.rest.tools.client.Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
+    BiFunction<Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
 
-    CompletableFuture<org.folio.rest.tools.client.Response> userResponse[] = new CompletableFuture[1];
-    boolean[] aRequestHasFailed = new boolean[] {false};
-    ArrayList<CompletableFuture<org.folio.rest.tools.client.Response>> requestedIncludes
+    CompletableFuture<Response> userResponse[] = new CompletableFuture[1];
+    boolean []aRequestHasFailed = new boolean[]{false};
+    ArrayList<CompletableFuture<Response>> requestedIncludes
       = new ArrayList<>();
-    Map<String, CompletableFuture<org.folio.rest.tools.client.Response>> completedLookup
+    Map<String, CompletableFuture<Response>> completedLookup
       = new HashMap<>();
 
     userResponse[0] = client.request(HttpMethod.GET, userUrl, okapiHeaders);
 
     for (int i = 0; i < include.size(); i++) {
 
-      if (include.get(i).equals(PERMISSIONS_INCLUDE)) {
+      if (include.get(i).equals(PERMISSIONS_INCLUDE)){
         //call perms once the /users?query=username={username} (same as creds) completes
-        CompletableFuture<org.folio.rest.tools.client.Response> permResponse = userResponse[0].thenCompose(
+        CompletableFuture<Response> permResponse = userResponse[0].thenCompose(
           client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
             handlePreviousResponse(false, false, false, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(permResponse);
         completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
-      } else if (include.get(i).equals(GROUPS_INCLUDE)) {
-        CompletableFuture<org.folio.rest.tools.client.Response> groupResponse = userResponse[0].thenCompose(
+      }
+      else if(include.get(i).equals(GROUPS_INCLUDE)){
+        CompletableFuture<Response> groupResponse = userResponse[0].thenCompose(
           client.chainedRequest("/groups/{users[0].patronGroup}", okapiHeaders, null,
             handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
         requestedIncludes.add(groupResponse);
         completedLookup.put(GROUPS_INCLUDE, groupResponse);
-      } else if (include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
-        CompletableFuture<org.folio.rest.tools.client.Response> servicePointsResponse = userResponse[0].thenCompose(
+      }
+      else if(include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
+        CompletableFuture<Response> servicePointsResponse = userResponse[0].thenCompose(
           client.chainedRequest("/service-points-users?query=userId=={users[0].id}" + QUERY_LIMIT,
             okapiHeaders, null, handlePreviousResponse(false, false, false,
               aRequestHasFailed, asyncResultHandler))
@@ -1005,7 +992,7 @@ public class BLUsersAPI implements BlUsers {
         requestedIncludes.add(servicePointsResponse);
         completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
         try { //NOSONAR
-          CompletableFuture<org.folio.rest.tools.client.Response> expandSPUResponse = expandServicePoints(
+          CompletableFuture<Response> expandSPUResponse = expandServicePoints(
             servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
             asyncResultHandler);
           completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
@@ -1018,14 +1005,13 @@ public class BLUsersAPI implements BlUsers {
       }
     }
 
-    if (expandPerms) {
-      CompletableFuture<org.folio.rest.tools.client.Response> permUserResponse = userResponse[0].thenCompose(
+    if (expandPerms){
+      CompletableFuture<Response> permUserResponse = userResponse[0].thenCompose(
         client.chainedRequest("/perms/users", okapiHeaders, new BuildCQL(null, "users[*].id", "userId"),
           handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler))
       );
-      CompletableFuture<org.folio.rest.tools.client.Response> expandPermsResponse = permUserResponse.thenCompose(
-        client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders,
-          true, null,
+      CompletableFuture<Response> expandPermsResponse = permUserResponse.thenCompose(
+        client.chainedRequest("/perms/users/{permissionUsers[0].id}/permissions?expanded=true&full=true", okapiHeaders, true, null,
           handlePreviousResponse(true, false, true, aRequestHasFailed, asyncResultHandler)));
       requestedIncludes.add(expandPermsResponse);
       completedLookup.put(EXPANDED_PERMISSIONS_INCLUDE, expandPermsResponse);
@@ -1035,54 +1021,54 @@ public class BLUsersAPI implements BlUsers {
     CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
       .thenAccept((response) -> {
         try {
-          if (requestedIncludes.size() == 1) {
+          if(requestedIncludes.size() == 1){
             //no includes requested, so users response was not validated, so validate
             handleResponse(userResponse[0].get(), true, false, true, aRequestHasFailed, asyncResultHandler);
           }
-          if (aRequestHasFailed[0]) {
+          if(aRequestHasFailed[0]){
             return;
           }
           //all requested endpoints have completed, proces....
           CompositeUser cu = new CompositeUser().withTenant(tenant);
           //user errors handled in chainedRequest, so assume user is ok at this point
-          cu.setUser((User) org.folio.rest.tools.client.Response.convertToPojo(
+          cu.setUser((User)Response.convertToPojo(
             userResponse[0].get().getBody().getJsonArray("users").getJsonObject(0), User.class));
 
-          CompletableFuture<org.folio.rest.tools.client.Response> cf = completedLookup.get(GROUPS_INCLUDE);
-          if (cf != null) {
-            org.folio.rest.tools.client.Response groupResponse = cf.get();
+          CompletableFuture<Response> cf = completedLookup.get(GROUPS_INCLUDE);
+          if(cf != null){
+            Response groupResponse = cf.get();
             handleResponse(groupResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
-            if (!aRequestHasFailed[0] && groupResponse.getBody() != null) {
-              cu.setPatronGroup((PatronGroup) org.folio.rest.tools.client.Response.convertToPojo(groupResponse.getBody(), PatronGroup.class));
+            if(!aRequestHasFailed[0] && groupResponse.getBody() != null){
+              cu.setPatronGroup((PatronGroup)Response.convertToPojo(groupResponse.getBody(), PatronGroup.class));
             }
           }
           cf = completedLookup.get(EXPANDED_PERMISSIONS_INCLUDE);
-          if (cf != null) {
-            org.folio.rest.tools.client.Response permsResponse = cf.get();
+          if(cf != null){
+            Response permsResponse = cf.get();
             handleResponse(permsResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
-            if (!aRequestHasFailed[0] && permsResponse.getBody() != null) {
+            if(!aRequestHasFailed[0] && permsResponse.getBody() != null){
               //data coming in from the service isnt returned as required by the composite user schema
               JsonObject j = new JsonObject();
               j.put("permissions", permsResponse.getBody().getJsonArray("permissionNames"));
-              cu.setPermissions((Permissions) org.folio.rest.tools.client.Response.convertToPojo(j, Permissions.class));
+              cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
             }
           }
           cf = completedLookup.get(PERMISSIONS_INCLUDE);
-          if (cf != null && cf.get().getBody() != null) {
-            org.folio.rest.tools.client.Response permsResponse = cf.get();
+          if(cf != null && cf.get().getBody() != null){
+            Response permsResponse = cf.get();
             handleResponse(permsResponse, false, false, false, aRequestHasFailed, asyncResultHandler);
-            if (!aRequestHasFailed[0]) {
+            if(!aRequestHasFailed[0]){
               Permissions p = cu.getPermissions();
               JsonArray permissionUsers = permsResponse.getBody().getJsonArray("permissionUsers");
               if (permissionUsers != null && !permissionUsers.isEmpty()) {
-                if (p != null) {
+                if(p != null){
                   //expanded permissions requested and the array of permissions has been populated
                   //add the username
                   p.setUserId(permissionUsers.getJsonObject(0).getString("id"));
-                } else {
+                } else{
                   //data coming in from the service isnt returned as required by the composite user schema
                   JsonObject j = permissionUsers.getJsonObject(0);
-                  cu.setPermissions((Permissions) org.folio.rest.tools.client.Response.convertToPojo(j, Permissions.class));
+                  cu.setPermissions((Permissions) Response.convertToPojo(j, Permissions.class));
                 }
               }
             }
@@ -1092,132 +1078,12 @@ public class BLUsersAPI implements BlUsers {
 
           fillCompositeUserWithServicePoint(completedLookup, cu);
 
-          if (!aRequestHasFailed[0]) {
+          if(!aRequestHasFailed[0]){
             var r = respond.apply(loginResponse, cu);
             asyncResultHandler.handle(Future.succeededFuture(r));
           }
         } catch (Exception e) {
-          if (!aRequestHasFailed[0]) {
-            asyncResultHandler.handle(Future.succeededFuture(
-              PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
-          }
-          logger.error(e.getMessage(), e);
-        } finally {
-          client.closeClient();
-        }
-      });
-  }
-
-  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874"})
-  private void getUserWithPermsEureka(boolean expandPerms,
-    Map<String, String> okapiHeaders,
-    Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
-    String userUrl,
-    List<String> include,
-    String tenant,
-    org.folio.rest.tools.client.Response loginResponse,
-    HttpClientInterface client,
-    BiFunction<org.folio.rest.tools.client.Response, CompositeUser, javax.ws.rs.core.Response> respond) throws Exception {
-
-    CompletableFuture<org.folio.rest.tools.client.Response> userResponse[] = new CompletableFuture[1];
-    boolean[] aRequestHasFailed = new boolean[] {false};
-    ArrayList<CompletableFuture<org.folio.rest.tools.client.Response>> requestedIncludes
-      = new ArrayList<>();
-    Map<String, CompletableFuture<org.folio.rest.tools.client.Response>> completedLookup
-      = new HashMap<>();
-
-    userResponse[0] = client.request(HttpMethod.GET, userUrl, okapiHeaders);
-
-    for (int i = 0; i < include.size(); i++) {
-
-      if (include.get(i).equals(PERMISSIONS_INCLUDE)) {
-        //call perms once the /users?query=username={username} (same as creds) completes
-        CompletableFuture<org.folio.rest.tools.client.Response> permResponse = userResponse[0].thenCompose(
-          client.chainedRequest("/permissions/users/{users[0].id}", okapiHeaders, null,
-            handlePreviousResponse(false, false, false, aRequestHasFailed, asyncResultHandler)));
-        requestedIncludes.add(permResponse);
-        completedLookup.put(PERMISSIONS_INCLUDE, permResponse);
-      } else if (include.get(i).equals(GROUPS_INCLUDE)) {
-        CompletableFuture<org.folio.rest.tools.client.Response> groupResponse = userResponse[0].thenCompose(
-          client.chainedRequest("/groups/{users[0].patronGroup}", okapiHeaders, null,
-            handlePreviousResponse(false, true, true, aRequestHasFailed, asyncResultHandler)));
-        requestedIncludes.add(groupResponse);
-        completedLookup.put(GROUPS_INCLUDE, groupResponse);
-      } else if (include.get(i).equals(SERVICEPOINTS_INCLUDE)) {
-        CompletableFuture<org.folio.rest.tools.client.Response> servicePointsResponse = userResponse[0].thenCompose(
-          client.chainedRequest("/service-points-users?query=userId=={users[0].id}" + QUERY_LIMIT,
-            okapiHeaders, null, handlePreviousResponse(false, false, false,
-              aRequestHasFailed, asyncResultHandler))
-        );
-        requestedIncludes.add(servicePointsResponse);
-        completedLookup.put(SERVICEPOINTS_INCLUDE, servicePointsResponse);
-        try { //NOSONAR
-          CompletableFuture<org.folio.rest.tools.client.Response> expandSPUResponse = expandServicePoints(
-            servicePointsResponse, client, aRequestHasFailed, okapiHeaders,
-            asyncResultHandler);
-          completedLookup.put(EXPANDED_SERVICEPOINTS_INCLUDE, expandSPUResponse);
-          requestedIncludes.add(expandSPUResponse);
-        } catch (Exception ex) {
-          client.closeClient();
-          asyncResultHandler.handle(Future.succeededFuture(
-            PostBlUsersLoginResponse.respond500WithTextPlain(ex.getLocalizedMessage())));
-        }
-      }
-    }
-
-    requestedIncludes.add(userResponse[0]);
-
-    CompletableFuture.allOf(requestedIncludes.toArray(new CompletableFuture[requestedIncludes.size()]))
-      .thenAccept((response) -> {
-        try {
-          if (requestedIncludes.size() == 1) {
-            //no includes requested, so users response was not validated, so validate
-            handleResponse(userResponse[0].get(), true, false, true, aRequestHasFailed, asyncResultHandler);
-          }
-          if (aRequestHasFailed[0]) {
-            return;
-          }
-          //all requested endpoints have completed, proces....
-          CompositeUser cu = new CompositeUser().withTenant(tenant);
-          //user errors handled in chainedRequest, so assume user is ok at this point
-          cu.setUser((User) org.folio.rest.tools.client.Response.convertToPojo(
-            userResponse[0].get().getBody().getJsonArray("users").getJsonObject(0), User.class));
-
-          CompletableFuture<org.folio.rest.tools.client.Response> cf = completedLookup.get(GROUPS_INCLUDE);
-          if (cf != null) {
-            org.folio.rest.tools.client.Response groupResponse = cf.get();
-            handleResponse(groupResponse, false, true, false, aRequestHasFailed, asyncResultHandler);
-            if (!aRequestHasFailed[0] && groupResponse.getBody() != null) {
-              cu.setPatronGroup((PatronGroup) org.folio.rest.tools.client.Response.convertToPojo(groupResponse.getBody(), PatronGroup.class));
-            }
-          }
-
-          cf = completedLookup.get(PERMISSIONS_INCLUDE);
-          if (cf != null && cf.get().getBody() != null) {
-            org.folio.rest.tools.client.Response permsResponse = cf.get();
-            handleResponse(permsResponse, false, false, false, aRequestHasFailed, asyncResultHandler);
-            if (!aRequestHasFailed[0]) {
-              JsonArray permissionUsers = permsResponse.getBody().getJsonArray("permissions");
-              var userId = permsResponse.getBody().getString("userId");
-              if (permissionUsers != null && !permissionUsers.isEmpty()) {
-                var userPermissions = permissionUsers.stream()
-                  .map(permissionName -> expandPerms ? Map.of("permissionName", permissionName) : permissionName)
-                  .toList();
-                cu.setPermissions(new Permissions().withPermissions(userPermissions).withUserId(userId));
-              }
-            }
-          }
-
-          //TODO: Refactor so less copy/paste
-
-          fillCompositeUserWithServicePoint(completedLookup, cu);
-
-          if (!aRequestHasFailed[0]) {
-            var r = respond.apply(loginResponse, cu);
-            asyncResultHandler.handle(Future.succeededFuture(r));
-          }
-        } catch (Exception e) {
-          if (!aRequestHasFailed[0]) {
+          if(!aRequestHasFailed[0]){
             asyncResultHandler.handle(Future.succeededFuture(
               PostBlUsersLoginResponse.respond500WithTextPlain(e.getLocalizedMessage())));
           }
