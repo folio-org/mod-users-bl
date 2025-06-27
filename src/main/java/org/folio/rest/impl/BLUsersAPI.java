@@ -947,7 +947,7 @@ public class BLUsersAPI implements BlUsers {
     return headers.get(OKAPI_TOKEN_HEADER);
   }
 
-  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874"})
+  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874", "java:S2142"})
   private void getUserWithPerms(boolean expandPerms,
     Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
     String userUrl, List<String> include, String tenant, org.folio.rest.tools.client.Response loginResponse,
@@ -964,7 +964,7 @@ public class BLUsersAPI implements BlUsers {
     }
   }
 
-  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874"})
+  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874", "java:S2142"})
   private void getUserWithPermsLegacy(boolean expandPerms,
     Map<String, String> okapiHeaders,
     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
@@ -1115,7 +1115,7 @@ public class BLUsersAPI implements BlUsers {
       });
   }
 
-  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874"})
+  @SuppressWarnings({"java:S107", "java:S3776", "java:S1874", "java:S2142"})
   private void getUserWithPermsEureka(boolean expandPerms,
     Map<String, String> okapiHeaders,
     Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
