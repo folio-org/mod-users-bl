@@ -260,10 +260,6 @@
     {
       "id": "password-validator",
       "version": "1.0"
-    },
-    {
-      "id": "permissions-users",
-      "version": "1.0"
     }
   ],
   "optional": [
@@ -294,6 +290,10 @@
     {
       "id": "request-preference-storage",
       "version": "2.0"
+    },
+    {
+      "id": "permissions-users",
+      "version": "1.0"
     }
   ],
   "permissionSets": [
