@@ -13,6 +13,7 @@ import io.vertx.ext.web.client.HttpResponse;
 
 
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Util class with static method for sending http request
@@ -68,11 +69,11 @@ public class RestUtil {
    */
   public static Future<WrappedResponse> doRequest(HttpClient client, String url,
     HttpMethod method, MultiMap headers, String payload) {
-      
+
     WebClient webClient = WebClient.wrap(client);
 
     Promise<WrappedResponse> promise = Promise.promise();
-    
+
     HttpRequest<Buffer> request = webClient.requestAbs(method, url);
     if (headers != null) {
       headers.add("Content-type", "application/json")
@@ -84,14 +85,10 @@ public class RestUtil {
         }
       }
     }
-    Future<HttpResponse<Buffer>> response;
 
-    if (payload != "" && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
-      Buffer buffer = Buffer.buffer(payload);
-      response = request.sendBuffer(buffer);
-    } else {
-      response = request.send();
-    }
+    var buffer = StringUtils.isEmpty(payload) ? null : Buffer.buffer(payload);
+
+    Future<HttpResponse<Buffer>> response = request.sendBuffer(buffer);
 
     response.onSuccess(res -> {
       WrappedResponse wr = new WrappedResponse(res.statusCode(), res.bodyAsString(), res);
