@@ -157,6 +157,6 @@ and the [Docker image](https://hub.docker.com/r/folioorg/mod-users-bl/).
 The Password reset link expiration will be dependent on the token expiration time configured in [mod-authtoken](https://github.com/folio-org/mod-authtoken).
 
 ### Eureka support
-Environment variable `EUREKA_LOGIN_PERMS` (default `false`), - if `true` `mod-users-bl` will use `mod-roles-keycloak`
-instead of `mod-permissions` to retrieve user permissions for `login` and `login-with-expiry` responses.
+Environment variable `EUREKA_LOGIN_PERMS` (default `true`), - if `false` `mod-users-bl` will use `mod-permissions`
+instead of `mod-roles-keycloak` to retrieve user permissions for `login` and `login-with-expiry` responses.
 

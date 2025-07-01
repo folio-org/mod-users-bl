@@ -7,7 +7,7 @@ public final class FeatureFlags {
   private static final boolean EUREKA_LOGIN_PERMS =
     Boolean.parseBoolean(
       System.getProperty(KEY,
-        System.getenv().getOrDefault(KEY, "false")
+        System.getenv().getOrDefault(KEY, "true")
       ));
 
   private FeatureFlags() {}
