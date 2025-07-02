@@ -40,12 +40,13 @@
           "modulePermissions" : [
             "users.item.get",
             "users.collection.get",
-            "perms.users.get",
             "usergroups.item.get",
             "inventory-storage.service-points-users.collection.get",
             "inventory-storage.service-points-users.item.get",
             "inventory-storage.service-points.collection.get",
-            "inventory-storage.service-points.item.get"
+            "inventory-storage.service-points.item.get",
+            "perms.users.get",
+            "permissions.users.item.get"
           ]
         },
         {
@@ -55,12 +56,13 @@
           "modulePermissions" : [
             "users.item.get",
             "users.collection.get",
-            "perms.users.get",
             "usergroups.item.get",
             "inventory-storage.service-points-users.collection.get",
             "inventory-storage.service-points-users.item.get",
             "inventory-storage.service-points.collection.get",
-            "inventory-storage.service-points.item.get"
+            "inventory-storage.service-points.item.get",
+            "perms.users.get",
+            "permissions.users.item.get"
           ]
         },
         {
@@ -290,6 +292,10 @@
     {
       "id": "request-preference-storage",
       "version": "2.0"
+    },
+    {
+      "id": "permissions-users",
+      "version": "1.0"
     }
   ],
   "permissionSets": [

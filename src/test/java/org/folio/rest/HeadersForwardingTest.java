@@ -29,7 +29,9 @@ import org.folio.rest.jaxrs.model.PasswordResetAction;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.tools.utils.NetworkUtils;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -106,6 +108,17 @@ public class HeadersForwardingTest {
       .setConfig(new JsonObject().put("http.port", port));
     TestUtil.deploy(RestVerticle.class, options, vertx, context);
   }
+
+  @BeforeClass
+  public static void enableEureka() {
+    System.setProperty("EUREKA_LOGIN_PERMS", "false");
+  }
+
+  @AfterClass
+  public static void disableEureka() {
+    System.clearProperty("EUREKA_LOGIN_PERMS");
+  }
+
 
   @Test
   public void testPostBlUsersLoginLegacy() {
