@@ -1,3 +1,6 @@
+## 7.11.0 in progress
+* Support mod-roles-keycloak for user's permissions during login (MODUSERBL-224)
+
 ## 7.10.0 2025-03-13
 
 * Update to mod-users-bl Java 21 (FOLIO-4223)
