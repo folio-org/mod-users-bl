@@ -9,7 +9,10 @@ import org.folio.rest.client.FeesFinesModuleClient;
 import org.folio.rest.exception.OkapiModuleClientException;
 import org.folio.rest.util.OkapiConnectionParams;
 import org.folio.rest.util.RestUtil;
+import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
+
+import java.time.LocalDate;
 
 public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
 
@@ -42,9 +45,19 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
   @Override
   public Future<Integer> getManualBlocksCountByUserId(String userId, OkapiConnectionParams connectionParams) {
     String query = StringUtil.urlEncode("(userId==" + StringUtil.cqlEncode(userId) + ")");
+    return fetchManualBlockByCQLQuery(connectionParams, query);
+  }
+
+  @Override
+  public Future<Integer> getNonExpiredManualBlocksCountByUserId(String userId, OkapiConnectionParams connectionParams) {
+    String query = StringUtil.urlEncode("(userId==" + StringUtil.cqlEncode(userId) + " AND expirationDate>=" + LocalDate.now() + ")");
+    return fetchManualBlockByCQLQuery(connectionParams, PercentCodec.encode(query).toString());
+  }
+
+  private Future<Integer> fetchManualBlockByCQLQuery(OkapiConnectionParams connectionParams, String query) {
     String requestUrl = connectionParams.getOkapiUrl() + "/manualblocks?limit=0&query=" + query;
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
-      connectionParams.buildHeaders(), StringUtils.EMPTY)
+        connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
         switch (response.getCode()) {
           case HttpStatus.SC_OK:

@@ -8,4 +8,6 @@ public interface FeesFinesModuleClient {
     Future<Integer> getOpenAccountsCountByUserId(String userId, OkapiConnectionParams connectionParams);
 
     Future<Integer> getManualBlocksCountByUserId(String userId, OkapiConnectionParams connectionParams);
+
+    Future<Integer> getNonExpiredManualBlocksCountByUserId(String userId, OkapiConnectionParams connectionParams);
 }
