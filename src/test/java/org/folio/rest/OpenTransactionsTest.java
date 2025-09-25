@@ -18,7 +18,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -249,7 +250,7 @@ public class OpenTransactionsTest {
     JsonObject manualBlockPost = new JsonObject()
       .put("id", MANUAL_BLOCK_ID)
       .put("userId", USER_ID)
-      .put("expirationDate", "2099-12-30");
+      .put("expirationDate", OffsetDateTime.now(ZoneOffset.UTC).plusYears(10).toString());
     given()
       .body(manualBlockPost.encode())
       .when()
@@ -278,7 +279,7 @@ public class OpenTransactionsTest {
     JsonObject manualBlockPost = new JsonObject()
       .put("id", MANUAL_BLOCK_ID)
       .put("userId", USER_ID)
-      .put("expirationDate", "2000-12-30");
+      .put("expirationDate", OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(5).toString());
     given()
       .body(manualBlockPost.encode())
       .when()
@@ -307,7 +308,7 @@ public class OpenTransactionsTest {
     JsonObject manualBlockPost = new JsonObject()
       .put("id", MANUAL_BLOCK_ID)
       .put("userId", USER_ID)
-      .put("expirationDate", LocalDate.now().toString());
+      .put("expirationDate", OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(10).toString());
     given()
       .body(manualBlockPost.encode())
       .when()

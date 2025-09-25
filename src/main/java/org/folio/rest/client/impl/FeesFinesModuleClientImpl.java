@@ -12,7 +12,8 @@ import org.folio.rest.util.RestUtil;
 import org.folio.util.PercentCodec;
 import org.folio.util.StringUtil;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
 
@@ -44,7 +45,7 @@ public class FeesFinesModuleClientImpl implements FeesFinesModuleClient {
 
   @Override
   public Future<Integer> getNonExpiredManualBlocksCountByUserId(String userId, OkapiConnectionParams connectionParams) {
-    String query = StringUtil.urlEncode("(userId==" + StringUtil.cqlEncode(userId) + " AND expirationDate>=" + LocalDate.now() + ")");
+    String query = StringUtil.urlEncode("(userId==" + StringUtil.cqlEncode(userId) + " AND expirationDate>=" + OffsetDateTime.now(ZoneOffset.UTC) + ")");
     String requestUrl = connectionParams.getOkapiUrl() + "/manualblocks?limit=0&query=" + PercentCodec.encode(query);
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
       connectionParams.buildHeaders(), StringUtils.EMPTY)
