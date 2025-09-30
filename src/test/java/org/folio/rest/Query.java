@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author kurt
  */
-enum Operator { EQUALS, NOTEQUALS }
+enum Operator { EQUALS, NOTEQUALS, GREATEREQUALS }
 
 public class Query {
   private Operator operator;
@@ -39,6 +39,16 @@ public class Query {
     switch (operator) {
       case EQUALS: return value.equals(checkObject);
       case NOTEQUALS: return !value.equals(checkObject);
+      case GREATEREQUALS:
+        if (checkObject == null) return false;
+        if (checkObject instanceof Number && value instanceof Number) {
+          double docValue = ((Number) checkObject).doubleValue();
+          double queryValue = ((Number) value).doubleValue();
+          return docValue >= queryValue;
+        } else if (checkObject instanceof String && value instanceof String) {
+          return ((String) checkObject).compareTo((String) value) >= 0;
+        }
+        return false;
       default: throw new IllegalStateException("Operator can't be null");
     }
   }

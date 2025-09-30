@@ -39,7 +39,7 @@ public class OpenTransactionsServiceImpl implements OpenTransactionsService {
         .onSuccess(openTransactions::setFeesFines);
 
     Future<Integer> manualBlockFuture =
-      feesFinesClient.getManualBlocksCountByUserId(id, connectionParams)
+      feesFinesClient.getNonExpiredManualBlocksCountByUserId(id, connectionParams)
         .onSuccess(openTransactions::setBlocks);
 
     Future<Integer> proxiesFuture =

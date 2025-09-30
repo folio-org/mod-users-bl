@@ -18,6 +18,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -187,7 +189,8 @@ public class OpenTransactionsTest {
   public void getTransactionsOfUserHasMultiTransactions() {
     JsonObject manualBlockPost = new JsonObject()
       .put("id", MANUAL_BLOCK_ID)
-      .put("userId", USER_ID);
+      .put("userId", USER_ID)
+      .put("expirationDate", "2099-12-30");
     given()
       .body(manualBlockPost.encode())
       .when()
@@ -246,7 +249,66 @@ public class OpenTransactionsTest {
   public void getTransactionsOfUserHasBlocks() {
     JsonObject manualBlockPost = new JsonObject()
       .put("id", MANUAL_BLOCK_ID)
-      .put("userId", USER_ID);
+      .put("userId", USER_ID)
+      .put("expirationDate", OffsetDateTime.now(ZoneOffset.UTC).plusYears(10).toString());
+    given()
+      .body(manualBlockPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/manualblocks")
+      .then()
+      .statusCode(201);
+
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(true),
+        "loans", equalTo(0),
+        "requests", equalTo(0),
+        "feesFines", equalTo(0),
+        "proxies", equalTo(0),
+        "blocks", equalTo(1),
+        "userId", equalTo(USER_ID));
+  }
+
+  @Test
+  public void getTransactionsOfUserHasBlocks_validateNoOpenTxnWhenExpiredBlockFound() {
+    JsonObject manualBlockPost = new JsonObject()
+      .put("id", MANUAL_BLOCK_ID)
+      .put("userId", USER_ID)
+      .put("expirationDate", OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(5).toString());
+    given()
+      .body(manualBlockPost.encode())
+      .when()
+      .post("http://localhost:" + okapiPort + "/manualblocks")
+      .then()
+      .statusCode(201);
+
+    given()
+      .spec(okapi)
+      .port(port)
+      .when()
+      .get("/bl-users/by-id/" + USER_ID + "/open-transactions")
+      .then()
+      .statusCode(200)
+      .body("hasOpenTransactions", equalTo(false),
+        "loans", equalTo(0),
+        "requests", equalTo(0),
+        "feesFines", equalTo(0),
+        "proxies", equalTo(0),
+        "blocks", equalTo(0),
+        "userId", equalTo(USER_ID));
+  }
+
+  @Test
+  public void getTransactionsOfUserHasBlocks_validateOpenTxnWhenBlockExpiringAfterToday() {
+    JsonObject manualBlockPost = new JsonObject()
+      .put("id", MANUAL_BLOCK_ID)
+      .put("userId", USER_ID)
+      .put("expirationDate", OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(10).toString());
     given()
       .body(manualBlockPost.encode())
       .when()

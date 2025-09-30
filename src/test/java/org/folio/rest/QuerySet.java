@@ -52,6 +52,8 @@ public class QuerySet {
         query.setOperator(Operator.EQUALS);
       } else if("<>".equals(termNode.getRelation().getBase())) {
         query.setOperator(Operator.NOTEQUALS);
+      } else if (">=".equals(termNode.getRelation().getBase())) {
+        query.setOperator(Operator.GREATEREQUALS);
       } else {
         throw new UnsupportedOperationException("Relation '"
                 + termNode.getRelation().getBase() + "' is not supported");
