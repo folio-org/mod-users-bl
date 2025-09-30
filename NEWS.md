@@ -1,5 +1,6 @@
 ## 7.11.0 in progress
 * Support mod-roles-keycloak for user's permissions during login (MODUSERBL-224)
+* Not possible to delete patrons via UI that have expired manual blocks (MODUSERBL-231) 
 
 ## 7.10.0 2025-03-13
 
