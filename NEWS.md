@@ -1,3 +1,6 @@
+## 7.9.5 2025-12-22
+* Update to RMB 35.3.1 ([MODUSERBL-236](https://folio-org.atlassian.net/browse/MODUSERBL-236))
+
 ## 7.9.4 2025-05-27
 * Search users in all tenants when using "Forgot password" and "Forgot username" links ([MODUSERBL-225](https://folio-org.atlassian.net/browse/MODUSERBL-225))
 
