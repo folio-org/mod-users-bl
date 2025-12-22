@@ -1,3 +1,7 @@
+## 7.10.4 2025-12-22
+
+* Update to RMB 35.4.1 (MODUSERBL-237)
+
 ## 7.10.0 2025-07-11
 
 * Support mod-roles-keycloak for user's permissions during login (MODUSERBL-224)
