@@ -168,7 +168,9 @@
             "auth.signtoken.all",
             "notify.item.post",
             "notify.users.item.post",
-            "user-tenants.collection.get"
+            "user-tenants.collection.get",
+            "mod-settings.entries.collection.get",
+            "mod-settings.global.read.mod-users-bl"
           ]
         },
         {
@@ -205,7 +207,9 @@
             "login.password-reset-action.post",
             "auth.signtoken.all",
             "notify.item.post",
-            "notify.users.item.post"
+            "notify.users.item.post",
+            "mod-settings.entries.collection.get",
+            "mod-settings.global.read.mod-users-bl"
           ]
         },
         {
@@ -262,6 +266,10 @@
     {
       "id": "password-validator",
       "version": "1.0"
+    },
+    {
+      "id": "settings",
+      "version": "1.1"
     }
   ],
   "optional": [
@@ -372,6 +380,16 @@
         "users-bl.transactions-by-username.get"
       ],
       "visible" : false
+    },
+    {
+      "permissionName": "mod-settings.global.read.mod-users-bl",
+      "displayName": "users-bl get settings collection",
+      "description": "To read the setting from mod-settings"
+    },
+    {
+      "permissionName": "mod-settings.global.write.mod-users-bl",
+      "displayName": "users-bl create settings",
+      "description": "To write the settings in mod-settings"
     }
   ],
   "launchDescriptor": {
