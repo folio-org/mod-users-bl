@@ -7,7 +7,7 @@ public enum PasswordResetSetting {
   RESET_PASSWORD_UI_PATH("resetPasswordPath"),
   FORGOT_PASSWORD_UI_PATH("forgotPasswordPath");
 
-  private String key;
+  private final String key;
 
   public String getKey() {
     return key;
@@ -24,5 +24,14 @@ public enum PasswordResetSetting {
       }
     }
     return Optional.empty();
+  }
+
+  public static PasswordResetSetting fromValue(String value) {
+    for (PasswordResetSetting setting : PasswordResetSetting.values()) {
+      if (setting.getKey().equalsIgnoreCase(value)) {
+        return setting;
+      }
+    }
+    throw new IllegalArgumentException("No enum constant with value " + value);
   }
 }

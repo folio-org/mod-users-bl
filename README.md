@@ -179,10 +179,7 @@ POST https://{okapi-url}/settings/entries
 {
   "scope": "mod-users-bl",
   "key": "resetPasswordHost",
-  "value": {
-    "enabled": true,
-    "resetPasswordHost": "http://localhost:3000"
-  }
+  "value": "http://localhost:3000"
 }
 ```
 
@@ -191,10 +188,7 @@ POST https://{okapi-url}/settings/entries
 {
   "scope": "mod-users-bl",
   "key": "resetPasswordPath",
-  "value": {
-    "enabled": true,
-    "resetPasswordPath": "/reset-password"
-  }
+  "value": "/reset-password"
 }
 ```
 
@@ -203,10 +197,7 @@ POST https://{okapi-url}/settings/entries
 {
   "scope": "mod-users-bl",
   "key": "forgotPasswordPath",
-  "value": {
-    "enabled": true,
-    "forgotPasswordPath": "/reset-password"
-  }
+  "value": "/reset-password"
 }
 ```
 

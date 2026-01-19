@@ -1,19 +1,15 @@
 package org.folio.rest.client.impl;
 
 import static java.lang.String.format;
-import static org.folio.service.PasswordResetSetting.FOLIO_HOST;
-import static org.folio.service.PasswordResetSetting.FORGOT_PASSWORD_UI_PATH;
-import static org.folio.service.PasswordResetSetting.RESET_PASSWORD_UI_PATH;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +24,7 @@ public class SettingsClientImpl implements SettingsClient {
   private static final Logger LOG = LogManager.getLogger(SettingsClientImpl.class);
 
   private static final String SETTING_VALUE_FIELD = "value";
+  private static final String SETTINGS_ENTRIES_FIELD = "items";
 
   private static final String SETTINGS_PATH = "/settings/entries";
 
@@ -53,57 +50,34 @@ public class SettingsClientImpl implements SettingsClient {
         }
 
         var responseJson = response.getJson();
-        var enabledSettings = validateResponseAndGetEnabledPasswordResetSettings(responseJson);
-        return asSettingKeyToValueMap(enabledSettings);
+        validatePasswordResetSettings(responseJson);
+        return asSettingKeyToValueMap(responseJson);
       });
   }
 
-  private List<JsonObject> validateResponseAndGetEnabledPasswordResetSettings(JsonObject responseJson) {
-    if (responseJson == null || !responseJson.containsKey("items")) {
+  private void validatePasswordResetSettings(JsonObject responseJson) {
+    if (responseJson == null || !responseJson.containsKey(SETTINGS_ENTRIES_FIELD)) {
       throw new OkapiModuleClientException("Invalid Password Reset Settings response: missing 'items' field");
     }
 
-    var items = responseJson.getJsonArray("items");
+    var items = responseJson.getJsonArray(SETTINGS_ENTRIES_FIELD);
     if (items.isEmpty()) {
       throw new OkapiModuleClientException("No Password Reset Settings found");
     }
 
-    var enabledSettings = items.stream()
+    var settings = items.stream()
       .map(JsonObject.class::cast)
-      .filter(settingJson -> settingJson.getJsonObject(SETTING_VALUE_FIELD) != null)
-      .filter(settingJson -> {
-        var valueObj = settingJson.getJsonObject(SETTING_VALUE_FIELD);
-        return Boolean.TRUE.equals(valueObj.getBoolean("enabled", false));
-      })
+      .filter(setting -> StringUtils.isNotBlank(setting.getString(SETTING_VALUE_FIELD)))
       .toList();
 
-    if (enabledSettings.isEmpty()) {
-      throw new OkapiModuleClientException("No enabled Password Reset Settings found");
+    if (settings.isEmpty()) {
+      throw new OkapiModuleClientException("No valid Password Reset Settings found");
     }
-
-    return enabledSettings;
   }
 
-  private Map<PasswordResetSetting, String> asSettingKeyToValueMap(List<JsonObject> enabledSettings) {
-    return enabledSettings.stream()
-      .map(settingJson -> {
-        var valueObj = settingJson.getJsonObject(SETTING_VALUE_FIELD);
-        if (valueObj.containsKey(FOLIO_HOST.getKey())) {
-          return Optional.of(Map.entry(FOLIO_HOST, valueObj.getString(FOLIO_HOST.getKey())));
-        }
-
-        if (valueObj.containsKey(RESET_PASSWORD_UI_PATH.getKey())) {
-          return Optional.of(Map.entry(RESET_PASSWORD_UI_PATH, valueObj.getString(RESET_PASSWORD_UI_PATH.getKey())));
-        }
-
-        if (valueObj.containsKey(FORGOT_PASSWORD_UI_PATH.getKey())) {
-          return Optional.of(Map.entry(FORGOT_PASSWORD_UI_PATH, valueObj.getString(FORGOT_PASSWORD_UI_PATH.getKey())));
-        }
-
-        return Optional.empty();
-      })
-      .filter(Optional::isPresent)
-      .map(op -> ((Optional<Map.Entry<PasswordResetSetting, String>>)op).get())
-      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  private Map<PasswordResetSetting, String> asSettingKeyToValueMap(JsonObject responseJson) {
+    return responseJson.getJsonArray(SETTINGS_ENTRIES_FIELD).stream()
+      .map(JsonObject.class::cast)
+      .collect(Collectors.toMap(s -> PasswordResetSetting.fromValue(s.getString("key")), s -> s.getString(SETTING_VALUE_FIELD)));
   }
 }
