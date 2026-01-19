@@ -156,6 +156,99 @@ and the [Docker image](https://hub.docker.com/r/folioorg/mod-users-bl/).
 
 The Password reset link expiration will be dependent on the token expiration time configured in [mod-authtoken](https://github.com/folio-org/mod-authtoken).
 
+#### Configuring reset password URL
+
+There are three configurations in `mod-users-bl` that can be used to configure the reset password URL that is sent to the user when they request a password reset. These configurations can be provided in one of the following two ways:
+
+##### 1. Configuring via `settings` interface from `mod-settings` module.
+
+This is a preferred option to provide the configurations.
+
+**Permissions**
+To make a post call to mod-settings, user should have below permissions.
+```
+  mod-settings.entries.item.post
+  mod-settings.global.write.mod-users-bl
+```
+
+For all three configurations, `scope` field should be set to `mod-users-bl` and the `value.enabled` field should be set to `true` to enable the configuration
+
+**Example request**
+```
+POST https://{okapi-url}/settings/entries
+{
+  "scope": "mod-users-bl",
+  "key": "resetPasswordHost",
+  "value": "http://localhost:3000"
+}
+```
+
+```
+POST https://{okapi-url}/settings/entries
+{
+  "scope": "mod-users-bl",
+  "key": "resetPasswordPath",
+  "value": "/reset-password"
+}
+```
+
+```
+POST https://{okapi-url}/settings/entries
+{
+  "scope": "mod-users-bl",
+  "key": "forgotPasswordPath",
+  "value": "/reset-password"
+}
+```
+
+##### 1. Configuring via `configuration` interface from `mod-configuration` module.
+
+This is an alternative, but not recommended option to provide the configurations.
+
+**Permissions**
+
+To query and fetch existing configurations one should have ```configuration.entries.collection.get```
+
+To Create new configuration one should have ```configuration.entries.item.post```
+
+The following three are the configurations used by reset password URL feature and they should be created with the same values for `module`, `configName`, `code` fields provided in below examples and with appropriate values for `value` field.:
+
+```json
+{
+  "module": "USERSBL",
+  "configName": "resetPassword",
+  "code": "FOLIO_HOST",
+  "description": "reset password host",
+  "default": true,
+  "enabled": true,
+  "value": "https://localhost"
+}
+```
+
+```json
+{
+  "module": "USERSBL",
+  "configName": "resetPassword",
+  "code": "RESET_PASSWORD_UI_PATH",
+  "description": "reset password UI path",
+  "default": true,
+  "enabled": true,
+  "value": "/reset-password"
+}
+```
+
+```json
+{
+  "module": "USERSBL",
+  "configName": "resetPassword",
+  "code": "FORGOT_PASSWORD_UI_PATH",
+  "description": "forgot password UI path",
+  "default": true,
+  "enabled": true,
+  "value": "/reset-password"
+}
+```
+
 ### Eureka support
 Environment variable `EUREKA_LOGIN_PERMS` (default `true`), - if `false` `mod-users-bl` will use `mod-permissions`
 instead of `mod-roles-keycloak` to retrieve user permissions for `login` and `login-with-expiry` responses.

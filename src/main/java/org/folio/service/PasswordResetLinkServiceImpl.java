@@ -1,5 +1,9 @@
 package org.folio.service;
 
+import static org.folio.service.PasswordResetSetting.FOLIO_HOST;
+import static org.folio.service.PasswordResetSetting.FORGOT_PASSWORD_UI_PATH;
+import static org.folio.service.PasswordResetSetting.RESET_PASSWORD_UI_PATH;
+
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -12,6 +16,7 @@ import org.folio.rest.client.AuthTokenClient;
 import org.folio.rest.client.ConfigurationClient;
 import org.folio.rest.client.NotificationClient;
 import org.folio.rest.client.PasswordResetActionClient;
+import org.folio.rest.client.SettingsClient;
 import org.folio.rest.client.UserModuleClient;
 import org.folio.rest.exception.UnprocessableEntityException;
 import org.folio.rest.exception.UnprocessableEntityMessage;
@@ -31,7 +36,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,10 +46,6 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
   private static final String MODULE_NAME = "USERSBL";
   private static final String UNDEFINED_USER_NAME = "UNDEFINED_USER__RESET_PASSWORD_";
-  private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
-  private static final String UI_PATH_CONFIG_KEY = "RESET_PASSWORD_UI_PATH";
-  private static final String FORGOT_PASSWORD_UI_PATH_CONFIG_KEY = "FORGOT_PASSWORD_UI_PATH";
-  private static final Set<String> GENERATE_LINK_REQUIRED_CONFIGURATION = Collections.emptySet();
   private static final String FOLIO_HOST_DEFAULT = "http://localhost:3000";
   private static final String CREATE_PASSWORD_EVENT_CONFIG_NAME = "CREATE_PASSWORD_EVENT";//NOSONAR
   private static final String RESET_PASSWORD_EVENT_CONFIG_NAME = "RESET_PASSWORD_EVENT";//NOSONAR
@@ -57,6 +57,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private static final String LINK_USED_STATUS_CODE = "link.used";
 
   private ConfigurationClient configurationClient;
+  private SettingsClient settingsClient;
   private AuthTokenClient authTokenClient;
   private NotificationClient notificationClient;
   private PasswordResetActionClient passwordResetActionClient;
@@ -65,10 +66,11 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   private String resetPasswordUIPathDefault;
   private String forgotPasswordUIPathDefault;
 
-  public PasswordResetLinkServiceImpl(ConfigurationClient configurationClient, AuthTokenClient authTokenClient,
+  public PasswordResetLinkServiceImpl(ConfigurationClient configurationClient, SettingsClient settingsClient, AuthTokenClient authTokenClient,
                                       NotificationClient notificationClient, PasswordResetActionClient passwordResetActionClient,
                                       UserModuleClient userModuleClient, UserPasswordService userPasswordService) {
     this.configurationClient = configurationClient;
+    this.settingsClient = settingsClient;
     this.authTokenClient = authTokenClient;
     this.notificationClient = notificationClient;
     this.passwordResetActionClient = passwordResetActionClient;
@@ -81,12 +83,17 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   public Future<String> sendPasswordResetLink(User user, Map<String, String> okapiHeaders) {
     LOG.info("sendPasswordResetLink:: user details {}", user);
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
-    Holder<Map<String, String>> configMapHolder = new Holder<>();
+    Holder<Map<PasswordResetSetting, String>> configMapHolder = new Holder<>();
     Holder<String> passwordResetActionIdHolder = new Holder<>();
     Holder<String> tokenHolder = new Holder<>();
     Holder<String> linkHolder = new Holder<>();
 
-    return configurationClient.lookupConfigByModuleName(MODULE_NAME, GENERATE_LINK_REQUIRED_CONFIGURATION, connectionParams)
+    return settingsClient.lookupPasswordResetSettings(connectionParams)
+      .recover(err -> {
+        LOG.info("sendPasswordResetLink:: password reset setting is absent: {} {}",
+          err.getClass().getSimpleName(), err.getMessage());
+        return configurationClient.lookupConfigByModuleName(MODULE_NAME, connectionParams);
+      })
       .compose(configurations -> {
         configMapHolder.value = configurations;
         if (StringUtils.isBlank(user.getUsername())) {
@@ -117,15 +124,15 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .compose(user -> sendPasswordResetLink(user, okapiHeaders));
   }
 
-  private Future<Void> sendNotification(OkapiConnectionParams connectionParams, Boolean passwordExists, Holder<String> tokenHolder, Holder<Map<String, String>> configMapHolder, Holder<String> linkHolder, User user) {
+  private Future<Void> sendNotification(OkapiConnectionParams connectionParams, Boolean passwordExists, Holder<String> tokenHolder, Holder<Map<PasswordResetSetting, String>> configMapHolder, Holder<String> linkHolder, User user) {
     LOG.info("sendNotification:: passwordExistValue {}, User details {}", passwordExists, user);
-    String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
-    String linkPath = configMapHolder.value.getOrDefault(UI_PATH_CONFIG_KEY, resetPasswordUIPathDefault);
+    String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST, FOLIO_HOST_DEFAULT);
+    String linkPath = configMapHolder.value.getOrDefault(RESET_PASSWORD_UI_PATH, resetPasswordUIPathDefault);
     String generatedLink = linkHost + linkPath + '/' + tokenHolder.value + "?tenant=" + connectionParams.getTenantId();
     linkHolder.value = generatedLink;
 
-    String forgotPasswordLinkHost = configMapHolder.value.getOrDefault(FOLIO_HOST_CONFIG_KEY, FOLIO_HOST_DEFAULT);
-    String forgotPasswordLinkPath = configMapHolder.value.getOrDefault(FORGOT_PASSWORD_UI_PATH_CONFIG_KEY, forgotPasswordUIPathDefault);
+    String forgotPasswordLinkHost = configMapHolder.value.getOrDefault(FOLIO_HOST, FOLIO_HOST_DEFAULT);
+    String forgotPasswordLinkPath = configMapHolder.value.getOrDefault(FORGOT_PASSWORD_UI_PATH, forgotPasswordUIPathDefault);
     String forgotPasswordLink = forgotPasswordLinkHost + forgotPasswordLinkPath;
 
     boolean passwordExistsValue = Boolean.TRUE.equals(passwordExists);

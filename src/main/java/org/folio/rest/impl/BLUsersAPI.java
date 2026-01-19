@@ -32,6 +32,7 @@ import org.folio.rest.client.impl.LoginAuthnCredentialsClientImpl;
 import org.folio.rest.client.impl.NotificationClientImpl;
 import org.folio.rest.client.impl.PasswordResetActionClientImpl;
 import org.folio.rest.client.impl.PermissionModuleClientImpl;
+import org.folio.rest.client.impl.SettingsClientImpl;
 import org.folio.rest.client.impl.UserModuleClientImpl;
 import org.folio.rest.exception.MultipleEntityException;
 import org.folio.rest.exception.UnprocessableEntityException;
@@ -165,6 +166,7 @@ public class BLUsersAPI implements BlUsers {
     userClient = new UserModuleClientImpl(httpClient);
     passwordResetLinkService = new PasswordResetLinkServiceImpl(
       new ConfigurationClientImpl(httpClient),
+      new SettingsClientImpl(httpClient),
       new AuthTokenClientImpl(httpClient),
       this.notificationClient,
       new PasswordResetActionClientImpl(httpClient),

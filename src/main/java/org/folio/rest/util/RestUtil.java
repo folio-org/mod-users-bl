@@ -25,7 +25,7 @@ public class RestUtil {
     private JsonObject json;
     private HttpResponse<Buffer> response;
 
-    WrappedResponse(int code, String body,
+    public WrappedResponse(int code, String body,
                     HttpResponse<Buffer> response) {
       this.code = code;
       this.body = body;
@@ -94,7 +94,7 @@ public class RestUtil {
       WrappedResponse wr = new WrappedResponse(res.statusCode(), res.bodyAsString(), res);
       promise.complete(wr);
     });
-    response.onFailure(err -> {promise.fail(err);});
+    response.onFailure(promise::fail);
 
     return promise.future();
   }
