@@ -1,5 +1,6 @@
 package org.folio.rest.service;
 
+import static org.folio.rest.client.impl.SettingsClientImpl.SETTING_SCOPE_FIELD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,12 +46,15 @@ class SettingsClientTest {
     var responseJson = new JsonObject()
       .put("items", new JsonArray()
         .add(new JsonObject()
+          .put("scope", SETTING_SCOPE_FIELD)
           .put("key", "resetPasswordPath")
           .put("value", "/reset-password"))
         .add(new JsonObject()
+          .put("scope", SETTING_SCOPE_FIELD)
           .put("key", "forgotPasswordPath")
           .put("value", "/forgot-password"))
         .add(new JsonObject()
+          .put("scope", SETTING_SCOPE_FIELD)
           .put("key", "resetPasswordHost")
           .put("value", "https://folio.example.com")));
 
@@ -139,9 +143,11 @@ class SettingsClientTest {
     var responseJson = new JsonObject()
       .put("items", new JsonArray()
         .add(new JsonObject()
+          .put("scope", SETTING_SCOPE_FIELD)
           .put("key", "reset.password.link.validity.minutes")
           .put("value", ""))
         .add(new JsonObject()
+          .put("scope", SETTING_SCOPE_FIELD)
           .put("key", "reset.password.ui.path")
           .put("value", null)));
     var response = mock(RestUtil.WrappedResponse.class);

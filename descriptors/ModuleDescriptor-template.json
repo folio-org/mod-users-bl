@@ -170,7 +170,7 @@
             "notify.users.item.post",
             "user-tenants.collection.get",
             "mod-settings.entries.collection.get",
-            "mod-settings.global.read.mod-users-bl"
+            "mod-settings.global.read.mod-users-bl.config.manage"
           ]
         },
         {
@@ -209,7 +209,7 @@
             "notify.item.post",
             "notify.users.item.post",
             "mod-settings.entries.collection.get",
-            "mod-settings.global.read.mod-users-bl"
+            "mod-settings.global.read.mod-users-bl.config.manage"
           ]
         },
         {
@@ -382,13 +382,13 @@
       "visible" : false
     },
     {
-      "permissionName": "mod-settings.global.read.mod-users-bl",
+      "permissionName": "mod-settings.global.read.mod-users-bl.config.manage",
       "displayName": "users-bl get settings collection",
       "description": "To read the setting from mod-settings"
     },
     {
-      "permissionName": "mod-settings.global.write.mod-users-bl",
-      "displayName": "users-bl create settings",
+      "permissionName": "mod-settings.global.write.mod-users-bl.config.manage",
+      "displayName": "users-bl create setting",
       "description": "To write the settings in mod-settings"
     }
   ],
