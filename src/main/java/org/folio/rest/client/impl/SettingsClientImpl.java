@@ -25,8 +25,9 @@ public class SettingsClientImpl implements SettingsClient {
 
   private static final String SETTING_VALUE_FIELD = "value";
   private static final String SETTINGS_ENTRIES_FIELD = "items";
-
   private static final String SETTINGS_PATH = "/settings/entries";
+
+  public static final String SETTING_SCOPE_FIELD = "mod-users-bl.config.manage";
 
   private final HttpClient httpClient;
 
@@ -40,7 +41,7 @@ public class SettingsClientImpl implements SettingsClient {
     var keysQuery = Arrays.stream(PasswordResetSetting.values())
       .map(settingKeyEnum -> format("key==%s", settingKeyEnum.getKey()))
       .collect(Collectors.joining(" or ", "(", ")"));
-    var requestUrl = format("%s?query=scope==mod-users-bl and %s", okapiConnectionParams.getOkapiUrl() + SETTINGS_PATH, keysQuery);
+    var requestUrl = format("%s?query=scope==%s and %s", okapiConnectionParams.getOkapiUrl() + SETTINGS_PATH, SETTING_SCOPE_FIELD, keysQuery);
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET, okapiConnectionParams.buildHeaders(), null)
       .map(response -> {
         if (response.getCode() != HttpStatus.SC_OK) {
