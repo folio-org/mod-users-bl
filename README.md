@@ -168,16 +168,17 @@ This is a preferred option to provide the configurations.
 To make a post call to mod-settings, user should have below permissions.
 ```
   mod-settings.entries.item.post
-  mod-settings.global.write.mod-users-bl
+  mod-settings.global.write.mod-users-bl.config.manage
 ```
 
-For all three configurations, `scope` field should be set to `mod-users-bl` and the `value.enabled` field should be set to `true` to enable the configuration
+For all three configurations, `scope` field should be set to `mod-users-bl.config.manage` and the `value` field should have the respective configuration value.
 
 **Example request**
 ```
 POST https://{okapi-url}/settings/entries
 {
-  "scope": "mod-users-bl",
+  "id": "6e302dd9-0e72-403a-afad-cfb023c70e96",
+  "scope": "mod-users-bl.config.manage",
   "key": "resetPasswordHost",
   "value": "http://localhost:3000"
 }
@@ -186,7 +187,8 @@ POST https://{okapi-url}/settings/entries
 ```
 POST https://{okapi-url}/settings/entries
 {
-  "scope": "mod-users-bl",
+  "id": "d528ab79-b2e8-429d-a57d-a56bebbfc1e5",
+  "scope": "mod-users-bl.config.manage",
   "key": "resetPasswordPath",
   "value": "/reset-password"
 }
@@ -195,7 +197,8 @@ POST https://{okapi-url}/settings/entries
 ```
 POST https://{okapi-url}/settings/entries
 {
-  "scope": "mod-users-bl",
+  "id": "01843de5-f5dc-4c96-ab8b-413c37b26c0f",
+  "scope": "mod-users-bl.config.manage",
   "key": "forgotPasswordPath",
   "value": "/reset-password"
 }
@@ -216,9 +219,9 @@ The following three are the configurations used by reset password URL feature an
 ```json
 {
   "module": "USERSBL",
-  "configName": "resetPassword",
+  "configName": "FOLIO host",
   "code": "FOLIO_HOST",
-  "description": "reset password host",
+  "description": "FOLIO host address for password reset",
   "default": true,
   "enabled": true,
   "value": "https://localhost"
