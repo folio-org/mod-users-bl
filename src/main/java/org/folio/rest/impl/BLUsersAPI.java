@@ -1405,7 +1405,7 @@ public class BLUsersAPI implements BlUsers {
             return entries.getJsonArray("configs").stream()
                 .map(o -> ((JsonObject) o).getString("value"))
                 .flatMap(s -> Stream.of(s.split("[^\\w\\.]+")))
-                .collect(Collectors.toList());
+                .toList();
           });
     } catch (Exception e) {
       return Future.failedFuture(e);
@@ -1552,39 +1552,42 @@ public class BLUsersAPI implements BlUsers {
           okapiHeaders.get(OKAPI_URL_HEADER),
           okapiHeaders.get(OKAPI_TENANT_HEADER),
           okapiHeaders.get(OKAPI_TOKEN_HEADER));
-        userPasswordService.validateNewPassword(entity.getUserId(), entity.getNewPassword(), JsonObject.mapFrom(connectionParams), h -> {
-          if (h.failed()) {
-            logger.error("Error during validate new user's password", h.cause());
-            Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-              .respond500WithTextPlain("Internal server error during validate new user's password"));
-          } else {
+        userPasswordService.validateNewPassword(entity.getUserId(), entity.getNewPassword(), JsonObject.mapFrom(connectionParams))
+          .onComplete(h -> {
+            if (h.failed()) {
+              logger.error("Error during validate new user's password", h.cause());
+              asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                .respond500WithTextPlain("Internal server error during validate new user's password")));
+              return;
+            }
             Errors errors = h.result().mapTo(Errors.class);
-            if (errors.getTotalRecords() == 0) {
-              Map<String, String> requestHeaders = new CaseInsensitiveMap<>(okapiHeaders);
-              Optional.ofNullable(userAgent)
-                .ifPresent(header -> requestHeaders.put(HttpHeaders.USER_AGENT, header));
-              Optional.ofNullable(xForwardedFor)
-                .ifPresent(header -> requestHeaders.put(X_FORWARDED_FOR_HEADER, header));
+            if (errors.getTotalRecords() != 0) {
+              asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                .respond400WithApplicationJson(errors)));
+              return;
+            }
 
-              userPasswordService.updateUserCredential(JsonObject.mapFrom(entity), JsonObject.mapFrom(requestHeaders), r -> {
+            Map<String, String> requestHeaders = new CaseInsensitiveMap<>(okapiHeaders);
+            Optional.ofNullable(userAgent)
+              .ifPresent(header -> requestHeaders.put(HttpHeaders.USER_AGENT, header));
+            Optional.ofNullable(xForwardedFor)
+              .ifPresent(header -> requestHeaders.put(X_FORWARDED_FOR_HEADER, header));
+
+            userPasswordService.updateUserCredential(JsonObject.mapFrom(entity), JsonObject.mapFrom(requestHeaders))
+              .onComplete( r -> {
                 if (r.failed()) {
                   asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
                     .respond500WithTextPlain(r.cause().getMessage())));
+                  return;
+                }
+                if (r.result().equals(401)) {
+                  asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                    .respond401WithTextPlain("Invalid credentials")));
                 } else {
-                  if (r.result().equals(401)) {
-                    asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-                      .respond401WithTextPlain("Invalid credentials")));
-                  } else {
-                    asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-                      .respond204WithTextPlain("User's password was successfully updated")));
-                  }
+                  asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
+                    .respond204WithTextPlain("User's password was successfully updated")));
                 }
               });
-            } else {
-              asyncResultHandler.handle(Future.succeededFuture(PostBlUsersSettingsMyprofilePasswordResponse
-                .respond400WithApplicationJson(errors)));
-            }
-          }
         });
       });
     } catch (Exception e) {

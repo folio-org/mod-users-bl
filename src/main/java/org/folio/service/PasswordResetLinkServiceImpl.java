@@ -5,7 +5,6 @@ import static org.folio.service.PasswordResetSetting.FORGOT_PASSWORD_UI_PATH;
 import static org.folio.service.PasswordResetSetting.RESET_PASSWORD_UI_PATH;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -38,7 +37,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
 
@@ -316,26 +314,17 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   private Future<Void> validatePassword(String userId, String newPassword, OkapiConnectionParams okapiConnectionParams) {
-    Promise<Void> promise = Promise.promise();
-    userPasswordService
-      .validateNewPassword(userId, newPassword, JsonObject.mapFrom(okapiConnectionParams),
-        res -> {
-          if (res.succeeded()) {
-            JsonObject pwdValidationResult = res.result();
-            Errors errors = pwdValidationResult.mapTo(Errors.class);
-            if (errors.getTotalRecords() == 0) {
-              promise.complete();
-            } else {
-              Exception exception = new UnprocessableEntityException(errors.getErrors().stream()
-                .map(error -> new UnprocessableEntityMessage(error.getCode(), error.getMessage()))
-                .collect(Collectors.toList()));
-              promise.fail(exception);
-            }
-          } else {
-            promise.fail(res.cause());
-          }
-        });
-    return promise.future();
+    return userPasswordService.validateNewPassword(userId, newPassword, JsonObject.mapFrom(okapiConnectionParams))
+      .compose(pwdValidationResult -> {
+        Errors errors = pwdValidationResult.mapTo(Errors.class);
+        if (errors.getTotalRecords() == 0) {
+          return Future.succeededFuture();
+        }
+        var exception = new UnprocessableEntityException(errors.getErrors().stream()
+          .map(error -> new UnprocessableEntityMessage(error.getCode(), error.getMessage()))
+          .toList());
+        return Future.failedFuture(exception);
+      });
   }
 
   private enum ExpirationTimeUnit {
