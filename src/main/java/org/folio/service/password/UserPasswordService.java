@@ -1,9 +1,7 @@
 package org.folio.service.password;
 
-import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.ProxyGen;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
@@ -39,23 +37,15 @@ public interface UserPasswordService {
    *
    * @param okapiConnectionParams - {@link org.folio.rest.util.OkapiConnectionParams}
    *                              json mapped entity with okapi connections params for endpoint's calls
-   * @param asyncResultHandler    - async result with {@link org.folio.rest.jaxrs.model.Errors} entity
-   *                              mapped to json object. Errors object with list of errors codes if password is invalid
    */
-  @Fluent
-  UserPasswordService validateNewPassword(String userId, String newPassword, JsonObject okapiConnectionParams,
-                                          Handler<AsyncResult<JsonObject>> asyncResultHandler);
+  Future<JsonObject> validateNewPassword(String userId, String newPassword, JsonObject okapiConnectionParams);
 
   /**
    * Method call mod-login and update user's credentials
    *
-   * @param newPasswordObject     - {@link org.folio.rest.jaxrs.model.UpdateCredentialsJson}
-   *                              json mapped entity with new user's password
+   * @param newPasswordObject     - json object entity with new user's password
    * @param okapiConnectionParams - {@link org.folio.rest.util.OkapiConnectionParams}
    *                              json mapped entity with okapi connections params for endpoint's calls
-   * @param asyncResultHandler - async result with http status code for update operation
    */
-  @Fluent
-  UserPasswordService updateUserCredential(JsonObject newPasswordObject, JsonObject okapiConnectionParams,
-                                           Handler<AsyncResult<Integer>> asyncResultHandler);
+  Future<Integer> updateUserCredential(JsonObject newPasswordObject, JsonObject okapiConnectionParams);
 }

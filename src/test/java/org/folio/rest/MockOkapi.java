@@ -9,7 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import org.apache.http.HttpStatus;
+import org.folio.HttpStatus;
 import org.folio.rest.jaxrs.model.UpdateCredentials;
 import org.folio.util.StringUtil;
 import org.z3950.zing.cql.CQLParseException;
@@ -46,6 +46,7 @@ public class MockOkapi extends AbstractVerticle {
   private JsonStore requestsStorage;
   private JsonStore accountsStorage;
   private JsonStore manualBlocksStorage;
+  private JsonStore settingsStore;
 
   private static final String USERS_ENDPOINT = "/users";
   private static final String USER_TENANT_ENDPOINT = "/user-tenants";
@@ -66,6 +67,7 @@ public class MockOkapi extends AbstractVerticle {
   private static final String REQUESTS_ENDPOINT = "/request-storage/request";
   private static final String ACCOUNTS_ENDPOINT = "/accounts";
   private static final String MANUAL_BLOCKS_ENDPOINT = "/manualblocks";
+  static final String SETTINGS_ENTRIES_ENDPOINT = "/settings/entries";
 
   @Override
   public void start(Promise<Void> future) {
@@ -76,13 +78,14 @@ public class MockOkapi extends AbstractVerticle {
     router.route("/*").handler(BodyHandler.create());
     router.route("/*").handler(this::handleRequest);
     System.out.println("Running MockOkapi on port " + port);
-    server.requestHandler(router).listen(port, result -> {
-      if(result.failed()) {
-        future.fail(result.cause());
-      }
-      else {
-        future.complete();
-      }
+    server.requestHandler(router).listen(port)
+      .onComplete(result -> {
+        if(result.failed()) {
+          future.fail(result.cause());
+        }
+        else {
+          future.complete();
+        }
     });
 
   }
@@ -102,6 +105,7 @@ public class MockOkapi extends AbstractVerticle {
     requestsStorage = new JsonStore();
     accountsStorage = new JsonStore();
     manualBlocksStorage = new JsonStore();
+    settingsStore = new JsonStore();
   }
 
   private void handleRequest(RoutingContext context) {
@@ -110,7 +114,7 @@ public class MockOkapi extends AbstractVerticle {
     String[] endpoints = {USERS_ENDPOINT, USER_TENANT_ENDPOINT, PERMS_USERS_ENDPOINT, PASSWORD_VALIDATE_ENDPOINT, PASSWORD_UPDATE_ENDPOINT,
       PERMS_PERMISSIONS_ENDPOINT, GROUPS_ENDPOINT, PROXIES_ENDPOINT, SERVICE_POINTS_USERS_ENDPOINT,
       SERVICE_POINTS_ENDPOINT, CONFIGURATIONS_ENTRIES_ENDPOINT, PASSWORD_RESET_ACTION_ENDPOINT, SIGN_TOKEN_ENDPOINT,
-      RESET_PASSWORD_ENDPOINT, NOTIFY_ENDPOINT, LOANS_ENDPOINT, REQUESTS_ENDPOINT, ACCOUNTS_ENDPOINT, MANUAL_BLOCKS_ENDPOINT};
+      RESET_PASSWORD_ENDPOINT, NOTIFY_ENDPOINT, LOANS_ENDPOINT, REQUESTS_ENDPOINT, ACCOUNTS_ENDPOINT, MANUAL_BLOCKS_ENDPOINT, SETTINGS_ENTRIES_ENDPOINT};
     String uri = context.request().path();
     Matcher matcher;
     String id = null;
@@ -145,76 +149,64 @@ public class MockOkapi extends AbstractVerticle {
     try {
       switch(activeEndpoint) {
         case USERS_ENDPOINT:
-          mockResponse = handleUsers(method, id, remainder,
-                  context.getBodyAsString(), context);
+          mockResponse = handleUsers(method, id, remainder, context.body().asString(), context);
           break;
         case PERMS_USERS_ENDPOINT:
-          mockResponse = handlePermsUsers(method, id, remainder,
-                  context.getBodyAsString(), context);
+          mockResponse = handlePermsUsers(method, id, remainder, context.body().asString(), context);
           break;
         case PERMS_PERMISSIONS_ENDPOINT:
-          mockResponse = handlePermsPermissions(method, id, remainder,
-                  context.getBodyAsString(), context);
+          mockResponse = handlePermsPermissions(method, id, remainder, context.body().asString(), context);
           break;
         case GROUPS_ENDPOINT:
-          mockResponse = handleGroups(method, id, remainder,
-                  context.getBodyAsString(), context);
+          mockResponse = handleGroups(method, id, remainder, context.body().asString(), context);
           break;
         case PROXIES_ENDPOINT:
-          mockResponse = handleProxies(method, id, remainder,
-                  context.getBodyAsString(), context);
+          mockResponse = handleProxies(method, id, remainder, context.body().asString(), context);
           break;
         case SERVICE_POINTS_ENDPOINT:
-          mockResponse = handleServicePoints(method, id, remainder,
-              context.getBodyAsString(), context);
+          mockResponse = handleServicePoints(method, id, remainder, context.body().asString(), context);
           break;
         case SERVICE_POINTS_USERS_ENDPOINT:
-          mockResponse = handleServicePointsUsers(method, id, remainder,
-              context.getBodyAsString(), context);
+          mockResponse = handleServicePointsUsers(method, id, remainder, context.body().asString(), context);
           break;
         case CONFIGURATIONS_ENTRIES_ENDPOINT:
-          mockResponse = handlerConfigurationEntries(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handlerConfigurationEntries(method, id, remainder, context.body().asString(), context);
+          break;
+        case SETTINGS_ENTRIES_ENDPOINT:
+          mockResponse = handlerSettingsEntries(method, id, remainder, context.body().asString(), context);
           break;
         case PASSWORD_VALIDATE_ENDPOINT:
-          mockResponse = handlerPasswordValidate(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handlerPasswordValidate(method, id, remainder, context.body().asString(), context);
           break;
         case PASSWORD_UPDATE_ENDPOINT:
-          mockResponse = handlerPasswordUpdate(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handlerPasswordUpdate(method, id, remainder, context.body().asString(), context);
           break;
         case PASSWORD_RESET_ACTION_ENDPOINT:
-          mockResponse = handleResetPasswordActions(method, id, remainder, context.getBodyAsString(), context);
+          mockResponse = handleResetPasswordActions(method, id, remainder, context.body().asString(), context);
           break;
         case SIGN_TOKEN_ENDPOINT:
-          mockResponse = handleSingToken(method, context.getBodyAsString());
+          mockResponse = handleSingToken(method, context.body().asString());
           break;
         case RESET_PASSWORD_ENDPOINT:
-          mockResponse = handleResetPassword(method, context.getBodyAsString());
+          mockResponse = handleResetPassword(method, context.body().asString());
           break;
         case NOTIFY_ENDPOINT:
-          mockResponse = handleNotify(method, context.getBodyAsString());
+          mockResponse = handleNotify(method, context.body().asString());
           break;
         case LOANS_ENDPOINT:
-          mockResponse = handleLoans(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handleLoans(method, id, remainder, context.body().asString(), context);
           break;
         case REQUESTS_ENDPOINT:
-          mockResponse = handleRequests(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handleRequests(method, id, remainder, context.body().asString(), context);
           break;
         case ACCOUNTS_ENDPOINT:
-          mockResponse = handleAccounts(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handleAccounts(method, id, remainder, context.body().asString(), context);
           break;
         case MANUAL_BLOCKS_ENDPOINT:
-          mockResponse = handleManualBlocks(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handleManualBlocks(method, id, remainder, context.body().asString(), context);
           break;
         case USER_TENANT_ENDPOINT:
-          mockResponse = handleUserTenants(method, id, remainder,
-            context.getBodyAsString(), context);
+          mockResponse = handleUserTenants(method, id, remainder, context.body().asString(), context);
           break;
         default:
           break;
@@ -355,6 +347,11 @@ public class MockOkapi extends AbstractVerticle {
                                                    String payload, RoutingContext context) throws CQLParseException {
     return handleBasicCrud(configurationStore, "configs", method, id, url,
       payload, context);
+  }
+
+  private MockResponse handlerSettingsEntries(HttpMethod method, String id, String url,
+                                              String payload, RoutingContext context) throws CQLParseException {
+    return handleBasicCrud(settingsStore, "items", method, id, url, payload, context);
   }
 
   private MockResponse handleResetPasswordActions(HttpMethod method, String id, String url,

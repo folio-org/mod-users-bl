@@ -52,7 +52,8 @@ public class OpenTransactionsTest {
     okapiPort = NetworkUtils.nextFreePort();
     DeploymentOptions okapiOptions = new DeploymentOptions()
       .setConfig(new JsonObject().put("http.port", okapiPort));
-    vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions, context.asyncAssertSuccess());
+    vertx.deployVerticle(MockOkapi.class.getName(), okapiOptions)
+      .onComplete(context.asyncAssertSuccess());
 
     port = NetworkUtils.nextFreePort();
     DeploymentOptions usersBLOptions = new DeploymentOptions()

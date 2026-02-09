@@ -1,7 +1,6 @@
 package org.folio.rest.client.impl;
 
-
-import org.apache.hc.core5.http.HttpStatus;
+import org.folio.HttpStatus;
 import org.folio.dbschema.ObjectMapperTool;
 import org.folio.rest.client.NotificationClient;
 import org.folio.rest.jaxrs.model.Notification;

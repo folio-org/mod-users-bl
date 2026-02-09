@@ -5,7 +5,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 
-import org.apache.hc.core5.http.HttpStatus;
+import org.folio.HttpStatus;
 import org.folio.rest.client.AuthTokenClient;
 import org.folio.rest.exception.TokenNotFoundException;
 import org.folio.rest.exception.OkapiModuleClientException;

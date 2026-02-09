@@ -17,6 +17,7 @@ import io.restassured.http.Header;
 import io.restassured.specification.RequestSpecification;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -24,9 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
+import org.folio.HttpStatus;
 import org.folio.dbschema.ObjectMapperTool;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.jaxrs.model.Config;
@@ -36,6 +36,7 @@ import org.folio.rest.jaxrs.model.Notification;
 import org.folio.rest.jaxrs.model.PasswordResetAction;
 import org.folio.rest.jaxrs.model.User;
 import org.folio.rest.tools.utils.NetworkUtils;
+import org.folio.util.StringUtil;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -50,6 +51,10 @@ public class GeneratePasswordRestLinkTest {
   private static final String NOTIFY_PATH = "/notify";
   private static final String MODULE_NAME = "USERSBL";
   private static final String FOLIO_HOST_CONFIG_KEY = "FOLIO_HOST";
+  private static final String SETTING_ENTRY_KEY = "key";
+  private static final String SETTING_ENTRY_VALUE = "value";
+  private static final String SETTING_PASSWORD_RESET_KEY_VALUE = "resetPasswordHost";
+  private static final String SETTING_PASSWORD_RESET_VALUE = "http://localhost:3000";
   private static final String CREATE_PASSWORD_EVENT_CONFIG_ID = "CREATE_PASSWORD_EVENT";
   private static final String RESET_PASSWORD_EVENT_CONFIG_ID = "RESET_PASSWORD_EVENT";
   private static final String MOCK_FOLIO_UI_HOST = "http://localhost:3000";
@@ -94,20 +99,18 @@ public class GeneratePasswordRestLinkTest {
 
   @AfterClass
   public static void tearDown(TestContext context) {
-    vertx.close(context.asyncAssertSuccess());
+    vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
   @Test
   public void shouldGenerateAndSendPasswordNotificationContainResetLinkWithExpirationTimeOfToken() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockSignAuthToken(MOCK_TOKEN);
     mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
@@ -146,16 +149,57 @@ public class GeneratePasswordRestLinkTest {
       .withRequestBody(WireMock.equalToJson(toJson(expectedNotification))));
   }
 
-  public void generateAndSendResetPasswordNotificationWhenPasswordExistsWith() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
+  @Test
+  public void generateWithLegacyConfigurationAndSendResetPasswordNotificationWhenPasswordExistsWith() {
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(true);
+    mockSignAuthToken(MOCK_TOKEN);
+    mockPostPasswordResetAction(passwordExists);
+    mockNotificationModule();
+
+    JsonObject requestBody = new JsonObject()
+      .put("userId", mockUser.getId());
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
+    RestAssured.given()
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_OK)
+      .body("link", is(expectedLink));
+
+    List<PasswordResetAction> requestBodyByUrl =
+      getRequestBodyByUrl(PASSWORD_RESET_ACTION_PATH, PasswordResetAction.class);
+    assertThat(requestBodyByUrl, hasSize(1));
+    assertThat(requestBodyByUrl.get(0).getUserId(), is(mockUser.getId()));
+
+    Notification expectedNotification = new Notification()
+      .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
+      .withContext(
+        new Context()
+          .withAdditionalProperty("user", mockUser)
+          .withAdditionalProperty("link", expectedLink))
+      .withRecipientId(mockUser.getId());
+    WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
+      .withRequestBody(WireMock.equalToJson(toJson(expectedNotification), true, true)));
+  }
+
+  @Test
+  public void generateAndSendResetPasswordNotificationWhenPasswordExistsWith() {
+    User mockUser = new User()
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
+    boolean passwordExists = true;
+
+    mockUserFound(mockUser.getId(), mockUser);
+    mockPasswordResetConfig(false);
     mockSignAuthToken(MOCK_TOKEN);
     mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
@@ -191,16 +235,13 @@ public class GeneratePasswordRestLinkTest {
 
   @Test
   public void shouldGenerateAndSendPasswordNotificationWithExpirationTimeWhenTokenSignEndPointReturns404AndUsesLegacyToken() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
-
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockSignAuthTokenLegacy(MOCK_TOKEN);
     mockSignAuthTokenNotFound();
     mockPostPasswordResetAction(passwordExists);
@@ -237,15 +278,13 @@ public class GeneratePasswordRestLinkTest {
 
   @Test
   public void cannotGeneratePasswordWhenTokenSignEndPointReturns500() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockSignAuthTokenNotFound();
     mockSignAuthTokenServerError();
     mockPostPasswordResetAction(passwordExists);
@@ -266,15 +305,13 @@ public class GeneratePasswordRestLinkTest {
 
   @Test
   public void cannotGeneratePasswordWhenTokenSignLegacyEndPointReturns500() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockSignAuthTokenNotFound();
     mockSignAuthTokenLegacyServerError();
     mockPostPasswordResetAction(passwordExists);
@@ -293,16 +330,15 @@ public class GeneratePasswordRestLinkTest {
 
   }
 
+  @Test
   public void shouldNotGenerateAndSendPasswordWhenLegacyTokenEndpointReturns404() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
     boolean passwordExists = true;
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockSignAuthTokenNotFound();
     mockSignAuthTokenLegacyNotFound();
     mockPostPasswordResetAction(passwordExists);
@@ -318,20 +354,17 @@ public class GeneratePasswordRestLinkTest {
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
       .statusCode(HttpStatus.SC_NOT_FOUND);
-
   }
 
   @Test
   public void shouldGenerateAndSendCreatePasswordNotificationWhenPasswordNotExists() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
     boolean passwordExists = false;
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockSignAuthToken(MOCK_TOKEN);
     mockPostPasswordResetAction(passwordExists);
     mockNotificationModule();
@@ -371,14 +404,12 @@ public class GeneratePasswordRestLinkTest {
 
   @Test
   public void shouldReturn422WhenUserNotFound() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
 
     mockUserNotFound(mockUser.getId());
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
 
     JsonObject requestBody = new JsonObject()
       .put("userId", mockUser.getId());
@@ -390,17 +421,15 @@ public class GeneratePasswordRestLinkTest {
       .when()
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
   public void shouldReturn422WhenUserHasNoUsername() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString());
 
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockUserFound(mockUser.getId(), mockUser);
 
     JsonObject requestBody = new JsonObject()
@@ -413,19 +442,17 @@ public class GeneratePasswordRestLinkTest {
       .when()
       .post(GENERATE_PASSWORD_RESET_LINK_PATH)
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
   public void shouldGenerateLinkWhenSendNotificationFailed() {
-    Map<String, String> configToMock = new HashMap<>();
-    configToMock.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
       .withUsername(MOCK_USERNAME);
 
     mockUserFound(mockUser.getId(), mockUser);
-    mockConfigModule(MODULE_NAME, configToMock);
+    mockPasswordResetConfig(false);
     mockSignAuthToken(MOCK_TOKEN);
     mockPostPasswordResetAction(true);
     mockNotificationModuleWithServerError();
@@ -448,15 +475,44 @@ public class GeneratePasswordRestLinkTest {
     return ObjectMapperTool.valueAsString(object);
   }
 
+  private void mockPasswordResetConfig(boolean isLegacyConfig) {
+    if (isLegacyConfig) {
+      mockConfigModule();
+      return;
+    }
 
-  private void mockConfigModule(String moduleName, Map<String, String> config) {
+    mockPasswordResetSettings();
+  }
+
+  private void mockConfigModule() {
+    Map<String, String> config = new HashMap<>();
+    config.put(FOLIO_HOST_CONFIG_KEY, MOCK_FOLIO_UI_HOST);
     List<Config> configList = config.entrySet().stream()
       .map(e -> new Config().withCode(e.getKey()).withValue(e.getValue()).withEnabled(true))
-      .collect(Collectors.toList());
+      .toList();
+
+    var query = "scope==\"mod-users-bl.config.manage\" AND (key==\"resetPasswordHost\" or key==\"resetPasswordPath\" or key==\"forgotPasswordPath\")";
+    String expectedQuery = "/settings/entries?query=" + StringUtil.urlEncode(query);
+    var emptySetting = new JsonObject().put("items", new JsonArray());
+    WireMock.stubFor(WireMock.get(expectedQuery)
+      .willReturn(WireMock.okJson(emptySetting.encode())));
+
     Configurations configurations = new Configurations().withConfigs(configList).withTotalRecords(configList.size());
-    String expectedQuery = String.format("/configurations/entries?query=module==%s", moduleName);
+    expectedQuery = String.format("/configurations/entries?query=module==%s", MODULE_NAME);
     WireMock.stubFor(WireMock.get(expectedQuery)
       .willReturn(WireMock.okJson(toJson(configurations))));
+  }
+
+  private void mockPasswordResetSettings() {
+    var resetPasswordSettingMock = new HashMap<>();
+    resetPasswordSettingMock.put(SETTING_ENTRY_KEY, SETTING_PASSWORD_RESET_KEY_VALUE);
+    resetPasswordSettingMock.put(SETTING_ENTRY_VALUE, SETTING_PASSWORD_RESET_VALUE);
+    var setting = JsonObject.mapFrom(resetPasswordSettingMock);
+    var settings = new JsonObject().put("items", new JsonArray().add(0, setting));
+    var query = "scope==\"mod-users-bl.config.manage\" AND (key==\"resetPasswordHost\" or key==\"resetPasswordPath\" or key==\"forgotPasswordPath\")";
+    String expectedQuery = "/settings/entries?query=" + StringUtil.urlEncode(query);
+    WireMock.stubFor(WireMock.get(expectedQuery)
+      .willReturn(WireMock.okJson(settings.encode())));
   }
 
   private void mockUserFound(String userId, User response) {
@@ -523,7 +579,7 @@ public class GeneratePasswordRestLinkTest {
       .map(request -> request.getRequest().getBodyAsString())
       .map(JsonObject::new)
       .map(jsonObject -> jsonObject.mapTo(clazz))
-      .collect(Collectors.toList());
+      .toList();
   }
 
 }

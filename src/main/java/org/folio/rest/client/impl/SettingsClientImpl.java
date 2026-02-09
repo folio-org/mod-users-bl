@@ -1,6 +1,8 @@
 package org.folio.rest.client.impl;
 
 import static java.lang.String.format;
+import static org.folio.util.StringUtil.cqlEncode;
+import static org.folio.util.StringUtil.urlEncode;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -10,7 +12,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hc.core5.http.HttpStatus;
+import org.folio.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.rest.client.SettingsClient;
@@ -39,9 +41,10 @@ public class SettingsClientImpl implements SettingsClient {
   public Future<Map<PasswordResetSetting, String>> lookupPasswordResetSettings(OkapiConnectionParams okapiConnectionParams) {
     LOG.info("lookupPasswordResetSettings:: looking for Password Reset Settings");
     var keysQuery = Arrays.stream(PasswordResetSetting.values())
-      .map(settingKeyEnum -> format("key==%s", settingKeyEnum.getKey()))
+      .map(settingKeyEnum -> format("key==%s", cqlEncode(settingKeyEnum.getKey())))
       .collect(Collectors.joining(" or ", "(", ")"));
-    var requestUrl = format("%s?query=scope==%s and %s", okapiConnectionParams.getOkapiUrl() + SETTINGS_PATH, SETTING_SCOPE_FIELD, keysQuery);
+    var query = "scope==" + cqlEncode(SETTING_SCOPE_FIELD) + " AND " + keysQuery;
+    var requestUrl = format("%s?query=%s", okapiConnectionParams.getOkapiUrl() + SETTINGS_PATH, urlEncode(query));
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET, okapiConnectionParams.buildHeaders(), null)
       .map(response -> {
         if (response.getCode() != HttpStatus.SC_OK) {

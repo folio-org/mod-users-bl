@@ -10,7 +10,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.apache.http.HttpStatus;
+import org.folio.HttpStatus;
 import org.folio.rest.impl.BLUsersAPI;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
@@ -286,7 +286,7 @@ public class BLUsersAPITest {
 
   @AfterClass
   public static void after(TestContext context) {
-    vertx.close(context.asyncAssertSuccess());
+    vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
   @Test
@@ -455,7 +455,7 @@ public class BLUsersAPITest {
       when().
       post("/bl-users/forgotten/password").
       then().
-      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT).
       body("errors[0].code", equalTo("forgotten.password.found.inactive"));
   }
 
@@ -502,7 +502,7 @@ public class BLUsersAPITest {
       when().
       post("/bl-users/forgotten/username").
       then().
-      statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY).
+      statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT).
       body("errors[0].code", equalTo("forgotten.password.found.inactive"));
   }
 
@@ -597,7 +597,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/validate")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -610,7 +610,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/validate")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -623,7 +623,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/validate")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -636,7 +636,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/validate")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -687,7 +687,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/reset")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -704,7 +704,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/reset")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -721,7 +721,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/reset")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -738,7 +738,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/reset")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   @Test
@@ -755,7 +755,7 @@ public class BLUsersAPITest {
       .when()
       .post("/bl-users/password-reset/reset")
       .then()
-      .statusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+      .statusCode(HttpStatus.SC_UNPROCESSABLE_CONTENT);
   }
 
   private String buildToken(String passwordResetActionId) {

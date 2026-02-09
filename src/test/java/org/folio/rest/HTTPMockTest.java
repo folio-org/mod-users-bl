@@ -25,21 +25,21 @@ public class HTTPMockTest {
   int                       port;
 
   @Before
-  public void setUp(TestContext context) throws Exception {
+  public void setUp(TestContext context) {
     System.setProperty(HttpClientMock2.MOCK_MODE, "true");
 
     vertx = Vertx.vertx();
 
     port = NetworkUtils.nextFreePort();
 
-    DeploymentOptions options = new DeploymentOptions().setConfig(new JsonObject().put("http.port",
-      port));
+    DeploymentOptions options = new DeploymentOptions()
+      .setConfig(new JsonObject().put("http.port", port));
     TestUtil.deploy(RestVerticle.class, options, vertx, context);
   }
 
   @After
-  public void tearDown(TestContext context) throws Exception {
-    vertx.close(context.asyncAssertSuccess());
+  public void tearDown(TestContext context) {
+    vertx.close().onComplete(context.asyncAssertSuccess());
     System.clearProperty(HttpClientMock2.MOCK_MODE);
   }
 

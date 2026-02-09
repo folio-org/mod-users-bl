@@ -1,6 +1,7 @@
-## 7.11.0 in progress
+## 7.11.0-SNAPSHOT 2026-XX-XX
 * Support mod-roles-keycloak for user's permissions during login (MODUSERBL-224)
-* Not possible to delete patrons via UI that have expired manual blocks (MODUSERBL-231) 
+* Not possible to delete patrons via UI that have expired manual blocks (MODUSERBL-231)
+* Upgrade module to Vert.x 5.0 (MODUSERBL-230)
 
 ## 7.10.0 2025-03-13
 

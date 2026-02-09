@@ -1,6 +1,5 @@
 package org.folio.service.transactions;
 
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import org.folio.rest.client.CirculationStorageModuleClient;
 import org.folio.rest.client.FeesFinesModuleClient;
@@ -46,7 +45,7 @@ public class OpenTransactionsServiceImpl implements OpenTransactionsService {
       userClient.getProxiesCountByUserId(id, connectionParams)
         .onSuccess(openTransactions::setProxies);
 
-    return CompositeFuture.all(loansFuture, requestsFuture, accountsFuture, manualBlockFuture, proxiesFuture)
+    return Future.all(loansFuture, requestsFuture, accountsFuture, manualBlockFuture, proxiesFuture)
       .map(compositeFuture -> {
         boolean hasOpenTransactions = compositeFuture.result().list().stream()
           .map(Integer.class::cast)

@@ -1,6 +1,5 @@
 package org.folio.rest;
 
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -32,6 +31,7 @@ import static io.vertx.core.Promise.promise;
 import static io.vertx.core.http.HttpMethod.GET;
 import static io.vertx.core.http.HttpMethod.POST;
 import static org.folio.rest.MockOkapi.CONFIGURATIONS_ENTRIES_ENDPOINT;
+import static org.folio.rest.MockOkapi.SETTINGS_ENTRIES_ENDPOINT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -226,6 +226,23 @@ public class MockOkapiTest {
       .put("enabled", "true")
       .put("value", "personal.email"));
 
+  JsonArray settingsEntriesList = new JsonArray()
+    .add(new JsonObject()
+      .put("id", "6e302dd9-0e72-403a-afad-cfb023c70e96")
+      .put("scope", "mod-users-bl.config.manage")
+      .put("key", "resetPasswordHost")
+      .put("value", "http://localhost:3000"))
+    .add(new JsonObject()
+      .put("id", "d528ab79-b2e8-429d-a57d-a56bebbfc1e5")
+      .put("scope", "mod-users-bl.config.manage")
+      .put("key", "resetPasswordPath")
+      .put("value", "/reset-password"))
+    .add(new JsonObject()
+      .put("id", "01843de5-f5dc-4c96-ab8b-413c37b26c0f")
+      .put("scope", "mod-users-bl.config.manage")
+      .put("key", "forgotPasswordPath")
+      .put("value", "/reset-password"));
+
   @BeforeClass
   public static void setupClass(TestContext context) {
     vertx = Vertx.vertx();
@@ -299,6 +316,8 @@ public class MockOkapiTest {
       return loadDataArray(context, "http://localhost:" + mockOkapiPort + "/perms/permissions", permissionList);
     }).compose(w -> {
       return loadDataArray(context, "http://localhost:" + mockOkapiPort + CONFIGURATIONS_ENTRIES_ENDPOINT, configurationEntriesList);
+    }).compose(w -> {
+      return loadDataArray(context, "http://localhost:" + mockOkapiPort + SETTINGS_ENTRIES_ENDPOINT, settingsEntriesList);
     }).compose( w -> {
       return getUserPerms(context, mphillipsPermId, new JsonArray()
               .add("gamma.a")
@@ -425,15 +444,14 @@ public class MockOkapiTest {
           JsonArray dataList) {
     System.out.println("Adding data to endpoint " + url + "\n");
     Promise<WrappedResponse> promise = promise();
-    //String url = "http://localhost:" + mockOkapiPort + "/users";
-    List<Future> futureList = new ArrayList<>();
+    List<Future<WrappedResponse>> futureList = new ArrayList<>();
     for(Object ob : dataList) {
       Future<WrappedResponse> responseFuture = testUtil.doRequest(vertx, url,
               POST, null, ((JsonObject)ob).encode());
       futureList.add(responseFuture);
     }
-    CompositeFuture compositeFuture = CompositeFuture.all(futureList);
-    compositeFuture.onComplete(res -> {
+
+    Future.all(futureList).onComplete(res -> {
       if (res.failed()) {
         promise.fail(res.cause());
       } else {

@@ -22,7 +22,7 @@ import io.vertx.junit5.VertxTestContext;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.http.HttpStatus;
+import org.folio.HttpStatus;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.folio.util.StringUtil;
 import org.junit.jupiter.api.BeforeAll;
