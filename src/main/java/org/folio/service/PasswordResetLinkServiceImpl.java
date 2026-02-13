@@ -33,6 +33,7 @@ import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -112,7 +113,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
         .recover(err -> {
           LOG.info("getPasswordResetConfiguration:: password reset settings not found in mod-settings: {} {}",
             err.getClass().getSimpleName(), err.getMessage());
-          Map<PasswordResetSetting, String> config = new java.util.HashMap<>();
+          Map<PasswordResetSetting, String> config = new EnumMap<>(PasswordResetSetting.class);
           config.put(FOLIO_HOST, baseUrl);
           return Future.succeededFuture(config);
         })

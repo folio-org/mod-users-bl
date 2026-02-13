@@ -166,4 +166,103 @@ class SettingsClientTest {
         })));
     }
   }
+
+  @Test
+  void getBaseUrl_shouldThrowException_whenNonOkStatus(VertxTestContext testContext) {
+    var response = mock(RestUtil.WrappedResponse.class);
+    when(response.getCode()).thenReturn(HttpStatus.SC_NOT_FOUND);
+    when(response.getBody()).thenReturn("base-url not found");
+
+    try (MockedStatic<RestUtil> restUtilMock = mockStatic(RestUtil.class)) {
+      restUtilMock.when(() -> RestUtil.doRequest(any(), anyString(), any(), any(), any()))
+        .thenReturn(Future.succeededFuture(response));
+
+      settingsClient.getBaseUrl(okapiConnectionParams)
+        .onComplete(testContext.failing(ex -> testContext.verify(() -> {
+          assertInstanceOf(OkapiModuleClientException.class, ex);
+          assertTrue(ex.getMessage().contains("Error getting base URL"));
+          assertTrue(ex.getMessage().contains("" + response.getCode()));
+          testContext.completeNow();
+        })));
+    }
+  }
+
+  @Test
+  void getBaseUrl_shouldThrowException_whenMissingBaseUrlField(VertxTestContext testContext) {
+    var responseJson = new JsonObject();
+    var response = mock(RestUtil.WrappedResponse.class);
+    when(response.getCode()).thenReturn(HttpStatus.SC_OK);
+    when(response.getJson()).thenReturn(responseJson);
+
+    try (MockedStatic<RestUtil> restUtilMock = mockStatic(RestUtil.class)) {
+      restUtilMock.when(() -> RestUtil.doRequest(any(), anyString(), any(), any(), any()))
+        .thenReturn(Future.succeededFuture(response));
+
+      settingsClient.getBaseUrl(okapiConnectionParams)
+        .onComplete(testContext.failing(ex -> testContext.verify(() -> {
+          assertInstanceOf(OkapiModuleClientException.class, ex);
+          assertTrue(ex.getMessage().contains("Invalid base URL response: missing 'baseUrl' field"));
+          testContext.completeNow();
+        })));
+    }
+  }
+
+  @Test
+  void getBaseUrl_shouldThrowException_whenBaseUrlEmpty(VertxTestContext testContext) {
+    var responseJson = new JsonObject().put("baseUrl", "");
+    var response = mock(RestUtil.WrappedResponse.class);
+    when(response.getCode()).thenReturn(HttpStatus.SC_OK);
+    when(response.getJson()).thenReturn(responseJson);
+
+    try (MockedStatic<RestUtil> restUtilMock = mockStatic(RestUtil.class)) {
+      restUtilMock.when(() -> RestUtil.doRequest(any(), anyString(), any(), any(), any()))
+        .thenReturn(Future.succeededFuture(response));
+
+      settingsClient.getBaseUrl(okapiConnectionParams)
+        .onComplete(testContext.failing(ex -> testContext.verify(() -> {
+          assertInstanceOf(OkapiModuleClientException.class, ex);
+          assertTrue(ex.getMessage().contains("Base URL is empty"));
+          testContext.completeNow();
+        })));
+    }
+  }
+
+  @Test
+  void getBaseUrl_shouldThrowException_whenResponseJsonIsNull(VertxTestContext testContext) {
+    var response = mock(RestUtil.WrappedResponse.class);
+    when(response.getCode()).thenReturn(HttpStatus.SC_OK);
+    when(response.getJson()).thenReturn(null);
+
+    try (MockedStatic<RestUtil> restUtilMock = mockStatic(RestUtil.class)) {
+      restUtilMock.when(() -> RestUtil.doRequest(any(), anyString(), any(), any(), any()))
+        .thenReturn(Future.succeededFuture(response));
+
+      settingsClient.getBaseUrl(okapiConnectionParams)
+        .onComplete(testContext.failing(ex -> testContext.verify(() -> {
+          assertInstanceOf(OkapiModuleClientException.class, ex);
+          assertTrue(ex.getMessage().contains("Invalid base URL response: missing 'baseUrl' field"));
+          testContext.completeNow();
+        })));
+    }
+  }
+
+  @Test
+  void getBaseUrl_shouldThrowException_whenBaseUrlIsNull(VertxTestContext testContext) {
+    var responseJson = new JsonObject().putNull("baseUrl");
+    var response = mock(RestUtil.WrappedResponse.class);
+    when(response.getCode()).thenReturn(HttpStatus.SC_OK);
+    when(response.getJson()).thenReturn(responseJson);
+
+    try (MockedStatic<RestUtil> restUtilMock = mockStatic(RestUtil.class)) {
+      restUtilMock.when(() -> RestUtil.doRequest(any(), anyString(), any(), any(), any()))
+        .thenReturn(Future.succeededFuture(response));
+
+      settingsClient.getBaseUrl(okapiConnectionParams)
+        .onComplete(testContext.failing(ex -> testContext.verify(() -> {
+          assertInstanceOf(OkapiModuleClientException.class, ex);
+          assertTrue(ex.getMessage().contains("Base URL is empty"));
+          testContext.completeNow();
+        })));
+    }
+  }
 }
