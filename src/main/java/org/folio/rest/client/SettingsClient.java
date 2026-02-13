@@ -17,4 +17,12 @@ public interface SettingsClient {
    * @return future with map containing found configuration
    */
   Future<Map<PasswordResetSetting, String>> lookupPasswordResetSettings(OkapiConnectionParams okapiConnectionParams);
+
+  /**
+   * Get base URL (FOLIO host) from mod-settings
+   *
+   * @param okapiConnectionParams connection params
+   * @return future containing base URL string
+   */
+  Future<String> getBaseUrl(OkapiConnectionParams okapiConnectionParams);
 }

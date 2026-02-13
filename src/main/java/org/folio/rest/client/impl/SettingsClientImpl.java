@@ -28,6 +28,7 @@ public class SettingsClientImpl implements SettingsClient {
   private static final String SETTING_VALUE_FIELD = "value";
   private static final String SETTINGS_ENTRIES_FIELD = "items";
   private static final String SETTINGS_PATH = "/settings/entries";
+  private static final String BASE_URL_PATH = "/base-url";
 
   public static final String SETTING_SCOPE_FIELD = "mod-users-bl.config.manage";
 
@@ -83,5 +84,33 @@ public class SettingsClientImpl implements SettingsClient {
     return responseJson.getJsonArray(SETTINGS_ENTRIES_FIELD).stream()
       .map(JsonObject.class::cast)
       .collect(Collectors.toMap(s -> PasswordResetSetting.fromValue(s.getString("key")), s -> s.getString(SETTING_VALUE_FIELD)));
+  }
+
+  @Override
+  public Future<String> getBaseUrl(OkapiConnectionParams okapiConnectionParams) {
+    LOG.info("getBaseUrl:: retrieving base URL from mod-settings");
+    var requestUrl = okapiConnectionParams.getOkapiUrl() + BASE_URL_PATH;
+    
+    return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET, okapiConnectionParams.buildHeaders(), null)
+      .map(response -> {
+        if (response.getCode() != HttpStatus.SC_OK) {
+          var logMessage = format("Error getting base URL. Status: %d, body: %s", 
+            response.getCode(), response.getBody());
+          throw new OkapiModuleClientException(logMessage);
+        }
+
+        var responseJson = response.getJson();
+        if (responseJson == null || !responseJson.containsKey("baseUrl")) {
+          throw new OkapiModuleClientException("Invalid base URL response: missing 'baseUrl' field");
+        }
+
+        var baseUrl = responseJson.getString("baseUrl");
+        if (baseUrl == null || baseUrl.isBlank()) {
+          throw new OkapiModuleClientException("Base URL is empty");
+        }
+
+        LOG.info("getBaseUrl:: successfully retrieved base URL");
+        return baseUrl;
+      });
   }
 }

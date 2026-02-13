@@ -481,7 +481,14 @@ public class GeneratePasswordRestLinkTest {
       return;
     }
 
+    mockBaseUrl();
     mockPasswordResetSettings();
+  }
+
+  private void mockBaseUrl() {
+    var baseUrlResponse = new JsonObject().put("baseUrl", MOCK_FOLIO_UI_HOST);
+    WireMock.stubFor(WireMock.get("/base-url")
+      .willReturn(WireMock.okJson(baseUrlResponse.encode())));
   }
 
   private void mockConfigModule() {
@@ -490,6 +497,10 @@ public class GeneratePasswordRestLinkTest {
     List<Config> configList = config.entrySet().stream()
       .map(e -> new Config().withCode(e.getKey()).withValue(e.getValue()).withEnabled(true))
       .toList();
+
+    var baseUrlResponse = new JsonObject().put("baseUrl", MOCK_FOLIO_UI_HOST);
+    WireMock.stubFor(WireMock.get("/base-url")
+      .willReturn(WireMock.notFound()));
 
     var query = "scope==\"mod-users-bl.config.manage\" AND (key==\"resetPasswordHost\" or key==\"resetPasswordPath\" or key==\"forgotPasswordPath\")";
     String expectedQuery = "/settings/entries?query=" + StringUtil.urlEncode(query);

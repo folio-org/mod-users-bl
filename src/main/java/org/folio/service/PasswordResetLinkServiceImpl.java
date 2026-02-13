@@ -86,12 +86,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
     Holder<String> tokenHolder = new Holder<>();
     Holder<String> linkHolder = new Holder<>();
 
-    return settingsClient.lookupPasswordResetSettings(connectionParams)
-      .recover(err -> {
-        LOG.info("sendPasswordResetLink:: password reset setting is absent: {} {}",
-          err.getClass().getSimpleName(), err.getMessage());
-        return configurationClient.lookupConfigByModuleName(MODULE_NAME, connectionParams);
-      })
+    return getPasswordResetConfiguration(connectionParams)
       .compose(configurations -> {
         configMapHolder.value = configurations;
         if (StringUtils.isBlank(user.getUsername())) {
@@ -105,6 +100,28 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
       .compose(token -> isPasswordExists(user.getId(), token, tokenHolder, connectionParams, passwordResetActionIdHolder))
       .compose(passwordExists -> sendNotification(connectionParams, passwordExists, tokenHolder, configMapHolder, linkHolder, user))
       .map(v -> linkHolder.value);
+  }
+
+  private Future<Map<PasswordResetSetting, String>> getPasswordResetConfiguration(OkapiConnectionParams connectionParams) {
+    return settingsClient.getBaseUrl(connectionParams)
+      .compose(baseUrl -> settingsClient.lookupPasswordResetSettings(connectionParams)
+        .map(settings -> {
+          settings.put(FOLIO_HOST, baseUrl);
+          return settings;
+        })
+        .recover(err -> {
+          LOG.info("getPasswordResetConfiguration:: password reset settings not found in mod-settings: {} {}",
+            err.getClass().getSimpleName(), err.getMessage());
+          Map<PasswordResetSetting, String> config = new java.util.HashMap<>();
+          config.put(FOLIO_HOST, baseUrl);
+          return Future.succeededFuture(config);
+        })
+      )
+      .recover(err -> {
+        LOG.info("getPasswordResetConfiguration:: base URL not found in mod-settings, falling back to mod-configuration: {} {}",
+          err.getClass().getSimpleName(), err.getMessage());
+        return configurationClient.lookupConfigByModuleName(MODULE_NAME, connectionParams);
+      });
   }
 
   @Override
