@@ -150,6 +150,48 @@ public class GeneratePasswordRestLinkTest {
   }
 
   @Test
+  public void shouldGenerateAndSendPasswordNotificationWhenOnlyBaseUrlAvailable() {
+    User mockUser = new User()
+      .withId(UUID.randomUUID().toString())
+      .withUsername(MOCK_USERNAME);
+    boolean passwordExists = true;
+
+    mockUserFound(mockUser.getId(), mockUser);
+    mockBaseUrlOnly();
+    mockSignAuthToken(MOCK_TOKEN);
+    mockPostPasswordResetAction(passwordExists);
+    mockNotificationModule();
+
+    JsonObject requestBody = new JsonObject()
+      .put("userId", mockUser.getId());
+    String expectedLink = MOCK_FOLIO_UI_HOST + DEFAULT_UI_URL + '/' + MOCK_TOKEN + "?tenant=" + TENANT;
+    String expectedForgotPasswordLink = MOCK_FOLIO_UI_HOST + DEFAULT_FORGOT_PASSWORD_URL;
+    
+    RestAssured.given()
+      .spec(spec)
+      .header(mockUrlHeader)
+      .body(requestBody.encode())
+      .when()
+      .post(GENERATE_PASSWORD_RESET_LINK_PATH)
+      .then()
+      .statusCode(HttpStatus.SC_OK)
+      .body("link", is(expectedLink));
+
+    Notification expectedNotification = new Notification()
+      .withEventConfigName(RESET_PASSWORD_EVENT_CONFIG_ID)
+      .withText(StringUtils.EMPTY)
+      .withLang("en")
+      .withContext(
+        new Context()
+          .withAdditionalProperty("user", mockUser)
+          .withAdditionalProperty("link", expectedLink)
+          .withAdditionalProperty("forgotPasswordLink", expectedForgotPasswordLink))
+      .withRecipientId(mockUser.getId());
+    WireMock.verify(WireMock.postRequestedFor(WireMock.urlMatching(NOTIFY_PATH))
+      .withRequestBody(WireMock.equalToJson(toJson(expectedNotification))));
+  }
+
+  @Test
   public void generateWithLegacyConfigurationAndSendResetPasswordNotificationWhenPasswordExistsWith() {
     User mockUser = new User()
       .withId(UUID.randomUUID().toString())
@@ -481,7 +523,22 @@ public class GeneratePasswordRestLinkTest {
       return;
     }
 
+    mockBaseUrl();
     mockPasswordResetSettings();
+  }
+
+  private void mockBaseUrl() {
+    var baseUrlResponse = new JsonObject().put("baseUrl", MOCK_FOLIO_UI_HOST);
+    WireMock.stubFor(WireMock.get("/base-url")
+      .willReturn(WireMock.okJson(baseUrlResponse.encode())));
+  }
+
+  private void mockBaseUrlOnly() {
+    mockBaseUrl();
+    var query = "scope==\"mod-users-bl.config.manage\" AND (key==\"resetPasswordHost\" or key==\"resetPasswordPath\" or key==\"forgotPasswordPath\")";
+    String expectedQuery = "/settings/entries?query=" + StringUtil.urlEncode(query);
+    WireMock.stubFor(WireMock.get(expectedQuery)
+      .willReturn(WireMock.serverError()));
   }
 
   private void mockConfigModule() {
@@ -490,6 +547,9 @@ public class GeneratePasswordRestLinkTest {
     List<Config> configList = config.entrySet().stream()
       .map(e -> new Config().withCode(e.getKey()).withValue(e.getValue()).withEnabled(true))
       .toList();
+
+    WireMock.stubFor(WireMock.get("/base-url")
+      .willReturn(WireMock.notFound()));
 
     var query = "scope==\"mod-users-bl.config.manage\" AND (key==\"resetPasswordHost\" or key==\"resetPasswordPath\" or key==\"forgotPasswordPath\")";
     String expectedQuery = "/settings/entries?query=" + StringUtil.urlEncode(query);
