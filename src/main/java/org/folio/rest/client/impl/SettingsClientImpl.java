@@ -90,11 +90,11 @@ public class SettingsClientImpl implements SettingsClient {
   public Future<String> getBaseUrl(OkapiConnectionParams okapiConnectionParams) {
     LOG.info("getBaseUrl:: retrieving base URL from mod-settings");
     var requestUrl = okapiConnectionParams.getOkapiUrl() + BASE_URL_PATH;
-    
+
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET, okapiConnectionParams.buildHeaders(), null)
       .map(response -> {
         if (response.getCode() != HttpStatus.SC_OK) {
-          var logMessage = format("Error getting base URL. Status: %d, body: %s", 
+          var logMessage = format("Error getting base URL. Status: %d, body: %s",
             response.getCode(), response.getBody());
           throw new OkapiModuleClientException(logMessage);
         }
@@ -105,7 +105,7 @@ public class SettingsClientImpl implements SettingsClient {
         }
 
         var baseUrl = responseJson.getString("baseUrl");
-        if (baseUrl == null || baseUrl.isBlank()) {
+        if (StringUtils.isBlank(baseUrl)) {
           throw new OkapiModuleClientException("Base URL is empty");
         }
 
