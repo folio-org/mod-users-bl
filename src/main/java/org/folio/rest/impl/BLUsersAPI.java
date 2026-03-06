@@ -246,12 +246,12 @@ public class BLUsersAPI implements BlUsers {
             //are not called
             response.setError(new JsonObject());
           }
-          logger.error("No record found for query '" + response.getEndpoint() + "'");
+          logger.error("No record found for query '{}'", response.getEndpoint());
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond404WithTextPlain("No record found for query '"
                 + response.getEndpoint() + "'")));
         } else if(totalRecords != null && totalRecords > 1 && requireOneResult) {
-          logger.error("'" + response.getEndpoint() + "' returns multiple results");
+          logger.error("'{}' returns multiple results", response.getEndpoint());
           previousFailure[0] = true;
           asyncResultHandler.handle(Future.succeededFuture(
             GetBlUsersByIdByIdResponse.respond400WithTextPlain(("'" + response.getEndpoint()
@@ -364,7 +364,7 @@ public class BLUsersAPI implements BlUsers {
     int includeCount = include.size();
     ArrayList<CompletableFuture<Response>> requestedIncludes = new ArrayList<>();
     Map<String, CompletableFuture<Response>> completedLookup = new HashMap<>();
-    logger.info(String.format("Received includes: %s", String.join(",", include)));
+    logger.info("Received includes: {}", String.join(",", include));
 
     for (int i = 0; i < includeCount; i++) {
 
@@ -887,7 +887,7 @@ public class BLUsersAPI implements BlUsers {
     } else {
       HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
       String moduleURL = "/authn/login";
-      logger.debug("Requesting login from " + moduleURL);
+      logger.debug("Requesting login from {}", moduleURL);
       //can only be one user with this username - so only one result expected
       var cql = "username==" + StringUtil.cqlEncode(entity.getUsername());
       var userUrl = "/users?query=" + PercentCodec.encode(cql);

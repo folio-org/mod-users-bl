@@ -87,7 +87,7 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
           .map(response -> {
             if (response.getCode() == HttpStatus.SC_NO_CONTENT) {
               logger.info("deleteUserRequestPreferenceByUserId:: [DELETE_USER_REQUEST_PREFERENCE] Successfully " +
-                  "deleted the UserRequestPreference with UserId: {}, requestPreferencesId: {}", userId,
+                "deleted the UserRequestPreference with UserId: {}, requestPreferencesId: {}", userId,
                 requestPreferencesId);
               return true;
             } else if (response.getCode() == HttpStatus.SC_NOT_FOUND) {
@@ -115,9 +115,8 @@ public class CirculationStorageModuleClientImpl implements CirculationStorageMod
     return RestUtil.doRequest(httpClient, requestUrl, HttpMethod.GET,
         connectionParams.buildHeaders(), StringUtils.EMPTY)
       .map(response -> {
-        logger.info("getUserRequestPreferenceIdByUserId:: [DELETE_GET_USER_REQUEST_PREFERENCE] response: code: {}, " +
-            "body: {}",
-          response.getCode(), response.getBody());
+        logger.info("getUserRequestPreferenceIdByUserId:: [DELETE_GET_USER_REQUEST_PREFERENCE] response: code: {}",
+          response.getCode());
         if (response.getCode() != HttpStatus.SC_OK) {
           String errorLogMsg =
             String.format("getUserRequestPreferenceIdByUserId:: [DELETE_GET_USER_REQUEST_PREFERENCE] Error while " +
