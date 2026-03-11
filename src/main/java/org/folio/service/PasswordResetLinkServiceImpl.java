@@ -80,7 +80,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   public Future<String> sendPasswordResetLink(User user, Map<String, String> okapiHeaders) {
-    LOG.info("sendPasswordResetLink:: user details {}", user);
+    LOG.info("sendPasswordResetLink:: user details {}", user.getId());
     OkapiConnectionParams connectionParams = new OkapiConnectionParams(okapiHeaders);
     Holder<Map<PasswordResetSetting, String>> configMapHolder = new Holder<>();
     Holder<String> passwordResetActionIdHolder = new Holder<>();
@@ -141,7 +141,7 @@ public class PasswordResetLinkServiceImpl implements PasswordResetLinkService {
   }
 
   private Future<Void> sendNotification(OkapiConnectionParams connectionParams, Boolean passwordExists, Holder<String> tokenHolder, Holder<Map<PasswordResetSetting, String>> configMapHolder, Holder<String> linkHolder, User user) {
-    LOG.info("sendNotification:: passwordExistValue {}, User details {}", passwordExists, user);
+    LOG.info("sendNotification:: passwordExistValue {}, User details {}", passwordExists, user.getId());
     String linkHost = configMapHolder.value.getOrDefault(FOLIO_HOST, FOLIO_HOST_DEFAULT);
     String linkPath = configMapHolder.value.getOrDefault(RESET_PASSWORD_UI_PATH, resetPasswordUIPathDefault);
     String generatedLink = linkHost + linkPath + '/' + tokenHolder.value + "?tenant=" + connectionParams.getTenantId();
