@@ -30,8 +30,7 @@ public class NotificationClientImpl implements NotificationClient {
       okapiConnectionParams.buildHeaders(), ObjectMapperTool.valueAsString(notification))
       .map(response -> {
         if (response.getCode() != HttpStatus.SC_CREATED) {
-          LOG.error(String.format("Error sending notification. Status: %d, body: %s",
-            response.getCode(), response.getBody()));
+          LOG.error("Error sending notification. Status: {}, body: {}", response.getCode(), response.getBody());
         }
         return null;
       });
