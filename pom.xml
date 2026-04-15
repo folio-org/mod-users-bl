@@ -50,7 +50,7 @@
     <java.version>21</java.version>
 
     <!-- Dependency versions -->
-    <raml-module-builder.version>36.0.0-SNAPSHOT</raml-module-builder.version>
+    <raml-module-builder.version>36.0.0</raml-module-builder.version>
     <vertx-version>5.0.6</vertx-version>
     <mod-configuration-client.version>5.12.0</mod-configuration-client.version>
     <log4j.version>2.25.2</log4j.version>
