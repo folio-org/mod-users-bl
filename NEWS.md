@@ -1,8 +1,34 @@
-## 7.11.0-SNAPSHOT 2026-XX-XX
-* Support mod-roles-keycloak for user's permissions during login (MODUSERBL-224)
-* Not possible to delete patrons via UI that have expired manual blocks (MODUSERBL-231)
-* Upgrade module to Vert.x 5.0 (MODUSERBL-230)
-* Retrieve FOLIO_HOST from mod-settings instead of mod-configuration (MODUSERBL-234)
+## 8.0.0 2026-04-15
+
+### Breaking changes
+* Upgrade module to Vert.x 5.0 ([MODUSERSBL-230](https://folio-org.atlassian.net/browse/MODUSERSBL-230))
+* Migrate to mod-settings for the configurations ([MODUSERSBL-228](https://folio-org.atlassian.net/browse/MODUSERSBL-228))
+
+### New APIs versions
+* Requires `settings 1.1`
+* Requires `base-url 1.0`
+* Optional `permissions-users 1.0`
+
+### Features
+* Support mod-roles-keycloak for user's permissions during login ([MODUSERBL-224](https://folio-org.atlassian.net/browse/MODUSERBL-224))
+* Search users in all tenants when using "Forgot password" and "Forgot username" links ([MODUSERSBL-225](https://folio-org.atlassian.net/browse/MODUSERSBL-225))
+* Retrieve FOLIO_HOST from mod-settings instead of mod-configuration ([MODUSERBL-234](https://folio-org.atlassian.net/browse/MODUSERBL-234))
+
+### Bug fixes
+* Not possible to delete patrons via UI that have expired manual blocks ([MODUSERBL-231](https://folio-org.atlassian.net/browse/MODUSERBL-231))
+* Fix global settings permission names and settings scopes ([MODUSERSBL-228](https://folio-org.atlassian.net/browse/MODUSERSBL-228))
+* Sensitive data in logs cleanup ([MODUSERBL-218](https://folio-org.atlassian.net/browse/MODUSERBL-218))
+* Fix RestUtil.doRequest: payload comparison, method restriction ([MODUSERBL-226](https://folio-org.atlassian.net/browse/MODUSERBL-226))
+
+### Tech Dept
+* Migrate CI from Jenkins to GitHub Actions Maven workflow ([MODUSERBL-239](https://folio-org.atlassian.net/browse/MODUSERBL-239))
+
+### Dependencies
+* Bump `raml-module-builder` from `35.4.0` to `36.0.0`
+* Bump `vertx` from `4.5.13` to `5.0.6`
+* Bump `mod-configuration-client` from `5.11.0` to `5.12.0`
+
+---
 
 ## 7.10.0 2025-03-13
 
