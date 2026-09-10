@@ -74,7 +74,6 @@ public class HeadersForwardingTest {
 
   private static final String URL_AUT_RESET_PASSWORD = "/authn/reset-password";
   private static final String URL_AUTH_UPDATE = "/authn/update";
-  private static final String URL_AUTH_LOGIN_LEGACY = "/authn/login";
   private static final String URL_AUTH_LOGIN = "/authn/login-with-expiry";
   private static final String BL_USERS_LOGIN_LEGACY = "/bl-users/login";
   private static final String BL_USERS_LOGIN = "/bl-users/login-with-expiry";
@@ -138,8 +137,11 @@ public class HeadersForwardingTest {
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\""))
       .willReturn(WireMock.okJson(users.encode())));
 
-    WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
-      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getToken(USER_ID, USERNAME, TENANT))));
+    String accessToken = getToken(USER_ID, USERNAME, TENANT);
+    Cookie accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, accessToken);
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201)
+        .withHeader("Set-Cookie", accessTokenCookie.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray().add(new JsonObject()));
@@ -164,7 +166,8 @@ public class HeadersForwardingTest {
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
-      .statusCode(201);
+      .statusCode(201)
+      .header(OKAPI_TOKEN_HEADER, accessToken);
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
@@ -172,7 +175,7 @@ public class HeadersForwardingTest {
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID)));
 
-    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/service-points-users"))
         .withQueryParam("query", equalTo("userId==" + USER_ID))
@@ -292,7 +295,7 @@ public class HeadersForwardingTest {
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
 
-    WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(null));
 
     RestAssured
@@ -305,7 +308,7 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(500);
 
-    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
   }
 
   @Test
@@ -314,8 +317,10 @@ public class HeadersForwardingTest {
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
 
-    WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
-      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getTokenWithoutTenant(USER_ID, USERNAME))));
+    Cookie accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, getTokenWithoutTenant(USER_ID, USERNAME));
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201)
+        .withHeader("Set-Cookie", accessTokenCookie.encode())));
 
     WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID))
@@ -331,7 +336,7 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(500);
 
-    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
   }
 
   @Test
@@ -340,8 +345,10 @@ public class HeadersForwardingTest {
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
 
-    WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
-      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, "")));
+    Cookie accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, "");
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201)
+        .withHeader("Set-Cookie", accessTokenCookie.encode())));
 
     WireMock.stubFor(get(urlPathEqualTo("/perms/users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID))
@@ -357,7 +364,7 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(500);
 
-    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
   }
 
   @Test
@@ -366,7 +373,7 @@ public class HeadersForwardingTest {
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
 
-    WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(WireMock.okJson(JsonObject.mapFrom(credentials).encode()).withStatus(422)));
 
     RestAssured
@@ -379,7 +386,7 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(422);
 
-    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
     WireMock.verify(0, postRequestedFor(urlPathEqualTo("/perms/users")));
   }
 
@@ -389,7 +396,7 @@ public class HeadersForwardingTest {
     credentials.setUsername(USERNAME);
     credentials.setPassword("password");
 
-    WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(null));
 
     RestAssured
@@ -402,7 +409,7 @@ public class HeadersForwardingTest {
       .then()
       .statusCode(500);
 
-    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
     WireMock.verify(0, postRequestedFor(urlPathEqualTo("/perms/users")));
   }
 
@@ -453,7 +460,7 @@ public class HeadersForwardingTest {
 
   @Test
   public void testPostBlUsersLoginIncorrectPermissionsLegacy() {
-    doTestPostBlUsersLoginIncorrectPermissions(URL_AUTH_LOGIN_LEGACY, BL_USERS_LOGIN_LEGACY);
+    doTestPostBlUsersLoginIncorrectPermissions(URL_AUTH_LOGIN, BL_USERS_LOGIN_LEGACY);
   }
 
   private void doTestPostBlUsersLoginIncorrectPermissions(String authLoginEndpoint, String blUsersLoginEndpoint) {
@@ -473,8 +480,10 @@ public class HeadersForwardingTest {
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\""))
       .willReturn(WireMock.okJson(users.encode())));
 
+    Cookie accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, getToken(USER_ID, USERNAME, TENANT));
     WireMock.stubFor(post(authLoginEndpoint)
-      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201).withHeader(OKAPI_TOKEN_HEADER, getToken(USER_ID, USERNAME, TENANT))));
+      .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201)
+        .withHeader("Set-Cookie", accessTokenCookie.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray()
@@ -629,7 +638,7 @@ public class HeadersForwardingTest {
   private boolean isContainsSpecifiedUrls(String url) {
     return url.contains(URL_AUT_RESET_PASSWORD)
       || url.contains(URL_AUTH_UPDATE)
-      || url.contains(URL_AUTH_LOGIN_LEGACY);
+      || url.contains(URL_AUTH_LOGIN);
   }
 
   private StringValuePattern passwordValidateRequestMatcher() {

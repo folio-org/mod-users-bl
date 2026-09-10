@@ -58,7 +58,6 @@ public class HeadersForwardingEurekaTest {
 
   private static final String URL_AUT_RESET_PASSWORD = "/authn/reset-password";
   private static final String URL_AUTH_UPDATE = "/authn/update";
-  private static final String URL_AUTH_LOGIN_LEGACY = "/authn/login";
   private static final String URL_AUTH_LOGIN = "/authn/login-with-expiry";
   private static final String BL_USERS_LOGIN_LEGACY = "/bl-users/login";
   private static final String BL_USERS_LOGIN = "/bl-users/login-with-expiry";
@@ -121,9 +120,11 @@ public class HeadersForwardingEurekaTest {
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\""))
       .willReturn(WireMock.okJson(users.encode())));
 
-    WireMock.stubFor(post(URL_AUTH_LOGIN_LEGACY)
+    String accessToken = getToken(USER_ID, USERNAME, TENANT);
+    Cookie accessTokenCookie = Cookie.cookie(ACCESS_TOKEN, accessToken);
+    WireMock.stubFor(post(URL_AUTH_LOGIN)
       .willReturn(WireMock.okJson(ObjectMapperTool.valueAsString(credentials)).withStatus(201)
-        .withHeader(OKAPI_TOKEN_HEADER, getToken(USER_ID, USERNAME, TENANT))));
+        .withHeader("Set-Cookie", accessTokenCookie.encode())));
 
     JsonObject permsUsersPost = new JsonObject()
       .put("permissionUsers", new JsonArray().add(new JsonObject()));
@@ -147,14 +148,15 @@ public class HeadersForwardingEurekaTest {
       .when()
       .post(BL_USERS_LOGIN_LEGACY)
       .then()
-      .statusCode(201);
+      .statusCode(201)
+      .header(OKAPI_TOKEN_HEADER, accessToken);
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/users"))
       .withQueryParam("query", equalTo("username==\"" + USERNAME + "\"")));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/permissions/users/" + USER_ID)));
 
-    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN_LEGACY)));
+    WireMock.verify(1, postRequestedFor(urlPathEqualTo(URL_AUTH_LOGIN)));
 
     WireMock.verify(1, getRequestedFor(urlPathEqualTo("/service-points-users"))
       .withQueryParam("query", equalTo("userId==" + USER_ID))
@@ -275,7 +277,7 @@ public class HeadersForwardingEurekaTest {
   private boolean isContainsSpecifiedUrls(String url) {
     return url.contains(URL_AUT_RESET_PASSWORD)
       || url.contains(URL_AUTH_UPDATE)
-      || url.contains(URL_AUTH_LOGIN_LEGACY);
+      || url.contains(URL_AUTH_LOGIN);
   }
 
   private StringValuePattern passwordValidateRequestMatcher() {

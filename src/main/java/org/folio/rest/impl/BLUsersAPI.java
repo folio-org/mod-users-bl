@@ -142,7 +142,6 @@ public class BLUsersAPI implements BlUsers {
   private static final String UNDEFINED_USER = "UNDEFINED_USER__";
 
   private static final String LOGIN_ENDPOINT = "/authn/login-with-expiry";
-  private static final String LOGIN_ENDPOINT_LEGACY = "/authn/login";
   private static final String FOLIO_ACCESS_TOKEN = "folioAccessToken";
   private static final String SET_COOKIE_HEADER = "Set-Cookie";
 
@@ -862,7 +861,7 @@ public class BLUsersAPI implements BlUsers {
       LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<javax.ws.rs.core.Response>> asyncResultHandler,
       Context vertxContext) {
     doPostBlUsersLogin(expandPerms, include, userAgent, xForwardedFor, entity, okapiHeaders, asyncResultHandler,
-        LOGIN_ENDPOINT_LEGACY, this::loginResponseLegacy);
+        LOGIN_ENDPOINT, this::loginResponseLegacy);
   }
 
   @SuppressWarnings("java:S1874")
@@ -886,8 +885,7 @@ public class BLUsersAPI implements BlUsers {
         PostBlUsersLoginResponse.respond400WithTextPlain("Improperly formatted request")));
     } else {
       HttpClientInterface clientForLogin = HttpClientFactory.getHttpClient(okapiURL, okapiHeaders.get(OKAPI_TENANT_HEADER));
-      String moduleURL = "/authn/login";
-      logger.debug("Requesting login from {}", moduleURL);
+      logger.debug("Requesting login from {}", loginEndpoint);
       //can only be one user with this username - so only one result expected
       var cql = "username==" + StringUtil.cqlEncode(entity.getUsername());
       var userUrl = "/users?query=" + PercentCodec.encode(cql);
@@ -1275,7 +1273,7 @@ public class BLUsersAPI implements BlUsers {
 
   @SuppressWarnings("java:S1874")
   private javax.ws.rs.core.Response loginResponseLegacy(Response loginResponse, CompositeUser cu) {
-    String token = String.valueOf(loginResponse.getHeaders().get(OKAPI_TOKEN_HEADER));
+    String token = getToken(loginResponse.getHeaders());
     return PostBlUsersLoginResponse.respond201WithApplicationJson(cu,
       PostBlUsersLoginResponse.headersFor201().withXOkapiToken(token));
   }

@@ -1,3 +1,6 @@
+## 8.1.0 in progress
+* Switch `/bl-users/login`'s backend call from mod-login's deprecated `/authn/login` to `/authn/login-with-expiry` (MODUSERBL-175)
+
 ## 8.0.0 2026-04-15
 
 ### Breaking changes
