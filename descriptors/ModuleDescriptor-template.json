@@ -21,7 +21,7 @@
         {
           "methods" : [ "GET" ],
           "pathPattern" : "/bl-users/_self",
-          "permissionsRequired" : [],
+          "permissionsRequired" : ["*"],
           "modulePermissions": [
             "users.item.get",
             "users.collection.get",
@@ -193,7 +193,7 @@
           "methods": ["POST"],
           "pathPattern": "/bl-users/settings/myprofile/password",
           "permissionsDesired": [],
-          "permissionsRequired": [],
+          "permissionsRequired": ["*"],
           "modulePermissions": ["validation.validate.post",
             "users.item.get"]
         },
