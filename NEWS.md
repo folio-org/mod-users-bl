@@ -1,3 +1,8 @@
+## WIP
+
+### Features
+* Upgrade from Java 21 to Java 25 ([MODUSERBL-248](https://folio-org.atlassian.net/browse/MODUSERBL-248))
+
 ## 8.0.0 2026-04-15
 
 ### Breaking changes
